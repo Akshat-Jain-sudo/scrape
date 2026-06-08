@@ -256,12 +256,57 @@ export async function scrapeSnapdealSearch(query, pages = 1) {
   return allProducts;
 }
 
+// ── Market Price Estimator for fallbacks and simulations ──
+export function getEstimatedBasePrice(query, category = 'ecommerce') {
+  const q = query.toLowerCase();
+  
+  // 1. Precise overrides for trending products
+  if (q.includes('iphone 16')) return 67900;
+  if (q.includes('airpods pro')) return 18900;
+  if (q.includes('macbook air m3')) return 114900;
+  if (q.includes('nike air max') || q.includes('nike shoes') || q.includes('nike shoe')) return 7999;
+  if (q.includes('adidas hoodie') || q.includes('adidas originals') || q.includes('adidas')) return 3499;
+  if (q.includes('levis 511') || q.includes('levis jeans') || q.includes('levis jean')) return 1699;
+  
+  if (q.includes('amul butter') || q.includes('butter 500g') || q.includes('butter')) return 275;
+  if (q.includes('coke') || q.includes('coca-cola') || q.includes('coca cola')) return 100;
+  if (q.includes('maggi') || q.includes('noodles') || q.includes('noodle')) return 168;
+  if (q.includes('oreo') || q.includes('biscuit') || q.includes('cookies')) return 35;
+  if (q.includes('milk')) return 66;
+  if (q.includes('bread')) return 45;
+  if (q.includes('cheese')) return 145;
+  if (q.includes('chips') || q.includes('lays')) return 20;
+  if (q.includes('chocolate') || q.includes('dairy milk')) return 80;
+  if (q.includes('oil')) return 175;
+  if (q.includes('onion')) return 30;
+  if (q.includes('tomato')) return 40;
+  
+  // 2. Generic category overrides
+  if (category === 'quickcommerce') {
+    return 120;
+  }
+  
+  const isFashionQuery = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt'].some(kw => q.includes(kw));
+  if (isFashionQuery) return 2400;
+
+  if (['phone', 'mobile'].some(k => q.includes(k))) return 24999;
+  if (['laptop', 'computer'].some(k => q.includes(k))) return 54999;
+  if (['headphone', 'earphone', 'buds'].some(k => q.includes(k))) return 2999;
+  if (['watch', 'smartwatch'].some(k => q.includes(k))) return 4999;
+  if (['shoe', 'sneaker', 'boot'].some(k => q.includes(k))) return 2999;
+
+  return 5000;
+}
+
 // ── Store Simulation / Fallback Generator ──
 export function generatePlatformComparison(query, baseProduct, targetStores) {
   const comparison = {};
   
-  // Set fallback parameters from the best available base product, or generic values
-  const basePrice = baseProduct ? baseProduct.price || 1500 : 1500;
+  const isQuickComm = targetStores.some(s => ['blinkit', 'zepto', 'instamart'].includes(s));
+  const category = isQuickComm ? 'quickcommerce' : 'ecommerce';
+
+  // Set fallback parameters from the best available base product, or estimated values
+  const basePrice = baseProduct && baseProduct.price ? baseProduct.price : getEstimatedBasePrice(query, category);
   const baseTitle = baseProduct ? baseProduct.name : `Premium ${query}`;
   const baseImg = baseProduct ? baseProduct.imageUrl : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
   const baseLink = baseProduct ? baseProduct.productLink : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
@@ -318,22 +363,14 @@ export function simulateStoreSearch(query, store, pages = 1) {
   const products = [];
   const itemCount = 5 + Math.floor(Math.random() * 8); // 5 to 12 items
   
-  // Base price based on query context
-  let basePrice = 250;
-  const lowerQuery = query.toLowerCase();
-  if (['phone', 'iphone', 'laptop', 'macbook', 'tv', 'ipad', 'watch', 'headphone', 'sony', 'airpods'].some(k => lowerQuery.includes(k))) {
-    basePrice = 45000;
-  } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => lowerQuery.includes(k))) {
-    basePrice = 1800;
-  } else if (['milk', 'butter', 'bread', 'coke', 'maggi', 'grocery', 'biscuit', 'cheese', 'chips', 'chocolate', 'oil', 'onion', 'tomato'].some(k => lowerQuery.includes(k))) {
-    basePrice = 120;
-  }
+  const storeCategory = ['blinkit', 'zepto', 'instamart'].includes(store) ? 'quickcommerce' : 'ecommerce';
+  const basePrice = getEstimatedBasePrice(query, storeCategory);
 
   // Predefined image placeholders
   let defaultImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
   if (['blinkit', 'zepto', 'instamart'].includes(store)) {
     defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'; // grocery style
-  } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => lowerQuery.includes(k))) {
+  } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => query.toLowerCase().includes(k))) {
     defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200'; // fashion style
   }
 
@@ -437,7 +474,7 @@ export async function compareProductPrices(query, category = 'ecommerce') {
 
     baseProduct = {
       name: query.toUpperCase(),
-      price: category === 'ecommerce' ? (isFashionQuery ? 2400 : 45000) : 180,
+      price: getEstimatedBasePrice(query, category),
       imageUrl: defaultImg,
       productLink: `https://www.google.com/search?q=${encodeURIComponent(query)}`
     };
