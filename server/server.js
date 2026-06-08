@@ -343,6 +343,19 @@ app.get('/api/history', (req, res) => {
   res.json(db.scrapeHistory || []);
 });
 
+// ── Serve React build assets in production ──
+const clientBuildPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+  console.log(`Serving static client files from: ${clientBuildPath}`);
+}
+
 // ── Server Start ──
 app.listen(PORT, () => {
   console.log(`\n🚀 FlipScrape Server running on http://localhost:${PORT}`);
