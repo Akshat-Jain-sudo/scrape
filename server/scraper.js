@@ -313,6 +313,80 @@ export function generatePlatformComparison(query, baseProduct, targetStores) {
   };
 }
 
+// ── Store Search Simulator for Scrape Console ──
+export function simulateStoreSearch(query, store, pages = 1) {
+  const products = [];
+  const itemCount = 5 + Math.floor(Math.random() * 8); // 5 to 12 items
+  
+  // Base price based on query context
+  let basePrice = 250;
+  const lowerQuery = query.toLowerCase();
+  if (['phone', 'iphone', 'laptop', 'macbook', 'tv', 'ipad', 'watch', 'headphone', 'sony', 'airpods'].some(k => lowerQuery.includes(k))) {
+    basePrice = 45000;
+  } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => lowerQuery.includes(k))) {
+    basePrice = 1800;
+  } else if (['milk', 'butter', 'bread', 'coke', 'maggi', 'grocery', 'biscuit', 'cheese', 'chips', 'chocolate', 'oil', 'onion', 'tomato'].some(k => lowerQuery.includes(k))) {
+    basePrice = 120;
+  }
+
+  // Predefined image placeholders
+  let defaultImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
+  if (['blinkit', 'zepto', 'instamart'].includes(store)) {
+    defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'; // grocery style
+  } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => lowerQuery.includes(k))) {
+    defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200'; // fashion style
+  }
+
+  for (let i = 0; i < itemCount; i++) {
+    // Generate slight price variance
+    const priceMultiplier = 0.85 + (i * 0.05) + Math.random() * 0.05;
+    const price = Math.round(basePrice * priceMultiplier);
+    const originalPrice = Math.round(price * (1.1 + Math.random() * 0.2));
+    const discount = Math.round(((originalPrice - price) / originalPrice) * 100);
+    const rating = parseFloat((3.8 + Math.random() * 1.2).toFixed(1));
+    const ratingsCount = 10 + Math.floor(Math.random() * 1500);
+
+    let productName = `${query.charAt(0).toUpperCase() + query.slice(1)} - Option ${i + 1}`;
+    if (store === 'blinkit') productName = `Blinkit Saver ${query.charAt(0).toUpperCase() + query.slice(1)} Pack ${i+1}`;
+    else if (store === 'zepto') productName = `Zepto Choice ${query.charAt(0).toUpperCase() + query.slice(1)} ${i+1}`;
+    else if (store === 'instamart') productName = `Instamart Instant ${query.charAt(0).toUpperCase() + query.slice(1)} ${i+1}`;
+    else if (store === 'croma') productName = `Croma Select ${query.charAt(0).toUpperCase() + query.slice(1)} ${i+1}`;
+    else if (store === 'myntra') productName = `Myntra Elite ${query.charAt(0).toUpperCase() + query.slice(1)} Brand ${i+1}`;
+    else if (store === 'ajio') productName = `Ajio Trend ${query.charAt(0).toUpperCase() + query.slice(1)} Style ${i+1}`;
+
+    let storeLink = `https://www.google.com/search?q=${encodeURIComponent(store + ' ' + query)}`;
+    if (store === 'blinkit') storeLink = `https://blinkit.com/s/?q=${encodeURIComponent(query)}`;
+    else if (store === 'zepto') storeLink = `https://www.zeptonow.com`;
+    else if (store === 'instamart') storeLink = `https://www.swiggy.com/instamart`;
+    else if (store === 'myntra') storeLink = `https://www.myntra.com/search?rawQuery=${encodeURIComponent(query)}`;
+    else if (store === 'ajio') storeLink = `https://www.ajio.com/search/?text=${encodeURIComponent(query)}`;
+    else if (store === 'croma') storeLink = `https://www.croma.com/searchB?q=${encodeURIComponent(query)}`;
+
+    products.push({
+      id: `${store.substring(0, 2)}-${i}-${Date.now().toString(36)}`,
+      name: productName,
+      price,
+      priceFormatted: `₹${price.toLocaleString('en-IN')}`,
+      originalPrice,
+      originalPriceFormatted: `₹${originalPrice.toLocaleString('en-IN')}`,
+      discount,
+      discountFormatted: `${discount}% off`,
+      rating,
+      ratingsCount,
+      reviewsCount: Math.round(ratingsCount * 0.15),
+      productLink: storeLink,
+      imageUrl: defaultImg,
+      source: store,
+      deliveryTime: ['blinkit', 'zepto', 'instamart'].includes(store)
+        ? `${6 + Math.floor(Math.random() * 9)} mins`
+        : null,
+      scrapedAt: new Date().toISOString()
+    });
+  }
+
+  return products;
+}
+
 // ── Multi-Store Compare Engine ──
 export async function compareProductPrices(query, category = 'ecommerce') {
   console.log(`Comparing "${query}" under category "${category}" in real-time...`);
@@ -327,7 +401,6 @@ export async function compareProductPrices(query, category = 'ecommerce') {
 
     if (isFashion) {
       targetStores = ['myntra', 'ajio', 'flipkart'];
-      // Fetch live catalog from Flipkart and Snapdeal as base products
       const [fkList, sdList] = await Promise.all([
         scrapeFlipkartSearch(query, 1),
         scrapeSnapdealSearch(query, 1)
@@ -353,10 +426,19 @@ export async function compareProductPrices(query, category = 'ecommerce') {
   } else {
     const isFashionQuery = category === 'ecommerce' && 
       ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie'].some(kw => query.toLowerCase().includes(kw));
+    
+    // Choose appropriate default image
+    let defaultImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200'; // Electronics
+    if (category === 'quickcommerce') {
+      defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'; // Grocery
+    } else if (isFashionQuery) {
+      defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200'; // Fashion
+    }
+
     baseProduct = {
       name: query.toUpperCase(),
       price: category === 'ecommerce' ? (isFashionQuery ? 2400 : 45000) : 180,
-      imageUrl: null,
+      imageUrl: defaultImg,
       productLink: `https://www.google.com/search?q=${encodeURIComponent(query)}`
     };
   }

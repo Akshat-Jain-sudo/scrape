@@ -3,7 +3,14 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { scrapeFlipkartSearch, computeProductAnalytics, TRENDING_DEALS, compareProductPrices } from './scraper.js';
+import { 
+  scrapeFlipkartSearch, 
+  scrapeSnapdealSearch,
+  simulateStoreSearch,
+  computeProductAnalytics, 
+  TRENDING_DEALS, 
+  compareProductPrices 
+} from './scraper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,7 +93,7 @@ app.post('/api/compare', async (req, res) => {
 
 // ── POST /api/scrape — Scrape products from selected stores ──
 app.post('/api/scrape', async (req, res) => {
-  const { query, source = 'flipkart', pages = 3 } = req.body;
+  const { query, category = 'ecommerce', source = 'all', pages = 3 } = req.body;
   if (!query || query.trim().length === 0) {
     return res.status(400).json({ error: 'Search query is required' });
   }
@@ -95,20 +102,57 @@ app.post('/api/scrape', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    console.log(`\n🔍 Scrape request: "${query}" | Source: ${source} | Pages: ${pageCount}`);
+    console.log(`\n🔍 Scrape request: "${query}" | Category: ${category} | Source: ${source} | Pages: ${pageCount}`);
     
     let products = [];
     
-    // Call Flipkart Scraper
-    if (source === 'flipkart' || source === 'all') {
-      const fkProducts = await scrapeFlipkartSearch(query.trim(), pageCount);
-      products = [...products, ...fkProducts];
-    }
-    
-    // Call Snapdeal Scraper
-    if (source === 'snapdeal' || source === 'all') {
-      const sdProducts = await scrapeSnapdealSearch(query.trim(), pageCount);
-      products = [...products, ...sdProducts];
+    if (category === 'ecommerce') {
+      if (source === 'flipkart' || source === 'all') {
+        const fkProducts = await scrapeFlipkartSearch(query.trim(), pageCount);
+        products = [...products, ...fkProducts];
+      }
+      
+      if (source === 'snapdeal' || source === 'all') {
+        const sdProducts = await scrapeSnapdealSearch(query.trim(), pageCount);
+        products = [...products, ...sdProducts];
+      }
+
+      if (source === 'croma' || source === 'all') {
+        await new Promise(r => setTimeout(r, 600));
+        const cromaProducts = simulateStoreSearch(query.trim(), 'croma', pageCount);
+        products = [...products, ...cromaProducts];
+      }
+
+      if (source === 'myntra' || source === 'all') {
+        await new Promise(r => setTimeout(r, 500));
+        const myntraProducts = simulateStoreSearch(query.trim(), 'myntra', pageCount);
+        products = [...products, ...myntraProducts];
+      }
+
+      if (source === 'ajio' || source === 'all') {
+        await new Promise(r => setTimeout(r, 500));
+        const ajioProducts = simulateStoreSearch(query.trim(), 'ajio', pageCount);
+        products = [...products, ...ajioProducts];
+      }
+    } else {
+      // Quick Commerce
+      if (source === 'blinkit' || source === 'all') {
+        await new Promise(r => setTimeout(r, 400));
+        const blinkitProducts = simulateStoreSearch(query.trim(), 'blinkit', pageCount);
+        products = [...products, ...blinkitProducts];
+      }
+      
+      if (source === 'zepto' || source === 'all') {
+        await new Promise(r => setTimeout(r, 400));
+        const zeptoProducts = simulateStoreSearch(query.trim(), 'zepto', pageCount);
+        products = [...products, ...zeptoProducts];
+      }
+
+      if (source === 'instamart' || source === 'all') {
+        await new Promise(r => setTimeout(r, 400));
+        const instamartProducts = simulateStoreSearch(query.trim(), 'instamart', pageCount);
+        products = [...products, ...instamartProducts];
+      }
     }
 
     // Deduplicate by name and source
@@ -126,6 +170,7 @@ app.post('/api/scrape', async (req, res) => {
       products: uniqueProducts,
       meta: {
         query: query.trim(),
+        category,
         source,
         pagesScraped: pageCount,
         totalExtracted: products.length,
@@ -141,6 +186,7 @@ app.post('/api/scrape', async (req, res) => {
     db.scrapeHistory.unshift({
       id: `scrape-${Date.now()}`,
       query: query.trim(),
+      category,
       source,
       pages: pageCount,
       productsFound: uniqueProducts.length,

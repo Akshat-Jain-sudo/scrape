@@ -7,9 +7,8 @@ import {
   TrendingUp, 
   Tag, 
   Sparkles,
-  Smartphone,
-  Shirt,
-  Cookie,
+  ShoppingBag,
+  Zap,
   RefreshCw,
   Bookmark,
   ArrowRight
@@ -281,14 +280,14 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
           className={`category-tab ${activeCategory === 'ecommerce' ? 'active' : ''}`}
           onClick={() => { setActiveCategory('ecommerce'); setCustomComp(null); }}
         >
-          <Smartphone size={16} />
+          <ShoppingBag size={16} />
           <span>E-Commerce (Flipkart, Snapdeal, Croma, Myntra, Ajio)</span>
         </button>
         <button 
           className={`category-tab ${activeCategory === 'quickcommerce' ? 'active' : ''}`}
           onClick={() => { setActiveCategory('quickcommerce'); setCustomComp(null); }}
         >
-          <Cookie size={16} />
+          <Zap size={16} />
           <span>Quick Commerce (Blinkit, Swiggy Instamart, Zepto)</span>
         </button>
       </div>
