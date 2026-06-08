@@ -1,0 +1,15 @@
+{
+  "name": "flipscrape-webscrapper",
+  "version": "1.0.0",
+  "description": "Full-stack Flipkart Product Scraper with a premium React client and Express scraper backend.",
+  "main": "server/server.js",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "server": "node server/server.js",
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
