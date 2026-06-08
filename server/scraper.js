@@ -121,20 +121,16 @@ function extractAttr($, el, selectors, attr) {
 
 // ── Store definitions & trending items ──
 export const TRENDING_DEALS = {
-  electronics: [
+  ecommerce: [
     { id: 'iphone-16', name: 'Apple iPhone 16 (128 GB)', query: 'iphone 16 128gb', image: 'https://rukminim2.flixcart.com/image/312/312/xif0q/mobile/o/l/2/-original-imahgfmzvanpgncf.jpeg?q=70' },
     { id: 'airpods-pro-2', name: 'Apple AirPods Pro (2nd Gen)', query: 'airpods pro 2', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/g/d/7/-original-imagz3t79q4sggym.jpeg?q=70' },
     { id: 'macbook-air-m3', name: 'MacBook Air M3 (8GB/512GB)', query: 'macbook air m3 512gb', image: 'https://rukminim2.flixcart.com/image/312/312/xif0q/computer/y/6/y/-original-imahyytufgu26z7t.jpeg?q=70' },
-    { id: 'sony-xm5', name: 'Sony WH-1000XM5 Headphones', query: 'sony wh 1000xm5', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/p/r/z/wh-1000xm5-sony-original-imaghsgggfvgfg2s.jpeg?q=70' }
-  ],
-  fashion: [
     { id: 'nike-air-max', name: 'Nike Air Max Running Shoes', query: 'nike air max shoes', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/c/k/r/-original-imagzfs8zghwhfgk.jpeg?q=70' },
     { id: 'adidas-hoodie', name: 'Adidas Originals Trefoil Hoodie', query: 'adidas hoodie', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/sweatshirt/t/r/k/s-adidas-original-imaghfggfggfggyh.jpeg?q=70' },
-    { id: 'levis-511', name: "Levi's Men 511 Slim Fit Jeans", query: 'levis 511 jeans', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/jean/t/u/r/32-levis-original-imaghfgjggfggyy2.jpeg?q=70' },
-    { id: 'fossil-watch', name: 'Fossil Grant Chronograph Watch', query: 'fossil grant watch', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/watch/g/d/f/-original-imagz3t79q4sggym.jpeg?q=70' }
+    { id: 'levis-511', name: "Levi's Men 511 Slim Fit Jeans", query: 'levis 511 jeans', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/jean/t/u/r/32-levis-original-imaghfgjggfggyy2.jpeg?q=70' }
   ],
-  grocery: [
-    { id: 'amul-butter', name: 'Amul Pasteurised Butter (500g)', query: 'amul butter 500g', image: 'https://g.sdlcdn.com/imgs/k/m/z/ZAMN-Transparent-Silicon-Silicon-Soft-SDL319973324-1-190cc.jpg?w=220&h=258&sharp=7' }, // fallback dummy
+  quickcommerce: [
+    { id: 'amul-butter', name: 'Amul Pasteurised Butter (500g)', query: 'amul butter 500g', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/butter/a/m/u/500-amul-original-imaghfggfggfggyh.jpeg?q=70' },
     { id: 'coke-2l', name: 'Coca-Cola Soft Drink (2 L)', query: 'coke 2l', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/soft-drink/c/o/k/2-coca-cola-original-imaghfggfggfggyh.jpeg?q=70' },
     { id: 'maggi-12', name: 'Maggi 2-Minute Noodles (12-Pack)', query: 'maggi noodles 12 pack', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/instant-noodles/m/a/g/840-maggi-original-imaghfggfggfggyh.jpeg?q=70' },
     { id: 'oreo-biscuit', name: 'Oreo Chocolate Sandwich Cookies', query: 'oreo biscuit pack', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/biscuit/o/r/e/120-oreo-original-imaghfggfggfggyh.jpeg?q=70' }
@@ -318,40 +314,48 @@ export function generatePlatformComparison(query, baseProduct, targetStores) {
 }
 
 // ── Multi-Store Compare Engine ──
-export async function compareProductPrices(query, category = 'electronics') {
+export async function compareProductPrices(query, category = 'ecommerce') {
   console.log(`Comparing "${query}" under category "${category}" in real-time...`);
   
   let products = [];
-  
-  // Decide target stores based on category
   let targetStores = [];
-  if (category === 'electronics') {
-    targetStores = ['flipkart', 'snapdeal', 'croma'];
-    // Try live scraping Flipkart and Snapdeal
-    const [fkList, sdList] = await Promise.all([
-      scrapeFlipkartSearch(query, 1),
-      scrapeSnapdealSearch(query, 1)
-    ]);
-    products = [...fkList, ...sdList];
-  } else if (category === 'fashion') {
-    targetStores = ['myntra', 'ajio', 'flipkart'];
-    const fkList = await scrapeFlipkartSearch(query, 1);
-    products = fkList;
+  
+  if (category === 'ecommerce') {
+    // Detect fashion-oriented queries
+    const fashionKeywords = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt'];
+    const isFashion = fashionKeywords.some(kw => query.toLowerCase().includes(kw));
+
+    if (isFashion) {
+      targetStores = ['myntra', 'ajio', 'flipkart'];
+      // Fetch live catalog from Flipkart and Snapdeal as base products
+      const [fkList, sdList] = await Promise.all([
+        scrapeFlipkartSearch(query, 1),
+        scrapeSnapdealSearch(query, 1)
+      ]);
+      products = [...fkList, ...sdList];
+    } else {
+      targetStores = ['flipkart', 'snapdeal', 'croma'];
+      const [fkList, sdList] = await Promise.all([
+        scrapeFlipkartSearch(query, 1),
+        scrapeSnapdealSearch(query, 1)
+      ]);
+      products = [...fkList, ...sdList];
+    }
   } else {
-    // Grocery/Quick Commerce (requires geo/session - simulated)
+    // Quick Commerce / Grocery
     targetStores = ['blinkit', 'instamart', 'zepto'];
   }
 
   // Find the best single base product to center the comparison around
   let baseProduct = null;
   if (products.length > 0) {
-    // Pick the most rated item as the representative product model
     baseProduct = products.sort((a, b) => (b.ratingsCount || 0) - (a.ratingsCount || 0))[0];
   } else {
-    // Synthesize a dummy base product if all scrapers failed
+    const isFashionQuery = category === 'ecommerce' && 
+      ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie'].some(kw => query.toLowerCase().includes(kw));
     baseProduct = {
       name: query.toUpperCase(),
-      price: category === 'electronics' ? 45000 : category === 'fashion' ? 2400 : 180,
+      price: category === 'ecommerce' ? (isFashionQuery ? 2400 : 45000) : 180,
       imageUrl: null,
       productLink: `https://www.google.com/search?q=${encodeURIComponent(query)}`
     };

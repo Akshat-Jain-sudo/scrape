@@ -204,7 +204,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
 }
 
 function Dashboard({ savedProducts, onSaveProducts, addToast }) {
-  const [activeCategory, setActiveCategory] = useState('electronics');
+  const [activeCategory, setActiveCategory] = useState('ecommerce');
   const [trendingDeals, setTrendingDeals] = useState(null);
   const [loadingTrending, setLoadingTrending] = useState(true);
 
@@ -278,25 +278,18 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
       {/* Category Navigation Tabs */}
       <div className="category-tabs">
         <button 
-          className={`category-tab ${activeCategory === 'electronics' ? 'active' : ''}`}
-          onClick={() => { setActiveCategory('electronics'); setCustomComp(null); }}
+          className={`category-tab ${activeCategory === 'ecommerce' ? 'active' : ''}`}
+          onClick={() => { setActiveCategory('ecommerce'); setCustomComp(null); }}
         >
           <Smartphone size={16} />
-          <span>Electronics & General</span>
+          <span>E-Commerce (Flipkart, Snapdeal, Croma, Myntra, Ajio)</span>
         </button>
         <button 
-          className={`category-tab ${activeCategory === 'fashion' ? 'active' : ''}`}
-          onClick={() => { setActiveCategory('fashion'); setCustomComp(null); }}
-        >
-          <Shirt size={16} />
-          <span>Fashion Store</span>
-        </button>
-        <button 
-          className={`category-tab ${activeCategory === 'grocery' ? 'active' : ''}`}
-          onClick={() => { setActiveCategory('grocery'); setCustomComp(null); }}
+          className={`category-tab ${activeCategory === 'quickcommerce' ? 'active' : ''}`}
+          onClick={() => { setActiveCategory('quickcommerce'); setCustomComp(null); }}
         >
           <Cookie size={16} />
-          <span>Quick Commerce & Grocery</span>
+          <span>Quick Commerce (Blinkit, Swiggy Instamart, Zepto)</span>
         </button>
       </div>
 
@@ -305,9 +298,8 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
         <h2>🔍 Search & Compare Any Product</h2>
         <p>
           Compare price indicators in real-time on: 
-          {activeCategory === 'electronics' && <strong style={{ color: 'var(--accent-primary)' }}> Flipkart, Snapdeal, Croma</strong>}
-          {activeCategory === 'fashion' && <strong style={{ color: 'var(--accent-primary)' }}> Myntra, Ajio, Flipkart</strong>}
-          {activeCategory === 'grocery' && <strong style={{ color: 'var(--accent-primary)' }}> Blinkit, Swiggy Instamart, Zepto</strong>}
+          {activeCategory === 'ecommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Flipkart, Snapdeal, Croma, Myntra, Ajio</strong>}
+          {activeCategory === 'quickcommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Blinkit, Swiggy Instamart, Zepto</strong>}
         </p>
         
         <div className="search-box">
