@@ -427,22 +427,53 @@ export function getStoreDeliveryTime(store) {
   }
 }
 
-function getRestaurantName(store, location, index) {
+function getRestaurantName(store, location, query, index) {
   const city = (location || 'Mumbai').toLowerCase();
+  const q = (query || '').toLowerCase();
   
-  const mumbaiDeli = ['Juhu Coastal Dhaba', 'Bandra Spice Bistro', 'Gateway Dum Biryani', 'Colaba Curry Camp', 'Versova Pizza Hub'];
-  const delhiDeli = ['Chandni Chowk Tandoor', 'Connaught Place Bistro', 'Karol Bagh Sweets', 'Delhi Heights Cafe', 'Lajpat Nagar Chaat Camp'];
-  const blrDeli = ['Koramangala Biryani Palace', 'Indiranagar Burger Hub', 'MG Road South Camp', 'Whitefield Bistro', 'HSR Layout Grill'];
-  const defaultDeli = ['Royal Biryani House', 'Golden Dragon Chinese', 'The Pizza Place', 'Urban Curry Bistro', 'Imperial Spice Kitchen'];
-  
-  let list = defaultDeli;
-  if (city.includes('mumbai') || city.includes('bombay')) list = mumbaiDeli;
-  else if (city.includes('delhi') || city.includes('ncr')) list = delhiDeli;
-  else if (city.includes('bangalore') || city.includes('bengaluru')) list = blrDeli;
+  // Areas depending on city
+  let areas = ["Juhu", "Bandra West", "Andheri East", "Colaba", "Versova", "Worli", "Lower Parel"];
+  if (city.includes('delhi') || city.includes('ncr')) {
+    areas = ["Connaught Place", "Karol Bagh", "Lajpat Nagar", "Saket", "Chandni Chowk", "Dwarka", "Rajouri Garden"];
+  } else if (city.includes('bangalore') || city.includes('bengaluru')) {
+    areas = ["Koramangala", "Indiranagar", "Whitefield", "HSR Layout", "Jayanagar", "Electronic City", "Marathahalli"];
+  }
+  const area = areas[index % areas.length];
 
-  const rest = list[index % list.length];
+  // Brands depending on query
+  let brands = ['Royal Biryani House', 'Golden Dragon Chinese', 'The Pizza Place', 'Urban Curry Bistro', 'Imperial Spice Kitchen'];
+  if (q.includes('pizza')) {
+    brands = ["Dominos Pizza", "Pizza Hut", "La Pino'z Pizza", "The Pizza Club", "L'Amour Pizzeria", "Chicago Pizza", "Ovenstory Pizza"];
+  } else if (q.includes('burger')) {
+    brands = ["Burger King", "McDonald's", "The Burger Club", "Wendy's Burgers", "Burger Singh", "Wat-a-Burger", "Carl's Jr."];
+  } else if (q.includes('biryani') || q.includes('rice')) {
+    brands = ["Meghana Foods", "Behrouz Biryani", "Mani's Dum Biryani", "Biryani By Kilo", "Paradise Biryani", "Lucky Biryani", "Sardarji Biryani"];
+  } else if (q.includes('chicken') || q.includes('non-veg') || q.includes('tikka') || q.includes('kebab')) {
+    brands = ["KFC", "Karim's Restaurant", "Delhi Heights Cafe", "Punjab Grill", "Al Bake", "Empire Restaurant", "Leon's Burgers & Salad"];
+  } else if (q.includes('dosa') || q.includes('idli') || q.includes('south') || q.includes('sambar')) {
+    brands = ["Saravana Bhavan", "Sagar Ratna", "Shiv Sagar", "Adyar Ananda Bhavan", "Udupi Cafe", "MTR", "A2B"];
+  } else if (q.includes('cake') || q.includes('sweet') || q.includes('dessert') || q.includes('ice cream') || q.includes('pastry')) {
+    brands = ["Theobroma", "Baskin Robbins", "Corner House Ice Creams", "Natural Ice Cream", "Haldiram's", "Waffle Wallah", "Keventers"];
+  }
+
+  const brand = brands[index % brands.length];
   const prefix = store === 'zomato' ? 'Zomato Special: ' : 'Swiggy Select: ';
-  return `${prefix}${rest}`;
+  return `${prefix}${brand} - ${area}`;
+}
+
+function getFoodProductLink(store, location, restaurantName, query) {
+  const citySlug = (location || 'Mumbai').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const cleanRestName = restaurantName
+    .replace(/^(Zomato Special:\s*|Swiggy Select:\s*)/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-');
+  
+  if (store === 'zomato') {
+    return `https://www.zomato.com/${citySlug}/${cleanRestName}-order`;
+  } else {
+    const randomId = Math.floor(100000 + Math.random() * 900000);
+    return `https://www.swiggy.com/restaurants/${cleanRestName}-${citySlug}-${randomId}`;
+  }
 }
 
 // ── Store Simulation / Fallback Generator ──
@@ -476,11 +507,13 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
     const rating = parseFloat((4.1 + Math.random() * 0.8).toFixed(1));
     const ratingsCount = 50 + Math.floor(Math.random() * 25000);
     
-    const storeLink = getStoreLink(store, query);
     const deliveryFee = isFood(store) ? 30 + Math.floor(Math.random() * 20) : null;
     const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
     const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
-    const restaurantName = isFood(store) ? getRestaurantName(store, location, idx) : null;
+    const restaurantName = isFood(store) ? getRestaurantName(store, location, query, idx) : null;
+    const storeLink = isFood(store) 
+      ? getFoodProductLink(store, location, restaurantName, query)
+      : getStoreLink(store, query);
 
     comparison[store] = {
       price,
@@ -553,9 +586,9 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     const ratingsCount = 10 + Math.floor(Math.random() * 1500);
 
     let productName = '';
+    const restaurantName = isFood(store) ? getRestaurantName(store, location, query, i) : null;
     if (isFood(store)) {
-      const restaurant = getRestaurantName(store, location, i);
-      productName = `${restaurant} - ${query.charAt(0).toUpperCase() + query.slice(1)}`;
+      productName = `${restaurantName} - ${query.charAt(0).toUpperCase() + query.slice(1)}`;
     } else {
       const storeDisplayName = STORE_NAMES[store] || (store.charAt(0).toUpperCase() + store.slice(1));
       productName = `${storeDisplayName} ${query.charAt(0).toUpperCase() + query.slice(1)} - Option ${i + 1}`;
@@ -564,7 +597,9 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     const deliveryFee = isFood(store) ? 30 + Math.floor(Math.random() * 20) : null;
     const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
     const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
-    const restaurantName = isFood(store) ? getRestaurantName(store, location, i) : null;
+    const itemLink = isFood(store) 
+      ? getFoodProductLink(store, location, restaurantName, query)
+      : storeLink;
 
     products.push({
       id: `${store.substring(0, 2)}-${i}-${Date.now().toString(36)}`,
@@ -578,7 +613,7 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
       rating,
       ratingsCount,
       reviewsCount: Math.round(ratingsCount * 0.15),
-      productLink: storeLink,
+      productLink: itemLink,
       imageUrl: defaultImg,
       source: store,
       deliveryTime: isQuickCommerce(store) || isFood(store) ? getStoreDeliveryTime(store) : null,
