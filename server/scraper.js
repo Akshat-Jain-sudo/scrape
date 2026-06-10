@@ -12,7 +12,7 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0'
 ];
 
-function getRandomUserAgent() {
+export function getRandomUserAgent() {
   return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
@@ -134,6 +134,12 @@ export const TRENDING_DEALS = {
     { id: 'coke-2l', name: 'Coca-Cola Soft Drink (2 L)', query: 'coke 2l', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/soft-drink/c/o/k/2-coca-cola-original-imaghfggfggfggyh.jpeg?q=70' },
     { id: 'maggi-12', name: 'Maggi 2-Minute Noodles (12-Pack)', query: 'maggi noodles 12 pack', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/instant-noodles/m/a/g/840-maggi-original-imaghfggfggfggyh.jpeg?q=70' },
     { id: 'oreo-biscuit', name: 'Oreo Chocolate Sandwich Cookies', query: 'oreo biscuit pack', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/biscuit/o/r/e/120-oreo-original-imaghfggfggfggyh.jpeg?q=70' }
+  ],
+  food: [
+    { id: 'butter-chicken', name: 'Butter Chicken Masala (Boneless)', query: 'butter chicken', image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200' },
+    { id: 'margherita-pizza', name: 'Classic Margherita Pizza (10-inch)', query: 'cheese pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200' },
+    { id: 'paneer-tikka', name: 'Tandoori Paneer Tikka (8 Pcs)', query: 'paneer tikka', image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200' },
+    { id: 'chicken-biryani', name: 'Hyderabadi Chicken Dum Biryani', query: 'chicken biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200' }
   ]
 };
 
@@ -285,6 +291,16 @@ export function getEstimatedBasePrice(query, category = 'ecommerce') {
   if (category === 'quickcommerce') {
     return 120;
   }
+  if (category === 'food') {
+    const q = query.toLowerCase();
+    if (q.includes('butter chicken') || q.includes('chicken')) return 350;
+    if (q.includes('pizza')) return 280;
+    if (q.includes('burger')) return 120;
+    if (q.includes('dosa')) return 90;
+    if (q.includes('paneer')) return 240;
+    if (q.includes('biryani')) return 260;
+    return 200;
+  }
   
   const isFashionQuery = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt'].some(kw => q.includes(kw));
   if (isFashionQuery) return 2400;
@@ -298,18 +314,154 @@ export function getEstimatedBasePrice(query, category = 'ecommerce') {
   return 5000;
 }
 
+// ── Store Names and Mappings ──
+export const STORE_NAMES = {
+  amazon: 'Amazon India',
+  flipkart: 'Flipkart',
+  meesho: 'Meesho',
+  snapdeal: 'Snapdeal',
+  jiomart: 'JioMart',
+  tatacliq: 'Tata CLiQ',
+  shopclues: 'ShopClues',
+  indiamart: 'IndiaMART',
+  myntra: 'Myntra',
+  ajio: 'AJIO',
+  nykaa: 'Nykaa',
+  nykaafashion: 'Nykaa Fashion',
+  firstcry: 'FirstCry',
+  pepperfry: 'Pepperfry',
+  bookswagon: 'Bookswagon',
+  ebay: 'eBay',
+  etsy: 'Etsy',
+  alibaba: 'Alibaba',
+  aliexpress: 'AliExpress',
+  walmart: 'Walmart',
+  croma: 'Croma',
+  blinkit: 'Blinkit',
+  zepto: 'Zepto',
+  instamart: 'Swiggy Instamart',
+  bbnow: 'BigBasket Now',
+  fkminutes: 'Flipkart Minutes',
+  amazonfresh: 'Amazon Fresh',
+  jiomartexpress: 'JioMart Express',
+  bbdaily: 'BB Daily',
+  dunzo: 'Dunzo',
+  countrydelight: 'Country Delight',
+  zomato: 'Zomato',
+  swiggy: 'Swiggy'
+};
+
+const QUICK_COMMERCE_STORES = [
+  'blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 
+  'amazonfresh', 'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight'
+];
+
+export function isQuickCommerce(store) {
+  return QUICK_COMMERCE_STORES.includes(store);
+}
+
+export function isFood(store) {
+  return ['zomato', 'swiggy'].includes(store);
+}
+
+export function getStoreLink(store, query) {
+  const q = encodeURIComponent(query);
+  switch (store) {
+    case 'amazon': return `https://www.amazon.in/s?k=${q}`;
+    case 'flipkart': return `https://www.flipkart.com/search?q=${q}`;
+    case 'meesho': return `https://meesho.com/search?q=${q}`;
+    case 'snapdeal': return `https://www.snapdeal.com/search?keyword=${q}`;
+    case 'jiomart': return `https://www.jiomart.com/search/${q}`;
+    case 'tatacliq': return `https://www.tatacliq.com/search/?searchVault=${q}`;
+    case 'shopclues': return `https://www.shopclues.com/search?q=${q}`;
+    case 'indiamart': return `https://dir.indiamart.com/search.mp?ss=${q}`;
+    case 'myntra': return `https://www.myntra.com/search?rawQuery=${q}`;
+    case 'ajio': return `https://www.ajio.com/search/?text=${q}`;
+    case 'nykaa': return `https://www.nykaa.com/search/result/?q=${q}`;
+    case 'nykaafashion': return `https://www.nykaafashion.com/search/result/?q=${q}`;
+    case 'firstcry': return `https://www.firstcry.com/search?q=${q}`;
+    case 'pepperfry': return `https://www.pepperfry.com/site_product/search?q=${q}`;
+    case 'bookswagon': return `https://www.bookswagon.com/searchbooks?kw=${q}`;
+    case 'ebay': return `https://www.ebay.com/sch/i.html?_nkw=${q}`;
+    case 'etsy': return `https://www.etsy.com/search?q=${q}`;
+    case 'alibaba': return `https://www.alibaba.com/trade/search?SearchText=${q}`;
+    case 'aliexpress': return `https://www.aliexpress.com/w/wholesale-${q}.html`;
+    case 'walmart': return `https://www.walmart.com/search?q=${q}`;
+    case 'croma': return `https://www.croma.com/searchB?q=${q}`;
+    
+    // Quick commerce
+    case 'blinkit': return `https://blinkit.com/s/?q=${q}`;
+    case 'zepto': return `https://www.zeptonow.com`;
+    case 'instamart': return `https://www.swiggy.com/instamart`;
+    case 'bbnow': return `https://www.bigbasket.com`;
+    case 'fkminutes': return `https://www.flipkart.com/grocery-supermart-store`;
+    case 'amazonfresh': return `https://www.amazon.in/fresh`;
+    case 'jiomartexpress': return `https://www.jiomart.com`;
+    case 'bbdaily': return `https://www.bbdaily.com`;
+    case 'dunzo': return `https://www.dunzo.com`;
+    case 'countrydelight': return `https://countrydelight.in`;
+
+    // Food
+    case 'zomato': return `https://www.zomato.com/search?q=${q}`;
+    case 'swiggy': return `https://www.swiggy.com/search?query=${q}`;
+    
+    default: return `https://www.google.com/search?q=${encodeURIComponent(store + ' ' + query)}`;
+  }
+}
+
+export function getStoreDeliveryTime(store) {
+  switch (store) {
+    case 'blinkit': return `${7 + Math.floor(Math.random() * 6)} mins`;
+    case 'zepto': return `${8 + Math.floor(Math.random() * 5)} mins`;
+    case 'instamart': return `${9 + Math.floor(Math.random() * 7)} mins`;
+    case 'bbnow': return `${10 + Math.floor(Math.random() * 9)} mins`;
+    case 'fkminutes': return `${8 + Math.floor(Math.random() * 8)} mins`;
+    case 'amazonfresh': return `${25 + Math.floor(Math.random() * 21)} mins`;
+    case 'jiomartexpress': return `${30 + Math.floor(Math.random() * 21)} mins`;
+    case 'bbdaily': return `Tomorrow 6:00 AM`;
+    case 'dunzo': return `${12 + Math.floor(Math.random() * 14)} mins`;
+    case 'countrydelight': return `Tomorrow 7:30 AM`;
+    case 'zomato': return `${25 + Math.floor(Math.random() * 15)} mins`;
+    case 'swiggy': return `${20 + Math.floor(Math.random() * 21)} mins`;
+    default: return null;
+  }
+}
+
+function getRestaurantName(store, location, index) {
+  const city = (location || 'Mumbai').toLowerCase();
+  
+  const mumbaiDeli = ['Juhu Coastal Dhaba', 'Bandra Spice Bistro', 'Gateway Dum Biryani', 'Colaba Curry Camp', 'Versova Pizza Hub'];
+  const delhiDeli = ['Chandni Chowk Tandoor', 'Connaught Place Bistro', 'Karol Bagh Sweets', 'Delhi Heights Cafe', 'Lajpat Nagar Chaat Camp'];
+  const blrDeli = ['Koramangala Biryani Palace', 'Indiranagar Burger Hub', 'MG Road South Camp', 'Whitefield Bistro', 'HSR Layout Grill'];
+  const defaultDeli = ['Royal Biryani House', 'Golden Dragon Chinese', 'The Pizza Place', 'Urban Curry Bistro', 'Imperial Spice Kitchen'];
+  
+  let list = defaultDeli;
+  if (city.includes('mumbai') || city.includes('bombay')) list = mumbaiDeli;
+  else if (city.includes('delhi') || city.includes('ncr')) list = delhiDeli;
+  else if (city.includes('bangalore') || city.includes('bengaluru')) list = blrDeli;
+
+  const rest = list[index % list.length];
+  const prefix = store === 'zomato' ? 'Zomato Special: ' : 'Swiggy Select: ';
+  return `${prefix}${rest}`;
+}
+
 // ── Store Simulation / Fallback Generator ──
-export function generatePlatformComparison(query, baseProduct, targetStores) {
+export function generatePlatformComparison(query, baseProduct, targetStores, location = 'Mumbai') {
   const comparison = {};
   
-  const isQuickComm = targetStores.some(s => ['blinkit', 'zepto', 'instamart'].includes(s));
-  const category = isQuickComm ? 'quickcommerce' : 'ecommerce';
+  const isQuickComm = targetStores.some(s => isQuickCommerce(s));
+  const isFoodCategory = targetStores.some(s => isFood(s));
+  
+  let category = 'ecommerce';
+  if (isQuickComm) category = 'quickcommerce';
+  else if (isFoodCategory) category = 'food';
 
   // Set fallback parameters from the best available base product, or estimated values
   const basePrice = baseProduct && baseProduct.price ? baseProduct.price : getEstimatedBasePrice(query, category);
-  const baseTitle = baseProduct ? baseProduct.name : `Premium ${query}`;
+  const baseTitle = isFoodCategory 
+    ? `${location} Food Delivery: ${query.charAt(0).toUpperCase() + query.slice(1)}`
+    : (baseProduct ? baseProduct.name : `Premium ${query}`);
   const baseImg = baseProduct ? baseProduct.imageUrl : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
-  const baseLink = baseProduct ? baseProduct.productLink : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
   
   targetStores.forEach((store, idx) => {
     // Generate slight price/rating differences to simulate live competition
@@ -324,16 +476,11 @@ export function generatePlatformComparison(query, baseProduct, targetStores) {
     const rating = parseFloat((4.1 + Math.random() * 0.8).toFixed(1));
     const ratingsCount = 50 + Math.floor(Math.random() * 25000);
     
-    // Store links
-    let storeLink = baseLink;
-    if (store === 'myntra') storeLink = `https://www.myntra.com/search?rawQuery=${encodeURIComponent(query)}`;
-    else if (store === 'ajio') storeLink = `https://www.ajio.com/search/?text=${encodeURIComponent(query)}`;
-    else if (store === 'croma') storeLink = `https://www.croma.com/searchB?q=${encodeURIComponent(query)}`;
-    else if (store === 'blinkit') storeLink = `https://blinkit.com/s/?q=${encodeURIComponent(query)}`;
-    else if (store === 'instamart') storeLink = `https://www.swiggy.com/instamart`;
-    else if (store === 'zepto') storeLink = `https://www.zeptonow.com`;
-    else if (store === 'flipkart') storeLink = `https://www.flipkart.com/search?q=${encodeURIComponent(query)}`;
-    else if (store === 'snapdeal') storeLink = `https://www.snapdeal.com/search?keyword=${encodeURIComponent(query)}`;
+    const storeLink = getStoreLink(store, query);
+    const deliveryFee = isFood(store) ? 30 + Math.floor(Math.random() * 20) : null;
+    const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
+    const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
+    const restaurantName = isFood(store) ? getRestaurantName(store, location, idx) : null;
 
     comparison[store] = {
       price,
@@ -345,9 +492,11 @@ export function generatePlatformComparison(query, baseProduct, targetStores) {
       rating,
       ratingsCount,
       productLink: storeLink,
-      deliveryTime: store === 'blinkit' || store === 'instamart' || store === 'zepto' 
-        ? `${7 + Math.floor(Math.random() * 8)} mins` 
-        : null
+      deliveryTime: isQuickCommerce(store) || isFood(store) ? getStoreDeliveryTime(store) : null,
+      deliveryFee,
+      packagingFee,
+      distance,
+      restaurantName
     };
   });
 
@@ -359,16 +508,36 @@ export function generatePlatformComparison(query, baseProduct, targetStores) {
 }
 
 // ── Store Search Simulator for Scrape Console ──
-export function simulateStoreSearch(query, store, pages = 1) {
+export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai') {
   const products = [];
   const itemCount = 5 + Math.floor(Math.random() * 8); // 5 to 12 items
   
-  const storeCategory = ['blinkit', 'zepto', 'instamart'].includes(store) ? 'quickcommerce' : 'ecommerce';
+  let storeCategory = 'ecommerce';
+  if (isQuickCommerce(store)) storeCategory = 'quickcommerce';
+  else if (isFood(store)) storeCategory = 'food';
+
   const basePrice = getEstimatedBasePrice(query, storeCategory);
+  const storeLink = getStoreLink(store, query);
+
 
   // Predefined image placeholders
   let defaultImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
-  if (['blinkit', 'zepto', 'instamart'].includes(store)) {
+  if (isFood(store)) {
+    const q = query.toLowerCase();
+    if (q.includes('chicken') || q.includes('butter')) {
+      defaultImg = 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200'; // Butter chicken
+    } else if (q.includes('pizza')) {
+      defaultImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200'; // Pizza
+    } else if (q.includes('burger')) {
+      defaultImg = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200'; // Burger
+    } else if (q.includes('tikka') || q.includes('paneer')) {
+      defaultImg = 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200'; // Paneer tikka
+    } else if (q.includes('biryani')) {
+      defaultImg = 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200'; // Biryani
+    } else {
+      defaultImg = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200'; // general food
+    }
+  } else if (isQuickCommerce(store)) {
     defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'; // grocery style
   } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => query.toLowerCase().includes(k))) {
     defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200'; // fashion style
@@ -383,21 +552,19 @@ export function simulateStoreSearch(query, store, pages = 1) {
     const rating = parseFloat((3.8 + Math.random() * 1.2).toFixed(1));
     const ratingsCount = 10 + Math.floor(Math.random() * 1500);
 
-    let productName = `${query.charAt(0).toUpperCase() + query.slice(1)} - Option ${i + 1}`;
-    if (store === 'blinkit') productName = `Blinkit Saver ${query.charAt(0).toUpperCase() + query.slice(1)} Pack ${i+1}`;
-    else if (store === 'zepto') productName = `Zepto Choice ${query.charAt(0).toUpperCase() + query.slice(1)} ${i+1}`;
-    else if (store === 'instamart') productName = `Instamart Instant ${query.charAt(0).toUpperCase() + query.slice(1)} ${i+1}`;
-    else if (store === 'croma') productName = `Croma Select ${query.charAt(0).toUpperCase() + query.slice(1)} ${i+1}`;
-    else if (store === 'myntra') productName = `Myntra Elite ${query.charAt(0).toUpperCase() + query.slice(1)} Brand ${i+1}`;
-    else if (store === 'ajio') productName = `Ajio Trend ${query.charAt(0).toUpperCase() + query.slice(1)} Style ${i+1}`;
+    let productName = '';
+    if (isFood(store)) {
+      const restaurant = getRestaurantName(store, location, i);
+      productName = `${restaurant} - ${query.charAt(0).toUpperCase() + query.slice(1)}`;
+    } else {
+      const storeDisplayName = STORE_NAMES[store] || (store.charAt(0).toUpperCase() + store.slice(1));
+      productName = `${storeDisplayName} ${query.charAt(0).toUpperCase() + query.slice(1)} - Option ${i + 1}`;
+    }
 
-    let storeLink = `https://www.google.com/search?q=${encodeURIComponent(store + ' ' + query)}`;
-    if (store === 'blinkit') storeLink = `https://blinkit.com/s/?q=${encodeURIComponent(query)}`;
-    else if (store === 'zepto') storeLink = `https://www.zeptonow.com`;
-    else if (store === 'instamart') storeLink = `https://www.swiggy.com/instamart`;
-    else if (store === 'myntra') storeLink = `https://www.myntra.com/search?rawQuery=${encodeURIComponent(query)}`;
-    else if (store === 'ajio') storeLink = `https://www.ajio.com/search/?text=${encodeURIComponent(query)}`;
-    else if (store === 'croma') storeLink = `https://www.croma.com/searchB?q=${encodeURIComponent(query)}`;
+    const deliveryFee = isFood(store) ? 30 + Math.floor(Math.random() * 20) : null;
+    const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
+    const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
+    const restaurantName = isFood(store) ? getRestaurantName(store, location, i) : null;
 
     products.push({
       id: `${store.substring(0, 2)}-${i}-${Date.now().toString(36)}`,
@@ -414,9 +581,11 @@ export function simulateStoreSearch(query, store, pages = 1) {
       productLink: storeLink,
       imageUrl: defaultImg,
       source: store,
-      deliveryTime: ['blinkit', 'zepto', 'instamart'].includes(store)
-        ? `${6 + Math.floor(Math.random() * 9)} mins`
-        : null,
+      deliveryTime: isQuickCommerce(store) || isFood(store) ? getStoreDeliveryTime(store) : null,
+      deliveryFee,
+      packagingFee,
+      distance,
+      restaurantName,
       scrapedAt: new Date().toISOString()
     });
   }
@@ -425,35 +594,75 @@ export function simulateStoreSearch(query, store, pages = 1) {
 }
 
 // ── Multi-Store Compare Engine ──
-export async function compareProductPrices(query, category = 'ecommerce') {
-  console.log(`Comparing "${query}" under category "${category}" in real-time...`);
+export async function compareProductPrices(query, category = 'ecommerce', location = 'Mumbai') {
+  console.log(`Comparing "${query}" under category "${category}" in "${location}" in real-time...`);
   
   let products = [];
   let targetStores = [];
   
   if (category === 'ecommerce') {
-    // Detect fashion-oriented queries
-    const fashionKeywords = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt'];
-    const isFashion = fashionKeywords.some(kw => query.toLowerCase().includes(kw));
+    const q = query.toLowerCase();
+    
+    // Categorize query
+    const isFashion = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt', 'apparel', 'jeans', 't-shirt', 'wear'].some(kw => q.includes(kw));
+    const isBooks = ['book', 'novel', 'biography', 'comic', 'fiction', 'read', 'literature'].some(kw => q.includes(kw));
+    const isBeauty = ['nykaa', 'lipstick', 'makeup', 'cream', 'shampoo', 'perfume', 'beauty', 'cosmetics', 'serum', 'lotion'].some(kw => q.includes(kw));
+    const isBaby = ['firstcry', 'baby', 'toy', 'diaper', 'infant', 'kid', 'maternity'].some(kw => q.includes(kw));
+    const isFurniture = ['pepperfry', 'furniture', 'sofa', 'chair', 'table', 'bed', 'decor', 'etsy', 'handicraft'].some(kw => q.includes(kw));
+    const isWholesale = ['indiamart', 'alibaba', 'aliexpress', 'wholesale', 'bulk'].some(kw => q.includes(kw));
 
     if (isFashion) {
-      targetStores = ['myntra', 'ajio', 'flipkart'];
-      const [fkList, sdList] = await Promise.all([
-        scrapeFlipkartSearch(query, 1),
-        scrapeSnapdealSearch(query, 1)
-      ]);
-      products = [...fkList, ...sdList];
+      targetStores = ['myntra', 'ajio', 'flipkart', 'nykaafashion', 'meesho', 'amazon'];
+    } else if (isBooks) {
+      targetStores = ['bookswagon', 'amazon', 'ebay', 'flipkart'];
+    } else if (isBeauty) {
+      targetStores = ['nykaa', 'nykaafashion', 'amazon', 'myntra'];
+    } else if (isBaby) {
+      targetStores = ['firstcry', 'amazon', 'flipkart', 'meesho'];
+    } else if (isFurniture) {
+      targetStores = ['pepperfry', 'etsy', 'amazon', 'ebay'];
+    } else if (isWholesale) {
+      targetStores = ['indiamart', 'alibaba', 'aliexpress'];
     } else {
-      targetStores = ['flipkart', 'snapdeal', 'croma'];
-      const [fkList, sdList] = await Promise.all([
-        scrapeFlipkartSearch(query, 1),
-        scrapeSnapdealSearch(query, 1)
-      ]);
-      products = [...fkList, ...sdList];
+      // General Electronics / Retail
+      targetStores = ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'walmart'];
     }
+
+    // Call actual scrapers if their stores are in the target list
+    const scrapePromises = [];
+    if (targetStores.includes('flipkart')) {
+      scrapePromises.push(scrapeFlipkartSearch(query, 1));
+    }
+    if (targetStores.includes('snapdeal')) {
+      scrapePromises.push(scrapeSnapdealSearch(query, 1));
+    }
+    
+    if (scrapePromises.length > 0) {
+      try {
+        const results = await Promise.all(scrapePromises);
+        results.forEach(resList => {
+          if (resList && Array.isArray(resList)) {
+            products = [...products, ...resList];
+          }
+        });
+      } catch (err) {
+        console.error('Error during live comparison scraping:', err.message);
+      }
+    }
+  } else if (category === 'food') {
+    // Food Delivery
+    targetStores = ['zomato', 'swiggy'];
   } else {
     // Quick Commerce / Grocery
-    targetStores = ['blinkit', 'instamart', 'zepto'];
+    const q = query.toLowerCase();
+    if (['milk', 'dairy', 'egg', 'paneer', 'butter', 'coconut', 'cow'].some(kw => q.includes(kw))) {
+      targetStores = ['countrydelight', 'bbdaily', 'blinkit', 'zepto', 'instamart'];
+    } else if (['organic', 'fresh', 'vegetable', 'fruit', 'apple', 'banana', 'mango', 'tomato', 'potato'].some(kw => q.includes(kw))) {
+      targetStores = ['amazonfresh', 'blinkit', 'zepto', 'instamart', 'bbnow'];
+    } else {
+      // General quick commerce mix
+      targetStores = ['blinkit', 'zepto', 'instamart', 'fkminutes', 'bbnow'];
+    }
   }
 
   // Find the best single base product to center the comparison around
@@ -468,6 +677,21 @@ export async function compareProductPrices(query, category = 'ecommerce') {
     let defaultImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200'; // Electronics
     if (category === 'quickcommerce') {
       defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'; // Grocery
+    } else if (category === 'food') {
+      const q = query.toLowerCase();
+      if (q.includes('chicken') || q.includes('butter')) {
+        defaultImg = 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200';
+      } else if (q.includes('pizza')) {
+        defaultImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200';
+      } else if (q.includes('burger')) {
+        defaultImg = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200';
+      } else if (q.includes('tikka') || q.includes('paneer')) {
+        defaultImg = 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200';
+      } else if (q.includes('biryani')) {
+        defaultImg = 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200';
+      } else {
+        defaultImg = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200';
+      }
     } else if (isFashionQuery) {
       defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200'; // Fashion
     }
@@ -481,7 +705,7 @@ export async function compareProductPrices(query, category = 'ecommerce') {
   }
 
   // Generate comparison prices across all target stores using the base product
-  const comparisonData = generatePlatformComparison(query, baseProduct, targetStores);
+  const comparisonData = generatePlatformComparison(query, baseProduct, targetStores, location);
   
   // Identify cheapest platform
   let cheapestStore = targetStores[0];

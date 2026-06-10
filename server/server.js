@@ -9,12 +9,17 @@ import {
   simulateStoreSearch,
   computeProductAnalytics, 
   TRENDING_DEALS, 
-  compareProductPrices 
+  compareProductPrices,
+  getRandomUserAgent
 } from './scraper.js';
+import axios from 'axios';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_PATH = path.join(__dirname, 'db.json');
+
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -77,13 +82,13 @@ app.get('/api/trending', (req, res) => {
 
 // ── POST /api/compare — Compare product prices across stores ──
 app.post('/api/compare', async (req, res) => {
-  const { query, category = 'electronics' } = req.body;
+  const { query, category = 'electronics', location = 'Mumbai' } = req.body;
   if (!query) {
     return res.status(400).json({ error: 'Search query is required' });
   }
 
   try {
-    const comparison = await compareProductPrices(query.trim(), category);
+    const comparison = await compareProductPrices(query.trim(), category, location);
     res.json(comparison);
   } catch (error) {
     console.error('Comparison error:', error);
@@ -93,7 +98,7 @@ app.post('/api/compare', async (req, res) => {
 
 // ── POST /api/scrape — Scrape products from selected stores ──
 app.post('/api/scrape', async (req, res) => {
-  const { query, category = 'ecommerce', source = 'all', pages = 3 } = req.body;
+  const { query, category = 'ecommerce', source = 'all', pages = 3, location = 'Mumbai' } = req.body;
   if (!query || query.trim().length === 0) {
     return res.status(400).json({ error: 'Search query is required' });
   }
@@ -102,11 +107,12 @@ app.post('/api/scrape', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    console.log(`\n🔍 Scrape request: "${query}" | Category: ${category} | Source: ${source} | Pages: ${pageCount}`);
+    console.log(`\n🔍 Scrape request: "${query}" | Category: ${category} | Source: ${source} | Pages: ${pageCount} | Location: ${location}`);
     
     let products = [];
     
     if (category === 'ecommerce') {
+      // 1. Live Scrapers
       if (source === 'flipkart' || source === 'all') {
         const fkProducts = await scrapeFlipkartSearch(query.trim(), pageCount);
         products = [...products, ...fkProducts];
@@ -117,41 +123,49 @@ app.post('/api/scrape', async (req, res) => {
         products = [...products, ...sdProducts];
       }
 
-      if (source === 'croma' || source === 'all') {
-        await new Promise(r => setTimeout(r, 600));
-        const cromaProducts = simulateStoreSearch(query.trim(), 'croma', pageCount);
-        products = [...products, ...cromaProducts];
-      }
+      // 2. Simulated Store Engines
+      const simulatedEcommerceStores = [
+        'amazon', 'meesho', 'jiomart', 'tatacliq', 'shopclues', 'indiamart',
+        'myntra', 'ajio', 'nykaa', 'nykaafashion', 'firstcry', 'pepperfry',
+        'bookswagon', 'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'croma'
+      ];
 
-      if (source === 'myntra' || source === 'all') {
-        await new Promise(r => setTimeout(r, 500));
-        const myntraProducts = simulateStoreSearch(query.trim(), 'myntra', pageCount);
-        products = [...products, ...myntraProducts];
+      for (const store of simulatedEcommerceStores) {
+        if (source === store || source === 'all') {
+          if (source !== 'all') {
+            await new Promise(r => setTimeout(r, 200));
+          }
+          const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
+          products = [...products, ...storeProducts];
+        }
       }
-
-      if (source === 'ajio' || source === 'all') {
-        await new Promise(r => setTimeout(r, 500));
-        const ajioProducts = simulateStoreSearch(query.trim(), 'ajio', pageCount);
-        products = [...products, ...ajioProducts];
+    } else if (category === 'food') {
+      // Food Delivery (Zomato & Swiggy)
+      const foodStores = ['zomato', 'swiggy'];
+      for (const store of foodStores) {
+        if (source === store || source === 'all') {
+          if (source !== 'all') {
+            await new Promise(r => setTimeout(r, 200));
+          }
+          const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
+          products = [...products, ...storeProducts];
+        }
       }
     } else {
       // Quick Commerce
-      if (source === 'blinkit' || source === 'all') {
-        await new Promise(r => setTimeout(r, 400));
-        const blinkitProducts = simulateStoreSearch(query.trim(), 'blinkit', pageCount);
-        products = [...products, ...blinkitProducts];
-      }
-      
-      if (source === 'zepto' || source === 'all') {
-        await new Promise(r => setTimeout(r, 400));
-        const zeptoProducts = simulateStoreSearch(query.trim(), 'zepto', pageCount);
-        products = [...products, ...zeptoProducts];
-      }
+      const quickCommerceStores = [
+        'blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 
+        'amazonfresh', 'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight'
+      ];
 
-      if (source === 'instamart' || source === 'all') {
-        await new Promise(r => setTimeout(r, 400));
-        const instamartProducts = simulateStoreSearch(query.trim(), 'instamart', pageCount);
-        products = [...products, ...instamartProducts];
+      for (const store of quickCommerceStores) {
+        if (source === store || source === 'all') {
+          if (source !== 'all') {
+            await new Promise(r => setTimeout(r, 200));
+          }
+          const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
+          products = [...products, ...storeProducts];
+        }
       }
     }
 
@@ -221,9 +235,10 @@ app.post('/api/products', (req, res) => {
   let skippedCount = 0;
 
   products.forEach(product => {
-    // Check for duplicates by name
+    // Check for duplicates by name and source
     const exists = db.products.find(p => 
-      p.name && product.name && p.name.toLowerCase() === product.name.toLowerCase()
+      p.name && product.name && p.name.toLowerCase() === product.name.toLowerCase() &&
+      p.source && product.source && p.source.toLowerCase() === product.source.toLowerCase()
     );
     if (!exists) {
       db.products.push({
@@ -292,7 +307,7 @@ app.get('/api/export/csv', async (req, res) => {
     const fields = [
       'name', 'price', 'priceFormatted', 'originalPrice', 'originalPriceFormatted',
       'discount', 'discountFormatted', 'rating', 'ratingsCount', 'reviewsCount',
-      'productLink', 'imageUrl', 'searchQuery', 'page', 'scrapedAt'
+      'productLink', 'imageUrl', 'searchQuery', 'page', 'source', 'scrapedAt'
     ];
 
     const parser = new Parser({ fields });
@@ -338,6 +353,7 @@ app.get('/api/export/excel', async (req, res) => {
       { header: 'Image URL', key: 'imageUrl', width: 40 },
       { header: 'Search Query', key: 'searchQuery', width: 20 },
       { header: 'Page', key: 'page', width: 8 },
+      { header: 'Source', key: 'source', width: 15 },
       { header: 'Scraped At', key: 'scrapedAt', width: 22 }
     ];
 
@@ -365,12 +381,13 @@ app.get('/api/export/excel', async (req, res) => {
         imageUrl: product.imageUrl || '',
         searchQuery: product.searchQuery || '',
         page: product.page || '',
+        source: product.source || '',
         scrapedAt: product.scrapedAt || ''
       });
     });
 
     // Auto-filter
-    sheet.autoFilter = { from: 'A1', to: 'L1' };
+    sheet.autoFilter = { from: 'A1', to: 'M1' };
 
     const buffer = await workbook.xlsx.writeBuffer();
     
@@ -387,6 +404,41 @@ app.get('/api/export/excel', async (req, res) => {
 app.get('/api/history', (req, res) => {
   const db = readDb();
   res.json(db.scrapeHistory || []);
+});
+
+// ── GET /api/proxy-image — Proxy product images to bypass WAF/Hotlinking blocks ──
+app.get('/api/proxy-image', async (req, res) => {
+  const { url } = req.query;
+  if (!url) {
+    return res.status(400).json({ error: 'URL parameter is required' });
+  }
+
+  try {
+    const decodedUrl = decodeURIComponent(url);
+
+    if (decodedUrl.startsWith('/') || decodedUrl.includes('unsplash.com')) {
+      return res.redirect(decodedUrl);
+    }
+
+    const response = await axios.get(decodedUrl, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': decodedUrl.includes('flipkart') ? 'https://www.flipkart.com/' : 'https://www.snapdeal.com/',
+        'Cache-Control': 'no-cache'
+      },
+      timeout: 6000
+    });
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(response.data));
+  } catch (error) {
+    console.error(`Image proxy failed for ${url}:`, error.message);
+    res.redirect('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200');
+  }
 });
 
 // ── Serve React build assets in production ──

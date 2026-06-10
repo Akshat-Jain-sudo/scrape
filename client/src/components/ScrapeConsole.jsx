@@ -12,7 +12,43 @@ import {
   FileJson
 } from 'lucide-react';
 
-function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
+const STORE_NAMES = {
+  amazon: 'Amazon India',
+  flipkart: 'Flipkart',
+  meesho: 'Meesho',
+  snapdeal: 'Snapdeal',
+  jiomart: 'JioMart',
+  tatacliq: 'Tata CLiQ',
+  shopclues: 'ShopClues',
+  indiamart: 'IndiaMART',
+  myntra: 'Myntra',
+  ajio: 'AJIO',
+  nykaa: 'Nykaa',
+  nykaafashion: 'Nykaa Fashion',
+  firstcry: 'FirstCry',
+  pepperfry: 'Pepperfry',
+  bookswagon: 'Bookswagon',
+  ebay: 'eBay',
+  etsy: 'Etsy',
+  alibaba: 'Alibaba',
+  aliexpress: 'AliExpress',
+  walmart: 'Walmart',
+  croma: 'Croma',
+  blinkit: 'Blinkit',
+  zepto: 'Zepto',
+  instamart: 'Swiggy Instamart',
+  bbnow: 'BigBasket Now',
+  fkminutes: 'Flipkart Minutes',
+  amazonfresh: 'Amazon Fresh',
+  jiomartexpress: 'JioMart Express',
+  bbdaily: 'BB Daily',
+  dunzo: 'Dunzo',
+  countrydelight: 'Country Delight',
+  zomato: 'Zomato',
+  swiggy: 'Swiggy'
+};
+
+function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('ecommerce');
   const [source, setSource] = useState('all');
@@ -49,23 +85,35 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
     addLog(`CONFIG: Category=${category.toUpperCase()} | Query="${query}" | Source=${source.toUpperCase()} | Pages=${pages}`, 'accent');
     await new Promise(r => setTimeout(r, 200));
 
-    if (category === 'quickcommerce') {
+    if (category === 'food') {
+      addLog(`LOCATION: Detecting current city boundaries for "${userLocation}"...`, 'info');
+      await new Promise(r => setTimeout(r, 150));
+      addLog(`AGENT: Fetching menus based on localized GPS coordinates...`, 'info');
+      await new Promise(r => setTimeout(r, 150));
+
+      const activeStores = source === 'all' 
+        ? ['zomato', 'swiggy'] 
+        : [source];
+
+      for (const st of activeStores) {
+        const name = STORE_NAMES[st] || st.toUpperCase();
+        addLog(`FETCH [${st.toUpperCase()}]: Checking local restaurants on ${name}...`, 'info');
+        await new Promise(r => setTimeout(r, 150));
+      }
+    } else if (category === 'quickcommerce') {
       addLog(`LOCATION: Resolving delivery zone coordinates...`, 'info');
       await new Promise(r => setTimeout(r, 150));
       addLog(`AGENT: Overriding coordinate request headers...`, 'info');
       await new Promise(r => setTimeout(r, 150));
 
-      if (source === 'blinkit' || source === 'all') {
-        addLog(`FETCH [BLINKIT]: Querying local Dark Store catalog...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (source === 'zepto' || source === 'all') {
-        addLog(`FETCH [ZEPTO]: Parsing store inventory indexes...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (source === 'instamart' || source === 'all') {
-        addLog(`FETCH [SWIGGY INSTAMART]: Resolving geo-fence limits...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
+      const activeStores = source === 'all' 
+        ? ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes'] 
+        : [source];
+
+      for (const st of activeStores) {
+        const name = STORE_NAMES[st] || st.toUpperCase();
+        addLog(`FETCH [${st.toUpperCase()}]: Querying ${name} express catalog...`, 'info');
+        await new Promise(r => setTimeout(r, 150));
       }
     } else {
       addLog(`AGENT: Preparing rotated request headers...`, 'info');
@@ -73,25 +121,14 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
       addLog(`RATE: Delay buffer (1.2s - 2.8s) between page indexes`, 'info');
       await new Promise(r => setTimeout(r, 150));
       
-      if (source === 'flipkart' || source === 'all') {
-        addLog(`FETCH [FLIPKART]: Page 1: Sending WAF-isolated GET...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (source === 'snapdeal' || source === 'all') {
-        addLog(`FETCH [SNAPDEAL]: Page 1: Querying catalog indexes...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (source === 'croma' || source === 'all') {
-        addLog(`FETCH [CROMA]: Accessing retail shelf database...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (source === 'myntra' || source === 'all') {
-        addLog(`FETCH [MYNTRA]: Scraping apparel catalog endpoints...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
-      }
-      if (source === 'ajio' || source === 'all') {
-        addLog(`FETCH [AJIO]: Connecting to fashion index proxy...`, 'info');
-        await new Promise(r => setTimeout(r, 200));
+      const activeStores = source === 'all'
+        ? ['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']
+        : [source];
+
+      for (const st of activeStores) {
+        const name = STORE_NAMES[st] || st.toUpperCase();
+        addLog(`FETCH [${st.toUpperCase()}]: Sending request signature to ${name}...`, 'info');
+        await new Promise(r => setTimeout(r, 150));
       }
     }
 
@@ -102,7 +139,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query.trim(), category, source, pages })
+        body: JSON.stringify({ query: query.trim(), category, source, pages, location: userLocation })
       });
 
       if (!response.ok) {
@@ -164,7 +201,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
       <div className="view-header">
         <div className="view-title">
           <h1>Scrape Console</h1>
-          <p>Scrape individual or combined catalog sets across E-Commerce and Quick Commerce platforms</p>
+          <p>Scrape individual or combined catalog sets across E-Commerce, Quick Commerce, and Food Delivery platforms</p>
         </div>
       </div>
 
@@ -198,6 +235,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
               >
                 <option value="ecommerce">E-Commerce</option>
                 <option value="quickcommerce">Quick Commerce</option>
+                <option value="food">Food Delivery</option>
               </select>
             </div>
 
@@ -209,21 +247,52 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
                 onChange={(e) => setSource(e.target.value)}
                 disabled={loading}
               >
-                {category === 'ecommerce' ? (
+                {category === 'ecommerce' && (
                   <>
-                    <option value="all">All E-Commerce (Flipkart, Snapdeal, Croma, Myntra, Ajio)</option>
-                    <option value="flipkart">Flipkart Only</option>
-                    <option value="snapdeal">Snapdeal Only</option>
-                    <option value="croma">Croma Only</option>
-                    <option value="myntra">Myntra Only</option>
-                    <option value="ajio">Ajio Only</option>
+                    <option value="all">All E-Commerce (20 Stores)</option>
+                    <option value="amazon">Amazon India</option>
+                    <option value="flipkart">Flipkart</option>
+                    <option value="meesho">Meesho</option>
+                    <option value="snapdeal">Snapdeal</option>
+                    <option value="jiomart">JioMart</option>
+                    <option value="tatacliq">Tata CLiQ</option>
+                    <option value="shopclues">ShopClues</option>
+                    <option value="indiamart">IndiaMART</option>
+                    <option value="myntra">Myntra</option>
+                    <option value="ajio">AJIO</option>
+                    <option value="nykaa">Nykaa</option>
+                    <option value="nykaafashion">Nykaa Fashion</option>
+                    <option value="firstcry">FirstCry</option>
+                    <option value="pepperfry">Pepperfry</option>
+                    <option value="bookswagon">Bookswagon</option>
+                    <option value="ebay">eBay</option>
+                    <option value="etsy">Etsy</option>
+                    <option value="alibaba">Alibaba</option>
+                    <option value="aliexpress">AliExpress</option>
+                    <option value="walmart">Walmart</option>
+                    <option value="croma">Croma</option>
                   </>
-                ) : (
+                )}
+                {category === 'quickcommerce' && (
                   <>
-                    <option value="all">All Quick Commerce (Blinkit, Zepto, Swiggy Instamart)</option>
-                    <option value="blinkit">Blinkit Only</option>
-                    <option value="zepto">Zepto Only</option>
-                    <option value="instamart">Swiggy Instamart Only</option>
+                    <option value="all">All Quick Commerce (10 Stores)</option>
+                    <option value="blinkit">Blinkit</option>
+                    <option value="zepto">Zepto</option>
+                    <option value="instamart">Swiggy Instamart</option>
+                    <option value="bbnow">BigBasket Now</option>
+                    <option value="fkminutes">Flipkart Minutes</option>
+                    <option value="amazonfresh">Amazon Fresh</option>
+                    <option value="jiomartexpress">JioMart Express</option>
+                    <option value="bbdaily">BB Daily</option>
+                    <option value="dunzo">Dunzo</option>
+                    <option value="countrydelight">Country Delight</option>
+                  </>
+                )}
+                {category === 'food' && (
+                  <>
+                    <option value="all">All Food Delivery (2 Stores)</option>
+                    <option value="zomato">Zomato</option>
+                    <option value="swiggy">Swiggy</option>
                   </>
                 )}
               </select>
@@ -351,7 +420,26 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast }) {
                           <td className="product-name-cell" title={product.name}>
                             {product.name}
                           </td>
-                          <td className="price-cell">{product.priceFormatted}</td>
+                          <td className="price-cell">
+                            <div>{product.priceFormatted}</div>
+                            {product.deliveryTime && (
+                              <div style={{ fontSize: '0.72rem', color: 'var(--info)', fontWeight: 500, marginTop: '2px' }}>
+                                🚚 {product.deliveryTime}
+                              </div>
+                            )}
+                            {product.distance && (
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                📍 {product.distance}
+                              </div>
+                            )}
+                            {(product.deliveryFee !== null || product.packagingFee !== null) && (
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                {product.deliveryFee !== null && `Del: ₹${product.deliveryFee}`}
+                                {product.deliveryFee !== null && product.packagingFee !== null && ' | '}
+                                {product.packagingFee !== null && `Pack: ₹${product.packagingFee}`}
+                              </div>
+                            )}
+                          </td>
                           <td>
                             {product.discountFormatted ? (
                               <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.8rem' }}>{product.discountFormatted}</span>

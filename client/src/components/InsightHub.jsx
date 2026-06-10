@@ -278,7 +278,14 @@ function InsightHub({ savedProducts }) {
                   >
                     <div style={{ width: '45px', height: '45px', background: 'white', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                       {deal.imageUrl ? (
-                        <img src={deal.imageUrl} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        <img 
+                          src={deal.imageUrl.startsWith('http') && !deal.imageUrl.includes('unsplash.com') ? `/api/proxy-image?url=${encodeURIComponent(deal.imageUrl)}` : deal.imageUrl} 
+                          alt="" 
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
+                          }}
+                        />
                       ) : (
                         <ShoppingCart size={18} style={{ color: '#aaa' }} />
                       )}

@@ -11,11 +11,14 @@ import {
   Zap,
   RefreshCw,
   Bookmark,
-  ArrowRight
+  ArrowRight,
+  MapPin,
+  ChevronDown,
+  Utensils
 } from 'lucide-react';
 
 // Sub-component to manage real-time comparison for a single product card in the feed
-function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts }) {
+function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, userLocation }) {
   const [loading, setLoading] = useState(true);
   const [compData, setCompData] = useState(null);
   const [error, setError] = useState(null);
@@ -27,7 +30,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: item.query, category })
+        body: JSON.stringify({ query: item.query, category, location: userLocation })
       });
       if (response.ok) {
         const data = await response.json();
@@ -44,7 +47,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
 
   useEffect(() => {
     fetchComparison();
-  }, [item.id, category]);
+  }, [item.id, category, userLocation]);
 
   const handleSave = () => {
     if (!compData) return;
@@ -64,6 +67,11 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
       imageUrl: compData.imageUrl || item.image,
       searchQuery: item.query,
       source: store,
+      deliveryTime: details.deliveryTime,
+      deliveryFee: details.deliveryFee,
+      packagingFee: details.packagingFee,
+      distance: details.distance,
+      restaurantName: details.restaurantName,
       scrapedAt: compData.scrapedAt
     }));
 
@@ -78,7 +86,11 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
     <div className="glass-card comparison-feed-card stagger-in">
       <div className="comp-img-container">
         <img 
-          src={compData?.imageUrl || item.image} 
+          src={
+            compData?.imageUrl && compData.imageUrl.startsWith('http') && !compData.imageUrl.includes('unsplash.com') 
+              ? `/api/proxy-image?url=${encodeURIComponent(compData.imageUrl)}` 
+              : (compData?.imageUrl || item.image)
+          } 
           alt={item.name} 
           className="comp-img" 
           onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200'; }}
@@ -145,6 +157,11 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
                     <span className={getStoreBadgeClass(store)}>
                       {store}
                     </span>
+                    {details.restaurantName && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
+                        🏪 {details.restaurantName}
+                      </div>
+                    )}
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -159,17 +176,31 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    {details.rating && (
-                      <>
-                        <Star size={12} fill="var(--warning)" stroke="var(--warning)" />
-                        <span>{details.rating}</span>
-                      </>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      {details.rating && (
+                        <>
+                          <Star size={12} fill="var(--warning)" stroke="var(--warning)" />
+                          <span>{details.rating}</span>
+                        </>
+                      )}
+                      {details.deliveryTime && (
+                        <span style={{ color: 'var(--info)', fontWeight: 500, fontSize: '0.75rem', marginLeft: '0.25rem' }}>
+                          🚚 {details.deliveryTime}
+                        </span>
+                      )}
+                    </div>
+                    {details.distance && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        📍 Distance: {details.distance}
+                      </div>
                     )}
-                    {details.deliveryTime && (
-                      <span style={{ color: 'var(--info)', fontWeight: 500, fontSize: '0.75rem' }}>
-                        🚚 {details.deliveryTime}
-                      </span>
+                    {(details.deliveryFee !== null || details.packagingFee !== null) && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {details.deliveryFee !== null && `Del: ₹${details.deliveryFee}`}
+                        {details.deliveryFee !== null && details.packagingFee !== null && ' | '}
+                        {details.packagingFee !== null && `Pack: ₹${details.packagingFee}`}
+                      </div>
                     )}
                   </div>
 
@@ -202,7 +233,15 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts })
   );
 }
 
-function Dashboard({ savedProducts, onSaveProducts, addToast }) {
+function Dashboard({ 
+  savedProducts, 
+  onSaveProducts, 
+  onNavigateToScraper, 
+  addToast, 
+  userLocation, 
+  setUserLocation, 
+  detectLocation
+}) {
   const [activeCategory, setActiveCategory] = useState('ecommerce');
   const [trendingDeals, setTrendingDeals] = useState(null);
   const [loadingTrending, setLoadingTrending] = useState(true);
@@ -211,6 +250,7 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [customComp, setCustomComp] = useState(null);
   const [searching, setSearching] = useState(false);
+  const [showLocationMenu, setShowLocationMenu] = useState(false);
 
   // Fetch trending products config
   useEffect(() => {
@@ -240,7 +280,7 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery.trim(), category: activeCategory })
+        body: JSON.stringify({ query: searchQuery.trim(), category: activeCategory, location: userLocation })
       });
 
       if (response.ok) {
@@ -272,6 +312,48 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
           <h1>Compare Dashboard</h1>
           <p>Real-time comparative pricing feed across e-commerce, fashion, and quick-commerce stores</p>
         </div>
+
+        {/* Geolocation selector widget */}
+        <div className="location-widget-container">
+          <div className="location-widget" onClick={() => setShowLocationMenu(!showLocationMenu)}>
+            <span className="location-pin-icon">
+              <MapPin size={14} />
+            </span>
+            <span>Deliver to: <strong>{userLocation}</strong></span>
+            <ChevronDown size={14} style={{ opacity: 0.7, transform: showLocationMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </div>
+          
+          {showLocationMenu && (
+            <div className="location-menu-dropdown">
+              <div 
+                className={`location-dropdown-item ${userLocation === 'Mumbai' ? 'active' : ''}`}
+                onClick={() => { setUserLocation('Mumbai'); setShowLocationMenu(false); addToast('Location set to Mumbai', 'success'); }}
+              >
+                <span>Mumbai</span>
+                {userLocation === 'Mumbai' && <span>✓</span>}
+              </div>
+              <div 
+                className={`location-dropdown-item ${userLocation === 'Delhi' ? 'active' : ''}`}
+                onClick={() => { setUserLocation('Delhi'); setShowLocationMenu(false); addToast('Location set to Delhi', 'success'); }}
+              >
+                <span>Delhi</span>
+                {userLocation === 'Delhi' && <span>✓</span>}
+              </div>
+              <div 
+                className={`location-dropdown-item ${userLocation === 'Bangalore' ? 'active' : ''}`}
+                onClick={() => { setUserLocation('Bangalore'); setShowLocationMenu(false); addToast('Location set to Bangalore', 'success'); }}
+              >
+                <span>Bangalore</span>
+                {userLocation === 'Bangalore' && <span>✓</span>}
+              </div>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.35rem' }}>
+                <button className="location-btn-detect" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { detectLocation(); setShowLocationMenu(false); }}>
+                  ⚡ Auto-Detect GPS
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Category Navigation Tabs */}
@@ -281,14 +363,21 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
           onClick={() => { setActiveCategory('ecommerce'); setCustomComp(null); }}
         >
           <ShoppingBag size={16} />
-          <span>E-Commerce (Flipkart, Snapdeal, Croma, Myntra, Ajio)</span>
+          <span>E-Commerce (Amazon, Flipkart, Meesho, AJIO, Walmart, Nykaa & more)</span>
         </button>
         <button 
           className={`category-tab ${activeCategory === 'quickcommerce' ? 'active' : ''}`}
           onClick={() => { setActiveCategory('quickcommerce'); setCustomComp(null); }}
         >
           <Zap size={16} />
-          <span>Quick Commerce (Blinkit, Swiggy Instamart, Zepto)</span>
+          <span>Quick Commerce (Blinkit, Zepto, Swiggy Instamart, BigBasket, Dunzo & more)</span>
+        </button>
+        <button 
+          className={`category-tab ${activeCategory === 'food' ? 'active' : ''}`}
+          onClick={() => { setActiveCategory('food'); setCustomComp(null); }}
+        >
+          <Utensils size={16} />
+          <span>Food Delivery (Zomato & Swiggy)</span>
         </button>
       </div>
 
@@ -297,8 +386,9 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
         <h2>🔍 Search & Compare Any Product</h2>
         <p>
           Compare price indicators in real-time on: 
-          {activeCategory === 'ecommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Flipkart, Snapdeal, Croma, Myntra, Ajio</strong>}
-          {activeCategory === 'quickcommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Blinkit, Swiggy Instamart, Zepto</strong>}
+          {activeCategory === 'ecommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Amazon, Flipkart, Meesho, Snapdeal, JioMart, Tata CLiQ, Myntra, AJIO, Nykaa, Nykaa Fashion, FirstCry, Pepperfry, Bookswagon, eBay, Etsy, Alibaba, AliExpress, Walmart, Croma</strong>}
+          {activeCategory === 'quickcommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Blinkit, Zepto, Swiggy Instamart, BigBasket Now, Flipkart Minutes, Amazon Fresh, JioMart Express, BB Daily, Dunzo, Country Delight</strong>}
+          {activeCategory === 'food' && <strong style={{ color: 'var(--accent-primary)' }}> Zomato, Swiggy</strong>}
         </p>
         
         <div className="search-box">
@@ -342,6 +432,7 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
             category={activeCategory} 
             onSaveComparison={handleSaveComparison}
             savedProducts={savedProducts}
+            userLocation={userLocation}
           />
         </div>
       )}
@@ -383,6 +474,7 @@ function Dashboard({ savedProducts, onSaveProducts, addToast }) {
                 category={activeCategory}
                 onSaveComparison={handleSaveComparison}
                 savedProducts={savedProducts}
+                userLocation={userLocation}
               />
             ))}
           </div>

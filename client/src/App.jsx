@@ -17,6 +17,7 @@ function App() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [userLocation, setUserLocation] = useState('Mumbai');
 
   // Live clock – update every second
   useEffect(() => {
@@ -32,6 +33,52 @@ function App() {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3000);
   }, []);
+
+  // Geolocation detector
+  const detectLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      addToast('Geolocation is not supported by your browser', 'warning');
+      return;
+    }
+    
+    addToast('Detecting location...', 'info');
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+          if (response.ok) {
+            const data = await response.json();
+            const city = data.address.city || data.address.town || data.address.suburb || data.address.state || 'Mumbai';
+            setUserLocation(city);
+            addToast(`Location detected: ${city} ✓`, 'success');
+          } else {
+            throw new Error();
+          }
+        } catch (err) {
+          let city = 'Mumbai';
+          if (latitude > 18.8 && latitude < 19.3 && longitude > 72.7 && longitude < 73.1) city = 'Mumbai';
+          else if (latitude > 28.4 && latitude < 28.9 && longitude > 76.9 && longitude < 77.4) city = 'Delhi';
+          else if (latitude > 12.8 && latitude < 13.1 && longitude > 77.4 && longitude < 77.9) city = 'Bangalore';
+          else city = 'Mumbai';
+          
+          setUserLocation(city);
+          addToast(`Location detected (approx): ${city} ✓`, 'success');
+        }
+      },
+      (error) => {
+        console.error(error);
+        addToast('Location access denied. Using Mumbai.', 'info');
+        setUserLocation('Mumbai');
+      },
+      { timeout: 5000 }
+    );
+  }, [addToast]);
+
+  // Detect location on load
+  useEffect(() => {
+    detectLocation();
+  }, [detectLocation]);
 
   // Fetch saved products from Express backend
   const fetchSavedProducts = async () => {
@@ -197,6 +244,9 @@ function App() {
             onSaveProducts={handleSaveProducts} 
             onNavigateToScraper={() => setCurrentView('scraper')}
             addToast={addToast}
+            userLocation={userLocation}
+            setUserLocation={setUserLocation}
+            detectLocation={detectLocation}
           />
         )}
         
@@ -205,6 +255,7 @@ function App() {
             savedProducts={savedProducts}
             onSaveProducts={handleSaveProducts}
             addToast={addToast}
+            userLocation={userLocation}
           />
         )}
 
@@ -218,7 +269,7 @@ function App() {
                     <span className="header-count-badge">{savedProducts.length} products</span>
                   )}
                 </h1>
-                <p>Browse through your collection of scraped Flipkart products</p>
+                <p>Browse through your collection of saved e-commerce & grocery products</p>
               </div>
               {savedProducts.length > 0 && (
                 <div className="btn-group">
@@ -244,7 +295,7 @@ function App() {
               <div className="glass-card empty-state">
                 <Archive />
                 <h3>No products saved yet</h3>
-                <p>Scrape Flipkart products and save them to build your collection.</p>
+                <p>Scrape products and save them to build your collection.</p>
                 <button 
                   className="btn btn-primary" 
                   onClick={() => setCurrentView('scraper')}
@@ -263,9 +314,15 @@ function App() {
                   >
                     <div className="card-img-wrapper">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="card-img" onError={(e) => {
-                          e.target.style.display = 'none';
-                        }} />
+                        <img 
+                          src={product.imageUrl.startsWith('http') && !product.imageUrl.includes('unsplash.com') ? `/api/proxy-image?url=${encodeURIComponent(product.imageUrl)}` : product.imageUrl} 
+                          alt={product.name} 
+                          className="card-img" 
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
+                          }} 
+                          loading="lazy"
+                        />
                       ) : (
                         <ShoppingCart size={40} style={{ color: 'var(--text-muted)', opacity: 0.3 }} />
                       )}
@@ -307,7 +364,7 @@ function App() {
                               target="_blank" 
                               rel="noopener noreferrer" 
                               className="btn-icon" 
-                              title="View on Flipkart"
+                              title="View on Store"
                             >
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                             </a>
