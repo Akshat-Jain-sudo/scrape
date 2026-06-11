@@ -10,17 +10,7 @@ echo.
 :: Check if node_modules exists, if not run installation
 if not exist "node_modules" (
     echo [INFO] node_modules not found. Installing dependencies...
-    call npm run install:all
-) else (
-    if not exist "client\node_modules" (
-        echo [INFO] client node_modules not found. Installing dependencies...
-        call npm run install:all
-    ) else (
-        if not exist "server\node_modules" (
-            echo [INFO] server node_modules not found. Installing dependencies...
-            call npm run install:all
-        )
-    )
+    call npm install
 )
 
 echo.

@@ -27,4 +27,4 @@ yarn-error.log*
 *.sw?
 
 # Build outputs
-/client/dist
+/dist
