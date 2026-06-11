@@ -68,3 +68,9 @@ FlipScrape is configured to serve static React assets directly from the Express 
    - Install root, server, and client dependencies.
    - Run Vite to compile the client-side files to `/client/dist`.
    - Serve the frontend files from the Express app origin relative directory.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](file:///e:/project/webscrapping/LICENSE) file for details.
