@@ -10,7 +10,11 @@ import {
   computeProductAnalytics, 
   TRENDING_DEALS, 
   compareProductPrices,
-  getRandomUserAgent
+  getRandomUserAgent,
+  STORE_NAMES,
+  getStoreLink,
+  getStoreDeliveryTime,
+  getEstimatedBasePrice
 } from './scraper.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -93,6 +97,107 @@ app.post('/api/compare', async (req, res) => {
   } catch (error) {
     console.error('Comparison error:', error);
     res.status(500).json({ error: error.message || 'Failed to compare product prices' });
+  }
+});
+
+// ── POST /api/cart/optimize — Calculate the cheapest store overall for a list of items ──
+app.post('/api/cart/optimize', async (req, res) => {
+  const { items, location = 'Mumbai', category = 'quickcommerce' } = req.body;
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Items array is required' });
+  }
+
+  try {
+    const cartByStore = {};
+    const targetStores = category === 'quickcommerce' 
+      ? ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes']
+      : category === 'food' 
+        ? ['zomato', 'swiggy']
+        : ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq'];
+
+    // Initialize stores in the result
+    targetStores.forEach(store => {
+      const deliveryFee = category === 'food' ? 30 + Math.floor(Math.random() * 20) :
+                         category === 'quickcommerce' ? 15 + Math.floor(Math.random() * 15) : 0;
+      const packagingFee = category === 'food' ? 10 + Math.floor(Math.random() * 15) : 0;
+      
+      cartByStore[store] = {
+        storeName: STORE_NAMES[store] || store,
+        items: [],
+        subtotal: 0,
+        deliveryFee,
+        packagingFee,
+        total: 0,
+        deliveryTime: getStoreDeliveryTime(store)
+      };
+    });
+
+    // Scrape/simulate each item
+    for (const itemQuery of items) {
+      const queryStr = itemQuery.trim();
+      if (!queryStr) continue;
+
+      for (const store of targetStores) {
+        const storeProducts = simulateStoreSearch(queryStr, store, 1, location);
+        if (storeProducts && storeProducts.length > 0) {
+          // Find the cheapest match
+          const bestMatch = storeProducts.sort((a, b) => a.price - b.price)[0];
+          cartByStore[store].items.push({
+            query: queryStr,
+            name: bestMatch.name,
+            price: bestMatch.price,
+            priceFormatted: bestMatch.priceFormatted,
+            imageUrl: bestMatch.imageUrl,
+            productLink: bestMatch.productLink
+          });
+          cartByStore[store].subtotal += bestMatch.price;
+        } else {
+          // Fallback if no item found
+          const estPrice = getEstimatedBasePrice(queryStr, category);
+          cartByStore[store].items.push({
+            query: queryStr,
+            name: `${store.toUpperCase()} ${queryStr} (Simulated)`,
+            price: estPrice,
+            priceFormatted: `₹${estPrice}`,
+            imageUrl: '',
+            productLink: getStoreLink(store, queryStr)
+          });
+          cartByStore[store].subtotal += estPrice;
+        }
+      }
+    }
+
+    // Compute totals
+    let cheapestStore = targetStores[0];
+    let cheapestTotal = Infinity;
+    let mostExpensiveTotal = 0;
+
+    targetStores.forEach(store => {
+      const storeCart = cartByStore[store];
+      storeCart.total = storeCart.subtotal + storeCart.deliveryFee + storeCart.packagingFee;
+      
+      if (storeCart.total < cheapestTotal) {
+        cheapestTotal = storeCart.total;
+        cheapestStore = store;
+      }
+      if (storeCart.total > mostExpensiveTotal) {
+        mostExpensiveTotal = storeCart.total;
+      }
+    });
+
+    const savings = mostExpensiveTotal - cheapestTotal;
+
+    res.json({
+      cartByStore,
+      cheapestStore,
+      cheapestTotal,
+      savings,
+      location,
+      category
+    });
+  } catch (err) {
+    console.error('Cart optimization error:', err);
+    res.status(500).json({ error: 'Failed to optimize cart' });
   }
 });
 
@@ -241,9 +346,26 @@ app.post('/api/products', (req, res) => {
       p.source && product.source && p.source.toLowerCase() === product.source.toLowerCase()
     );
     if (!exists) {
+      // Generate simulated price history for the last 5 days
+      const basePrice = product.price || 100;
+      const history = [];
+      for (let d = 4; d >= 0; d--) {
+        const date = new Date();
+        date.setDate(date.getDate() - d);
+        // Variance factor between 0.88 and 1.12
+        const varPercent = 0.88 + Math.random() * 0.24;
+        const histPrice = Math.round(basePrice * varPercent);
+        history.push({
+          price: histPrice,
+          date: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+        });
+      }
+
       db.products.push({
         ...product,
         id: product.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        priceHistory: history,
+        targetPrice: null, // default
         savedAt: new Date().toISOString()
       });
       savedCount++;
@@ -259,6 +381,22 @@ app.post('/api/products', (req, res) => {
     skippedCount,
     totalInDb: db.products.length
   });
+});
+
+// ── PUT /api/products/:id/alert — Update target alert price ──
+app.put('/api/products/:id/alert', (req, res) => {
+  const { id } = req.params;
+  const { targetPrice } = req.body;
+
+  const db = readDb();
+  const product = db.products.find(p => p.id === id);
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  product.targetPrice = targetPrice ? parseFloat(targetPrice) : null;
+  writeDb(db);
+  res.json({ message: 'Target price updated successfully', targetPrice: product.targetPrice });
 });
 
 // ── DELETE /api/products/:id — Delete a saved product ──

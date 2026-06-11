@@ -1039,4 +1039,301 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: rgba(245,114,36,0.08);
 }
 
+/* ── Theme Switcher ── */
+.theme-glass-light {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-focus: rgba(245, 114, 36, 0.5);
+  --accent-primary: #f57224;
+  --accent-secondary: #e05e15;
+  --accent-glow: rgba(245, 114, 36, 0.08);
+  --accent-blue: #1d4ed8;
+  --accent-blue-glow: rgba(29, 78, 216, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: 1px solid rgba(15, 23, 42, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.1);
+}
+.theme-glass-light body::before {
+  background: rgba(245, 114, 36, 0.04);
+}
+.theme-glass-light body::after {
+  background: rgba(29, 78, 216, 0.03);
+}
+.theme-glass-light .glass-card {
+  box-shadow: 0 4px 20px 0 rgba(148, 163, 184, 0.08);
+}
+.theme-glass-light input, 
+.theme-glass-light select {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.15) !important;
+}
+
+.theme-amoled-black {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #050505;
+  --border-color: #1a1a1a;
+  --border-focus: #f57224;
+  --accent-primary: #f57224;
+  --accent-secondary: #e05e15;
+  --accent-glow: rgba(245, 114, 36, 0.15);
+  --accent-blue: #2874f0;
+  --accent-blue-glow: rgba(40, 116, 240, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #525252;
+  --glass-bg: #030303;
+  --glass-border: 1px solid #141414;
+  --glass-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0);
+}
+.theme-amoled-black body::before,
+.theme-amoled-black body::after {
+  display: none;
+}
+
+/* Theme Toggle Button Style in Sidebar Clock Row */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+.theme-toggle-btn:hover {
+  color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Speed vs Cost Matrix Styles ── */
+.speed-cost-matrix-card {
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+.matrix-node {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.matrix-node:hover circle {
+  r: 9;
+  filter: drop-shadow(0 0 6px var(--accent-primary));
+}
+.matrix-node:hover text {
+  fill: var(--text-primary);
+  font-weight: 700;
+}
+
+/* ── Cart Optimizer Styles ── */
+.cart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease-out;
+}
+.cart-workspace {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+}
+@media (max-width: 900px) {
+  .cart-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+.cart-builder-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cart-item-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.cart-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.cart-item-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+.cart-item-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.cart-item-delete:hover {
+  color: var(--danger);
+}
+.cart-results-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.cart-cheapest-highlight {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cart-store-grids {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.cart-store-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+}
+.cart-store-card.cheapest {
+  border-color: var(--success);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+.cart-store-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.75rem;
+}
+.cart-store-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.cart-store-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+.cart-store-items-table td {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.cart-store-item-name {
+  color: var(--text-primary);
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cart-store-item-price {
+  text-align: right;
+  font-weight: 600;
+}
+.cart-store-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+.cart-store-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ── Price History SVG Line Chart Styles ── */
+.price-chart-container {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(0,0,0,0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.chart-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  padding: 0 4px;
+}
+.chart-dot-group {
+  cursor: pointer;
+}
+.chart-dot-group:hover circle {
+  r: 6px;
+  fill: var(--accent-primary);
+}
+
+/* ── Target Alert Badge & Banner Styles ── */
+.price-alert-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-primary);
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-top: 0.5rem;
+}
+.price-alert-met-banner {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid var(--success);
+  color: var(--success);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  animation: pulseMet 2s infinite alternate;
+}
+@keyframes pulseMet {
+  0% { border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 0 2px rgba(16, 185, 129, 0.2); }
+  100% { border-color: var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+}
+.target-price-input-container {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+.target-price-input {
+  height: 28px !important;
+  padding: 0 6px !important;
+  font-size: 0.75rem !important;
+}
+
 

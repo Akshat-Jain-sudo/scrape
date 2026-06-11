@@ -5,19 +5,107 @@ import {
   Archive, 
   BarChart3, 
   ShoppingCart, 
-  Sparkles
+  Sparkles,
+  Palette,
+  ShoppingBag,
+  Bell,
+  LineChart,
+  Trash2
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import ScrapeConsole from './components/ScrapeConsole';
 import InsightHub from './components/InsightHub';
+import CartOptimizer from './components/CartOptimizer';
+
+function SVGLineChart({ history }) {
+  if (!history || history.length === 0) return null;
+  
+  const prices = history.map(h => h.price);
+  const minPrice = Math.min(...prices) * 0.95; // 5% padding
+  const maxPrice = Math.max(...prices) * 1.05; // 5% padding
+  const priceRange = maxPrice - minPrice || 1;
+  
+  const width = 260;
+  const height = 80;
+  const paddingX = 15;
+  const paddingY = 10;
+  
+  const chartWidth = width - paddingX * 2;
+  const chartHeight = height - paddingY * 2;
+  
+  // Compute coordinates
+  const points = history.map((item, idx) => {
+    const x = paddingX + (idx / (history.length - 1 || 1)) * chartWidth;
+    const y = height - paddingY - ((item.price - minPrice) / priceRange) * chartHeight;
+    return { x, y, price: item.price, date: item.date };
+  });
+  
+  const pathData = points.reduce((acc, p, idx) => {
+    return acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
+  }, '');
+  
+  const areaData = pathData + ` L ${points[points.length-1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+  
+  return (
+    <div className="price-chart-container" style={{ marginTop: '0.75rem', animation: 'fadeIn 0.2s ease-out' }}>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--accent-primary)" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0.0"/>
+          </linearGradient>
+        </defs>
+        
+        {/* Grid lines */}
+        <line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke="rgba(255,255,255,0.03)" strokeDasharray="2,2" />
+        <line x1={paddingX} y1={height/2} x2={width - paddingX} y2={height/2} stroke="rgba(255,255,255,0.03)" strokeDasharray="2,2" />
+        <line x1={paddingX} y1={height - paddingY} x2={width - paddingX} y2={height - paddingY} stroke="rgba(255,255,255,0.03)" strokeDasharray="2,2" />
+        
+        {/* Glow Area under the line */}
+        <path d={areaData} fill="url(#chartGlow)" />
+        
+        {/* Line */}
+        <path d={pathData} fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Interactive Dots */}
+        {points.map((p, idx) => (
+          <g key={idx} className="chart-dot-group">
+            <circle cx={p.x} cy={p.y} r="3" fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth="1.5" />
+            <title>{`${p.date}: ₹${p.price}`}</title>
+          </g>
+        ))}
+      </svg>
+      <div className="chart-labels">
+        <span>{history[0].date}</span>
+        <span>{history[history.length - 1].date}</span>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [savedProducts, setSavedProducts] = useState([]);
+  const [showCharts, setShowCharts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userLocation, setUserLocation] = useState('Mumbai');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'cyberpunk');
+
+  // Apply theme class to document body
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.body.className = `theme-${theme}`;
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      if (prev === 'cyberpunk') return 'glass-light';
+      if (prev === 'glass-light') return 'amoled-black';
+      return 'cyberpunk';
+    });
+  };
 
   // Live clock – update every second
   useEffect(() => {
@@ -160,6 +248,12 @@ function App() {
   };
 
   const formattedTime = currentTime.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const metAlertsCount = savedProducts.reduce((count, p) => {
+    if (p.targetPrice && p.price <= p.targetPrice) {
+      return count + 1;
+    }
+    return count;
+  }, 0);
 
   return (
     <div className="app-container">
@@ -203,13 +297,25 @@ function App() {
             <span>Scrape Console</span>
           </li>
           <li 
+            className={`nav-item ${currentView === 'cart' ? 'active' : ''}`}
+            onClick={() => setCurrentView('cart')}
+          >
+            <ShoppingBag />
+            <span>Cart Optimizer</span>
+          </li>
+          <li 
             className={`nav-item ${currentView === 'archive' ? 'active' : ''}`}
             onClick={() => setCurrentView('archive')}
           >
             <Archive />
             <span>Saved Products</span>
             {savedProducts.length > 0 && (
-              <span className="nav-badge">{savedProducts.length}</span>
+              <span className="nav-badge" style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
+                {savedProducts.length}
+                {metAlertsCount > 0 && (
+                  <span style={{ width: '6px', height: '6px', background: 'var(--danger)', borderRadius: '50%', display: 'inline-block', animation: 'pulseMet 1s infinite alternate' }} title={`${metAlertsCount} price alert(s) met!`}></span>
+                )}
+              </span>
             )}
           </li>
           <li 
@@ -222,12 +328,17 @@ function App() {
         </ul>
 
         <div className="sidebar-footer">
-          <div className="sidebar-clock">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent-primary)' }}>
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span className="clock-time">{formattedTime}</span>
+          <div className="sidebar-clock" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent-primary)' }}>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span className="clock-time">{formattedTime}</span>
+            </div>
+            <button className="theme-toggle-btn" onClick={toggleTheme} title="Switch Theme (Cyberpunk / Light / AMOLED)">
+              <Palette size={14} />
+            </button>
           </div>
           <p>© 2026 FlipScrape v1.0</p>
           <p style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
@@ -340,6 +451,48 @@ function App() {
                         )}
                       </div>
 
+                      {/* Alert Met Banner */}
+                      {product.targetPrice && product.price <= product.targetPrice && (
+                        <div className="price-alert-met-banner">
+                          🔥 Price Alert Met! Target: ₹{product.targetPrice}
+                        </div>
+                      )}
+
+                      {/* Alert Config and Badge */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                        {product.targetPrice && product.price > product.targetPrice && (
+                          <div className="price-alert-pill">
+                            <Bell size={10} /> Target: ₹{product.targetPrice}
+                          </div>
+                        )}
+                        <div className="target-price-input-container">
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center' }}>Alert: ₹</span>
+                          <input 
+                            type="number" 
+                            placeholder="Set target" 
+                            className="target-price-input" 
+                            style={{ width: '70px', height: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', padding: '0 4px', fontSize: '0.75rem' }}
+                            defaultValue={product.targetPrice || ''}
+                            onBlur={async (e) => {
+                              const val = e.target.value ? parseFloat(e.target.value) : null;
+                              try {
+                                const response = await fetch(`/api/products/${product.id}/alert`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ targetPrice: val })
+                                });
+                                if (response.ok) {
+                                  addToast('Target price updated', 'success');
+                                  fetchSavedProducts();
+                                }
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
                       {product.rating && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                           <span className={`star-rating-badge ${product.rating >= 4 ? 'high' : product.rating >= 3 ? 'medium' : 'low'}`}>
@@ -353,11 +506,24 @@ function App() {
                         </div>
                       )}
 
+                      {/* Line Chart */}
+                      {showCharts[product.id] && (
+                        <SVGLineChart history={product.priceHistory || [{ price: product.price, date: 'Now' }]} />
+                      )}
+
                       <div className="card-footer">
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {product.searchQuery}
                         </span>
                         <div className="card-actions">
+                          <button 
+                            className="btn-icon" 
+                            style={{ color: showCharts[product.id] ? 'var(--accent-primary)' : 'var(--text-muted)' }}
+                            onClick={() => setShowCharts(prev => ({ ...prev, [product.id]: !prev[product.id] }))}
+                            title="Toggle Price History Chart"
+                          >
+                            <LineChart size={18} />
+                          </button>
                           {product.productLink && (
                             <a 
                               href={product.productLink} 
@@ -385,6 +551,10 @@ function App() {
               </div>
             )}
           </div>
+        )}
+
+        {currentView === 'cart' && (
+          <CartOptimizer userLocation={userLocation} addToast={addToast} />
         )}
 
         {currentView === 'insights' && (
