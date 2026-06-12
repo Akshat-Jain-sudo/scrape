@@ -135,10 +135,10 @@ function InsightHub({ savedProducts }) {
           <p>Scrape and save comparative products to compile analytics metrics.</p>
         </div>
       ) : (
-        <div className="insights-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
+        <div className="insights-row" style={{ marginTop: '1.5rem' }}>
           
           {/* Store Catalog Distribution */}
-          <div className="glass-card" style={{ gridColumn: 'span 2' }}>
+          <div className="glass-card insights-card-wide">
             <h3 className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               Products Saved by Store Source
               <ShoppingCart size={18} style={{ color: 'var(--accent-primary)' }} />
@@ -256,7 +256,7 @@ function InsightHub({ savedProducts }) {
           </div>
 
           {/* Top Deals / Best Discounts */}
-          <div className="glass-card" style={{ gridColumn: 'span 2' }}>
+          <div className="glass-card insights-card-wide">
             <h3 className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               Top Saved Discount Deals
               <Tag size={18} style={{ color: 'var(--success)' }} />

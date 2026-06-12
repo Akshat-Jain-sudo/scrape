@@ -92,6 +92,7 @@ function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userLocation, setUserLocation] = useState('Mumbai');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'cyberpunk');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Apply theme class to document body
   useEffect(() => {
@@ -257,6 +258,35 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Mobile Top Header */}
+      <header className="mobile-header">
+        <button 
+          className="menu-toggle-btn" 
+          onClick={() => setSidebarOpen(true)} 
+          aria-label="Toggle Sidebar"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+          </svg>
+        </button>
+        <div className="mobile-logo">
+          <div className="logo-icon" style={{ padding: '0.45rem', borderRadius: '8px', boxShadow: 'none', animation: 'none' }}>
+            <ShoppingCart size={16} />
+          </div>
+          <span className="logo-text" style={{ fontSize: '1.15rem' }}>FlipScrape</span>
+        </div>
+        <button className="theme-toggle-btn" onClick={toggleTheme} title="Switch Theme">
+          <Palette size={16} />
+        </button>
+      </header>
+
+      {/* Sidebar Backdrop Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>
+      )}
+
       {/* Toast Notifications */}
       <div className="toast-container">
         {toasts.map(toast => (
@@ -273,7 +303,7 @@ function App() {
       </div>
 
       {/* Sidebar Navigation */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="logo-section">
           <div className="logo-icon">
             <ShoppingCart size={24} />
@@ -284,28 +314,28 @@ function App() {
         <ul className="nav-links">
           <li 
             className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setCurrentView('dashboard')}
+            onClick={() => { setCurrentView('dashboard'); setSidebarOpen(false); }}
           >
             <LayoutDashboard />
             <span>Dashboard</span>
           </li>
           <li 
             className={`nav-item ${currentView === 'scraper' ? 'active' : ''}`}
-            onClick={() => setCurrentView('scraper')}
+            onClick={() => { setCurrentView('scraper'); setSidebarOpen(false); }}
           >
             <Terminal />
             <span>Scrape Console</span>
           </li>
           <li 
             className={`nav-item ${currentView === 'cart' ? 'active' : ''}`}
-            onClick={() => setCurrentView('cart')}
+            onClick={() => { setCurrentView('cart'); setSidebarOpen(false); }}
           >
             <ShoppingBag />
             <span>Cart Optimizer</span>
           </li>
           <li 
             className={`nav-item ${currentView === 'archive' ? 'active' : ''}`}
-            onClick={() => setCurrentView('archive')}
+            onClick={() => { setCurrentView('archive'); setSidebarOpen(false); }}
           >
             <Archive />
             <span>Saved Products</span>
@@ -320,7 +350,7 @@ function App() {
           </li>
           <li 
             className={`nav-item ${currentView === 'insights' ? 'active' : ''}`}
-            onClick={() => setCurrentView('insights')}
+            onClick={() => { setCurrentView('insights'); setSidebarOpen(false); }}
           >
             <BarChart3 />
             <span>Analytics</span>

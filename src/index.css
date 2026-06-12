@@ -1336,4 +1336,259 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-size: 0.75rem !important;
 }
 
+/* ==========================================
+   MOBILE & RESPONSIVE COMPATIBILITY STYLES
+   ========================================== */
 
+/* Mobile Top Header (Hidden on Desktop) */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border-bottom: var(--glass-border);
+  padding: 0 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1500; /* above sidebar overlay backdrop */
+}
+
+.menu-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all var(--transition-fast);
+}
+
+.menu-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Sidebar Backdrop Overlay */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1400;
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive Sidebar & App layout container */
+@media (max-width: 1024px) {
+  .mobile-header {
+    display: flex;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1600; /* above backdrop */
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding: 5.5rem 1.25rem 2.5rem !important; /* Top padding clears the fixed 60px header */
+  }
+}
+
+/* Category Tab Subtexts Hiding */
+@media (max-width: 768px) {
+  .tab-subtext {
+    display: none !important;
+  }
+  
+  .category-tabs {
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .category-tab {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+  }
+}
+
+/* Insights Hub Responsive Cards Class */
+.insights-card-wide {
+  grid-column: span 1;
+}
+
+@media (min-width: 900px) {
+  .insights-card-wide {
+    grid-column: span 2;
+  }
+}
+
+/* Stats Cards Grid Adjustments on Small Screens */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+  }
+  
+  .stat-card {
+    padding: 1rem 0.75rem !important;
+    gap: 0.5rem !important;
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+  
+  .stat-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 10px !important;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem !important;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Comparison Store Grid Rows (.comp-store-row) mobile wrapping */
+@media (max-width: 600px) {
+  .comp-store-row {
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 0.5rem 1rem !important;
+    align-items: center !important;
+    padding: 0.75rem !important;
+  }
+  
+  /* Badge details & restaurant info on top-left */
+  .comp-store-row > div:nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+  
+  /* Current/original prices on top-right */
+  .comp-store-row > div:nth-child(2) {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    text-align: right !important;
+  }
+  
+  /* Delivery details on bottom-left */
+  .comp-store-row > div:nth-child(3) {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+  
+  /* Buy action button on bottom-right */
+  .comp-store-row > div:nth-child(4) {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    text-align: right !important;
+  }
+  
+  .btn-store-go {
+    padding: 0.25rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Search Hero & Box Adjustments on Mobile */
+@media (max-width: 600px) {
+  .search-hero {
+    padding: 1.5rem 1rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+  
+  .search-hero h2 {
+    font-size: 1.35rem !important;
+  }
+  
+  .search-hero p {
+    font-size: 0.8rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-box {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  .search-box .console-input,
+  .search-box .btn {
+    width: 100% !important;
+  }
+}
+
+/* Cheapest Cart Optimizer Highlight Card mobile wrapping */
+@media (max-width: 600px) {
+  .cart-cheapest-highlight {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+  }
+  
+  .cart-cheapest-highlight > div:nth-child(2) {
+    align-self: flex-end !important;
+    text-align: right !important;
+  }
+}
+
+/* Item lists max-width clipping in Cart Optimizer */
+.cart-store-item-name {
+  max-width: 135px !important;
+}
+
+@media (min-width: 480px) {
+  .cart-store-item-name {
+    max-width: 180px !important;
+  }
+}
+
+/* Table paddings reduction on mobile screen sizes */
+@media (max-width: 600px) {
+  .product-table th, 
+  .product-table td {
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+  
+  .product-table .product-name-cell {
+    max-width: 150px !important;
+  }
+  
+  .view-header {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .view-title h1 {
+    font-size: 1.5rem !important;
+  }
+}

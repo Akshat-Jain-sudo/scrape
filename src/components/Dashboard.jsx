@@ -101,7 +101,7 @@ function SpeedCostMatrix({ comparisonData }) {
         <Zap size={12} color="var(--accent-primary)" /> Speed vs. Cost Tradeoff
       </h4>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <svg width={width} height={height} style={{ maxWidth: '100%' }}>
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="auto" style={{ maxWidth: '100%', display: 'block' }}>
           <text x={width / 2} y={height - 5} fill="var(--text-muted)" fontSize="8" textAnchor="middle">⏳ Delivery Time (Faster →)</text>
           <text x={10} y={height / 2} fill="var(--text-muted)" fontSize="8" textAnchor="middle" transform={`rotate(-90 10 ${height/2})`}>₹ Cost (Cheaper ↑)</text>
           
@@ -506,21 +506,21 @@ function Dashboard({
           onClick={() => { setActiveCategory('ecommerce'); setCustomComp(null); }}
         >
           <ShoppingBag size={16} />
-          <span>E-Commerce (Amazon, Flipkart, Meesho, AJIO, Walmart, Nykaa & more)</span>
+          <span>E-Commerce <span className="tab-subtext">(Amazon, Flipkart, Meesho, AJIO, Walmart, Nykaa & more)</span></span>
         </button>
         <button 
           className={`category-tab ${activeCategory === 'quickcommerce' ? 'active' : ''}`}
           onClick={() => { setActiveCategory('quickcommerce'); setCustomComp(null); }}
         >
           <Zap size={16} />
-          <span>Quick Commerce (Blinkit, Zepto, Swiggy Instamart, BigBasket, Dunzo & more)</span>
+          <span>Quick Commerce <span className="tab-subtext">(Blinkit, Zepto, Swiggy Instamart, BigBasket, Dunzo & more)</span></span>
         </button>
         <button 
           className={`category-tab ${activeCategory === 'food' ? 'active' : ''}`}
           onClick={() => { setActiveCategory('food'); setCustomComp(null); }}
         >
           <Utensils size={16} />
-          <span>Food Delivery (Zomato & Swiggy)</span>
+          <span>Food Delivery <span className="tab-subtext">(Zomato & Swiggy)</span></span>
         </button>
       </div>
 
