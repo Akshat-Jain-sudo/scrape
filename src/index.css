@@ -804,6 +804,29 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .store-badge-aliexpress { background: #e62e04; color: #fff; }
 .store-badge-walmart { background: #0071ce; color: #fff; }
 .store-badge-croma { background: #017872; color: #fff; }
+.store-badge-reliance { background: #e41a22; color: #fff; }
+.store-badge-samsung { background: #0f4c81; color: #fff; }
+.store-badge-vijaysales { background: #d32f2f; color: #fff; }
+.store-badge-hp { background: #0096d6; color: #fff; }
+.store-badge-oneplus { background: #eb0028; color: #fff; }
+.store-badge-lenovo { background: #e1251b; color: #fff; }
+.store-badge-lg { background: #a50034; color: #fff; }
+.store-badge-dailyobjects { background: #1a1a1a; color: #fff; border: 1px solid #333; }
+.store-badge-headphones { background: #000000; color: #fff; border: 1px solid #222; }
+.store-badge-apple { background: #555555; color: #fff; }
+.store-badge-puma { background: #ba0c2f; color: #fff; }
+.store-badge-lenskart { background: #000066; color: #fff; }
+.store-badge-zara { background: #000000; color: #fff; }
+.store-badge-tanishq { background: #8c7355; color: #fff; }
+.store-badge-pantaloons { background: #0082c9; color: #fff; }
+.store-badge-adidas { background: #000000; color: #fff; }
+.store-badge-maxfashion { background: #005691; color: #fff; }
+.store-badge-bewakoof { background: #fdd835; color: #000; }
+.store-badge-chumbak { background: #00b0b9; color: #fff; }
+.store-badge-joyalukkas { background: #8b1e0f; color: #fff; }
+.store-badge-snitch { background: #1a1a1a; color: #fff; border: 1px solid #333; }
+.store-badge-cultstore { background: #fe5b24; color: #fff; }
+.store-badge-vishalmegamart { background: #003399; color: #fff; }
 .store-badge-blinkit { background: #dca306; color: #000; }
 .store-badge-instamart { background: #c25303; color: #fff; }
 .store-badge-zepto { background: #40186b; color: #fff; }

@@ -267,12 +267,20 @@ export function getEstimatedBasePrice(query, category = 'ecommerce') {
   const q = query.toLowerCase();
   
   // 1. Precise overrides for trending products
-  if (q.includes('iphone 16')) return 67900;
-  if (q.includes('airpods pro')) return 18900;
+  if (q.includes('iphone 16') || q.includes('apple watch') || q.includes('macbook')) return 67900;
+  if (q.includes('airpods pro') || q.includes('headphone') || q.includes('earphone')) return 18900;
   if (q.includes('macbook air m3')) return 114900;
   if (q.includes('nike air max') || q.includes('nike shoes') || q.includes('nike shoe')) return 7999;
   if (q.includes('adidas hoodie') || q.includes('adidas originals') || q.includes('adidas')) return 3499;
   if (q.includes('levis 511') || q.includes('levis jeans') || q.includes('levis jean')) return 1699;
+  if (q.includes('samsung s24') || q.includes('samsung ultra')) return 79999;
+  if (q.includes('hp laptop') || q.includes('hp pavilion')) return 58999;
+  if (q.includes('lenovo thinkpad') || q.includes('lenovo yoga')) return 62999;
+  if (q.includes('lg tv') || q.includes('lg oled')) return 45999;
+  if (q.includes('puma sneaker') || q.includes('puma running')) return 4499;
+  if (q.includes('lenskart sunglasses') || q.includes('lenskart glasses')) return 1999;
+  if (q.includes('zara jacket') || q.includes('zara dress')) return 3999;
+  if (q.includes('tanishq gold') || q.includes('tanishq ring')) return 25000;
   
   if (q.includes('amul butter') || q.includes('butter 500g') || q.includes('butter')) return 275;
   if (q.includes('coke') || q.includes('coca-cola') || q.includes('coca cola')) return 100;
@@ -302,7 +310,7 @@ export function getEstimatedBasePrice(query, category = 'ecommerce') {
     return 200;
   }
   
-  const isFashionQuery = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt'].some(kw => q.includes(kw));
+  const isFashionQuery = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt', 'apparel', 'perfume'].some(kw => q.includes(kw));
   if (isFashionQuery) return 2400;
 
   if (['phone', 'mobile'].some(k => q.includes(k))) return 24999;
@@ -337,6 +345,29 @@ export const STORE_NAMES = {
   aliexpress: 'AliExpress',
   walmart: 'Walmart',
   croma: 'Croma',
+  reliance: 'Reliance Digital',
+  samsung: 'Samsung Store',
+  vijaysales: 'Vijay Sales',
+  hp: 'HP World',
+  oneplus: 'OnePlus Store',
+  lenovo: 'Lenovo Store',
+  lg: 'LG Brand Store',
+  dailyobjects: 'Daily Objects',
+  headphones: 'Headphone Zone',
+  apple: 'Apple Store',
+  puma: 'Puma',
+  lenskart: 'Lenskart',
+  zara: 'Zara',
+  tanishq: 'Tanishq',
+  pantaloons: 'Pantaloons',
+  adidas: 'Adidas Store',
+  maxfashion: 'Max Fashion',
+  bewakoof: 'Bewakoof',
+  chumbak: 'Chumbak',
+  joyalukkas: 'Joyalukkas',
+  snitch: 'Snitch',
+  cultstore: 'Cultsport',
+  vishalmegamart: 'Vishal Mega Mart',
   blinkit: 'Blinkit',
   zepto: 'Zepto',
   instamart: 'Swiggy Instamart',
@@ -388,6 +419,29 @@ export function getStoreLink(store, query) {
     case 'aliexpress': return `https://www.aliexpress.com/w/wholesale-${q}.html`;
     case 'walmart': return `https://www.walmart.com/search?q=${q}`;
     case 'croma': return `https://www.croma.com/searchB?q=${q}`;
+    case 'reliance': return `https://www.reliancedigital.in/search?q=${q}`;
+    case 'samsung': return `https://www.samsung.com/in/search/?searchvalue=${q}`;
+    case 'vijaysales': return `https://www.vijaysales.com/search/${q}`;
+    case 'hp': return `https://www.hp.com/in-en/shop/catalogsearch/result/?q=${q}`;
+    case 'oneplus': return `https://www.oneplus.in/search?q=${q}`;
+    case 'lenovo': return `https://www.lenovo.com/in/en/search?fq=&q=${q}`;
+    case 'lg': return `https://www.lg.com/in/search?search=${q}`;
+    case 'dailyobjects': return `https://www.dailyobjects.com/search?q=${q}`;
+    case 'headphones': return `https://www.headphonezone.in/search?q=${q}`;
+    case 'apple': return `https://www.apple.com/in/search/${q}`;
+    case 'puma': return `https://in.puma.com/in/en/search?q=${q}`;
+    case 'lenskart': return `https://www.lenskart.com/search?q=${q}`;
+    case 'zara': return `https://www.zara.com/in/en/search?searchTerm=${q}`;
+    case 'tanishq': return `https://www.tanishq.co.in/search?q=${q}`;
+    case 'pantaloons': return `https://www.pantaloons.com/search?q=${q}`;
+    case 'adidas': return `https://www.adidas.co.in/search?q=${q}`;
+    case 'maxfashion': return `https://www.maxfashion.in/in/en/search?q=${q}`;
+    case 'bewakoof': return `https://www.bewakoof.com/search/${q}`;
+    case 'chumbak': return `https://www.chumbak.com/search?q=${q}`;
+    case 'joyalukkas': return `https://www.joyalukkas.in/catalogsearch/result/?q=${q}`;
+    case 'snitch': return `https://www.snitch.co.in/search?q=${q}`;
+    case 'cultstore': return `https://cult.sport/search?q=${q}`;
+    case 'vishalmegamart': return `https://www.vishalmegamart.com/search?q=${q}`;
     
     // Quick commerce
     case 'blinkit': return `https://blinkit.com/s/?q=${q}`;
@@ -639,15 +693,16 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     const q = query.toLowerCase();
     
     // Categorize query
-    const isFashion = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt', 'apparel', 'jeans', 't-shirt', 'wear'].some(kw => q.includes(kw));
+    const isFashion = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt', 'apparel', 'jeans', 't-shirt', 'wear', 'pantaloons', 'max', 'bewakoof', 'zara', 'puma', 'adidas', 'snitch', 'cult'].some(kw => q.includes(kw));
     const isBooks = ['book', 'novel', 'biography', 'comic', 'fiction', 'read', 'literature'].some(kw => q.includes(kw));
     const isBeauty = ['nykaa', 'lipstick', 'makeup', 'cream', 'shampoo', 'perfume', 'beauty', 'cosmetics', 'serum', 'lotion'].some(kw => q.includes(kw));
     const isBaby = ['firstcry', 'baby', 'toy', 'diaper', 'infant', 'kid', 'maternity'].some(kw => q.includes(kw));
     const isFurniture = ['pepperfry', 'furniture', 'sofa', 'chair', 'table', 'bed', 'decor', 'etsy', 'handicraft'].some(kw => q.includes(kw));
     const isWholesale = ['indiamart', 'alibaba', 'aliexpress', 'wholesale', 'bulk'].some(kw => q.includes(kw));
+    const isJewelry = ['gold', 'diamond', 'jewel', 'ring', 'necklace', 'tanishq', 'joyalukkas', 'ornament'].some(kw => q.includes(kw));
 
     if (isFashion) {
-      targetStores = ['myntra', 'ajio', 'flipkart', 'nykaafashion', 'meesho', 'amazon'];
+      targetStores = ['myntra', 'ajio', 'flipkart', 'nykaafashion', 'meesho', 'amazon', 'zara', 'puma', 'adidas', 'pantaloons', 'maxfashion', 'bewakoof', 'snitch', 'cultstore'];
     } else if (isBooks) {
       targetStores = ['bookswagon', 'amazon', 'ebay', 'flipkart'];
     } else if (isBeauty) {
@@ -655,12 +710,19 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     } else if (isBaby) {
       targetStores = ['firstcry', 'amazon', 'flipkart', 'meesho'];
     } else if (isFurniture) {
-      targetStores = ['pepperfry', 'etsy', 'amazon', 'ebay'];
+      targetStores = ['pepperfry', 'etsy', 'amazon', 'ebay', 'chumbak'];
     } else if (isWholesale) {
       targetStores = ['indiamart', 'alibaba', 'aliexpress'];
+    } else if (isJewelry) {
+      targetStores = ['tanishq', 'joyalukkas', 'etsy', 'amazon', 'flipkart'];
     } else {
-      // General Electronics / Retail
-      targetStores = ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'walmart'];
+      // General Electronics / Retail / Brand Store defaults
+      const isTech = ['phone', 'mobile', 'samsung', 'apple', 'oneplus', 'hp', 'lenovo', 'lg', 'laptop', 'television', 'tv', 'croma', 'reliance', 'vijay', 'headphone', 'earphone'].some(kw => q.includes(kw));
+      if (isTech) {
+        targetStores = ['amazon', 'flipkart', 'croma', 'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'lg', 'headphones', 'dailyobjects', 'lenskart'];
+      } else {
+        targetStores = ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'walmart', 'vishalmegamart', 'shopclues', 'etsy'];
+      }
     }
 
     // Call actual scrapers if their stores are in the target list

@@ -34,6 +34,29 @@ const STORE_NAMES = {
   aliexpress: 'AliExpress',
   walmart: 'Walmart',
   croma: 'Croma',
+  reliance: 'Reliance Digital',
+  samsung: 'Samsung Store',
+  vijaysales: 'Vijay Sales',
+  hp: 'HP World',
+  oneplus: 'OnePlus Store',
+  lenovo: 'Lenovo Store',
+  lg: 'LG Brand Store',
+  dailyobjects: 'Daily Objects',
+  headphones: 'Headphone Zone',
+  apple: 'Apple Store',
+  puma: 'Puma',
+  lenskart: 'Lenskart',
+  zara: 'Zara',
+  tanishq: 'Tanishq',
+  pantaloons: 'Pantaloons',
+  adidas: 'Adidas Store',
+  maxfashion: 'Max Fashion',
+  bewakoof: 'Bewakoof',
+  chumbak: 'Chumbak',
+  joyalukkas: 'Joyalukkas',
+  snitch: 'Snitch',
+  cultstore: 'Cultsport',
+  vishalmegamart: 'Vishal Mega Mart',
   blinkit: 'Blinkit',
   zepto: 'Zepto',
   instamart: 'Swiggy Instamart',
@@ -48,7 +71,7 @@ const STORE_NAMES = {
   swiggy: 'Swiggy'
 };
 
-function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation }) {
+function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, onAddToCart }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('ecommerce');
   const [source, setSource] = useState('all');
@@ -249,7 +272,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation }
               >
                 {category === 'ecommerce' && (
                   <>
-                    <option value="all">All E-Commerce (20 Stores)</option>
+                    <option value="all">All E-Commerce (43 Stores)</option>
                     <option value="amazon">Amazon India</option>
                     <option value="flipkart">Flipkart</option>
                     <option value="meesho">Meesho</option>
@@ -271,6 +294,29 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation }
                     <option value="aliexpress">AliExpress</option>
                     <option value="walmart">Walmart</option>
                     <option value="croma">Croma</option>
+                    <option value="reliance">Reliance Digital</option>
+                    <option value="samsung">Samsung Store</option>
+                    <option value="vijaysales">Vijay Sales</option>
+                    <option value="hp">HP World</option>
+                    <option value="oneplus">OnePlus Store</option>
+                    <option value="lenovo">Lenovo Store</option>
+                    <option value="lg">LG Brand Store</option>
+                    <option value="dailyobjects">Daily Objects</option>
+                    <option value="headphones">Headphone Zone</option>
+                    <option value="apple">Apple Store</option>
+                    <option value="puma">Puma</option>
+                    <option value="lenskart">Lenskart</option>
+                    <option value="zara">Zara</option>
+                    <option value="tanishq">Tanishq</option>
+                    <option value="pantaloons">Pantaloons</option>
+                    <option value="adidas">Adidas Store</option>
+                    <option value="maxfashion">Max Fashion</option>
+                    <option value="bewakoof">Bewakoof</option>
+                    <option value="chumbak">Chumbak</option>
+                    <option value="joyalukkas">Joyalukkas</option>
+                    <option value="snitch">Snitch</option>
+                    <option value="cultstore">Cultsport</option>
+                    <option value="vishalmegamart">Vishal Mega Mart</option>
                   </>
                 )}
                 {category === 'quickcommerce' && (
@@ -405,7 +451,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation }
                         <th>Price</th>
                         <th>Discount</th>
                         <th>Rating</th>
-                        <th>Link</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -457,11 +503,23 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation }
                             )}
                           </td>
                           <td>
-                            {product.productLink ? (
-                              <a href={product.productLink} target="_blank" rel="noopener noreferrer" className="btn-icon" style={{ padding: '0.3rem' }}>
-                                <ExternalLink size={13} />
-                              </a>
-                            ) : '-'}
+                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                              {product.productLink ? (
+                                <a href={product.productLink} target="_blank" rel="noopener noreferrer" className="btn-icon" style={{ padding: '0.3rem' }} title="View on Store">
+                                  <ExternalLink size={13} />
+                                </a>
+                              ) : null}
+                              {onAddToCart && (
+                                <button 
+                                  className="btn-icon" 
+                                  onClick={() => onAddToCart(product.name)}
+                                  style={{ padding: '0.3rem', color: 'var(--accent-blue)' }}
+                                  title="Add to Cart Optimizer"
+                                >
+                                  <ShoppingCart size={13} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

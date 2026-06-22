@@ -37,6 +37,29 @@ const STORE_NAMES = {
   aliexpress: 'AliExpress',
   walmart: 'Walmart',
   croma: 'Croma',
+  reliance: 'Reliance Digital',
+  samsung: 'Samsung Store',
+  vijaysales: 'Vijay Sales',
+  hp: 'HP World',
+  oneplus: 'OnePlus Store',
+  lenovo: 'Lenovo Store',
+  lg: 'LG Brand Store',
+  dailyobjects: 'Daily Objects',
+  headphones: 'Headphone Zone',
+  apple: 'Apple Store',
+  puma: 'Puma',
+  lenskart: 'Lenskart',
+  zara: 'Zara',
+  tanishq: 'Tanishq',
+  pantaloons: 'Pantaloons',
+  adidas: 'Adidas Store',
+  maxfashion: 'Max Fashion',
+  bewakoof: 'Bewakoof',
+  chumbak: 'Chumbak',
+  joyalukkas: 'Joyalukkas',
+  snitch: 'Snitch',
+  cultstore: 'Cultsport',
+  vishalmegamart: 'Vishal Mega Mart',
   blinkit: 'Blinkit',
   zepto: 'Zepto',
   instamart: 'Swiggy Instamart',
@@ -158,7 +181,7 @@ function SpeedCostMatrix({ comparisonData }) {
 }
 
 // Sub-component to manage real-time comparison for a single product card in the feed
-function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, userLocation }) {
+function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, userLocation, onAddToCart }) {
   const [loading, setLoading] = useState(true);
   const [compData, setCompData] = useState(null);
   const [error, setError] = useState(null);
@@ -257,14 +280,26 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
               {compData?.productName || item.name}
             </h3>
             {!loading && !error && (
-              <button 
-                className="btn-icon" 
-                onClick={handleSave} 
-                title="Save comparison to library"
-                style={{ color: 'var(--accent-primary)', padding: '0.25rem' }}
-              >
-                <Bookmark size={18} />
-              </button>
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                {onAddToCart && (
+                  <button 
+                    className="btn-icon" 
+                    onClick={() => onAddToCart(compData?.productName || item.name)} 
+                    title="Add to Cart Optimizer"
+                    style={{ color: 'var(--accent-blue)', padding: '0.25rem' }}
+                  >
+                    <ShoppingCart size={18} />
+                  </button>
+                )}
+                <button 
+                  className="btn-icon" 
+                  onClick={handleSave} 
+                  title="Save comparison to library"
+                  style={{ color: 'var(--accent-primary)', padding: '0.25rem' }}
+                >
+                  <Bookmark size={18} />
+                </button>
+              </div>
             )}
           </div>
           
@@ -383,7 +418,8 @@ function Dashboard({
   addToast, 
   userLocation, 
   setUserLocation, 
-  detectLocation
+  detectLocation,
+  onAddToCart
 }) {
   const [activeCategory, setActiveCategory] = useState('ecommerce');
   const [trendingDeals, setTrendingDeals] = useState(null);
@@ -529,7 +565,7 @@ function Dashboard({
         <h2>🔍 Search & Compare Any Product</h2>
         <p>
           Compare price indicators in real-time on: 
-          {activeCategory === 'ecommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Amazon, Flipkart, Meesho, Snapdeal, JioMart, Tata CLiQ, Myntra, AJIO, Nykaa, Nykaa Fashion, FirstCry, Pepperfry, Bookswagon, eBay, Etsy, Alibaba, AliExpress, Walmart, Croma</strong>}
+          {activeCategory === 'ecommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Amazon, Flipkart, Meesho, Snapdeal, JioMart, Tata CLiQ, Myntra, AJIO, Nykaa, Nykaa Fashion, FirstCry, Pepperfry, Bookswagon, eBay, Etsy, Alibaba, AliExpress, Walmart, Croma, Reliance, Samsung, Vijay Sales, HP, OnePlus, Lenovo, LG, Daily Objects, Headphone Zone, Apple, Puma, Lenskart, Zara, Tanishq, Pantaloons, Adidas, Max Fashion, Bewakoof, Chumbak, Joyalukkas, Snitch, Cultsport, Vishal Mega Mart</strong>}
           {activeCategory === 'quickcommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Blinkit, Zepto, Swiggy Instamart, BigBasket Now, Flipkart Minutes, Amazon Fresh, JioMart Express, BB Daily, Dunzo, Country Delight</strong>}
           {activeCategory === 'food' && <strong style={{ color: 'var(--accent-primary)' }}> Zomato, Swiggy</strong>}
         </p>
@@ -576,6 +612,7 @@ function Dashboard({
             onSaveComparison={handleSaveComparison}
             savedProducts={savedProducts}
             userLocation={userLocation}
+            onAddToCart={onAddToCart}
           />
         </div>
       )}
@@ -618,6 +655,7 @@ function Dashboard({
                 onSaveComparison={handleSaveComparison}
                 savedProducts={savedProducts}
                 userLocation={userLocation}
+                onAddToCart={onAddToCart}
               />
             ))}
           </div>

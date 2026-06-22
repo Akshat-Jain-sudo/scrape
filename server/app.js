@@ -187,7 +187,11 @@ app.post('/api/scrape', async (req, res) => {
       const simulatedEcommerceStores = [
         'amazon', 'meesho', 'jiomart', 'tatacliq', 'shopclues', 'indiamart',
         'myntra', 'ajio', 'nykaa', 'nykaafashion', 'firstcry', 'pepperfry',
-        'bookswagon', 'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'croma'
+        'bookswagon', 'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'croma',
+        'reliance', 'samsung', 'vijaysales', 'hp', 'oneplus', 'lenovo', 'lg',
+        'dailyobjects', 'headphones', 'apple', 'puma', 'lenskart', 'zara',
+        'tanishq', 'pantaloons', 'adidas', 'maxfashion', 'bewakoof', 'chumbak',
+        'joyalukkas', 'snitch', 'cultstore', 'vishalmegamart'
       ];
 
       for (const store of simulatedEcommerceStores) {

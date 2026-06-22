@@ -123,6 +123,27 @@ function App() {
     }, 3000);
   }, []);
 
+  // Add item to Cart Optimizer list in localStorage
+  const handleAddToCart = useCallback((itemName) => {
+    try {
+      const saved = localStorage.getItem('optimize_cart_items');
+      let currentItems = saved ? JSON.parse(saved) : [];
+      const cleaned = itemName.trim();
+      if (!cleaned) return;
+      
+      if (!currentItems.includes(cleaned)) {
+        currentItems.push(cleaned);
+        localStorage.setItem('optimize_cart_items', JSON.stringify(currentItems));
+        addToast(`"${cleaned}" added to Cart Optimizer ✓`, 'success');
+      } else {
+        addToast(`"${cleaned}" is already in Cart Optimizer`, 'info');
+      }
+    } catch (e) {
+      console.error(e);
+      addToast('Failed to add item to Cart', 'error');
+    }
+  }, [addToast]);
+
   // Geolocation detector
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -388,6 +409,7 @@ function App() {
             userLocation={userLocation}
             setUserLocation={setUserLocation}
             detectLocation={detectLocation}
+            onAddToCart={handleAddToCart}
           />
         )}
         
@@ -397,6 +419,7 @@ function App() {
             onSaveProducts={handleSaveProducts}
             addToast={addToast}
             userLocation={userLocation}
+            onAddToCart={handleAddToCart}
           />
         )}
 
@@ -553,6 +576,14 @@ function App() {
                             title="Toggle Price History Chart"
                           >
                             <LineChart size={18} />
+                          </button>
+                          <button 
+                            className="btn-icon" 
+                            style={{ color: 'var(--accent-blue)' }}
+                            onClick={() => handleAddToCart(product.name)}
+                            title="Add to Cart Optimizer"
+                          >
+                            <ShoppingCart size={18} />
                           </button>
                           {product.productLink && (
                             <a 
