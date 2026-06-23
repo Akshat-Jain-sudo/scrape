@@ -339,7 +339,7 @@ export const STORE_NAMES = {
   firstcry: 'FirstCry',
   pepperfry: 'Pepperfry',
   bookswagon: 'Bookswagon',
-  ebay: 'eBay',
+  ebay: 'eBay India',
   etsy: 'Etsy',
   alibaba: 'Alibaba',
   aliexpress: 'AliExpress',
@@ -368,6 +368,212 @@ export const STORE_NAMES = {
   snitch: 'Snitch',
   cultstore: 'Cultsport',
   vishalmegamart: 'Vishal Mega Mart',
+
+  // General E-Commerce
+  shopsy: 'Shopsy',
+  paytmmall: 'Paytm Mall',
+  dealshare: 'DealShare',
+  citymall: 'CityMall',
+  udaan: 'Udaan',
+  ondc: 'ONDC',
+
+  // Fashion & Lifestyle Marketplaces
+  tatacliq_luxury: 'Tata CLiQ Luxury',
+  nnnow: 'Nnnow',
+  lifestylestores: 'Lifestyle Stores',
+  shoppersstop: 'Shoppers Stop',
+  westside: 'Westside',
+  zudio: 'Zudio',
+  azorte: 'Azorte',
+  reliancetrends: 'Reliance Trends',
+  yousta: 'Yousta',
+  centro: 'Centro',
+
+  // D2C Fashion & Apparel
+  souledstore: 'The Souled Store',
+  rarerabbit: 'Rare Rabbit',
+  bombayshirt: 'Bombay Shirt Company',
+  powerlook: 'Powerlook',
+  beyoung: 'Beyoung',
+  redwolf: 'Redwolf',
+  campussutra: 'Campus Sutra',
+  hubberholme: 'Hubberholme',
+  mufti: 'Mufti',
+  spykar: 'Spykar',
+  killerjeans: 'Killer Jeans',
+  flyingmachine: 'Flying Machine',
+  roadster: 'Roadster',
+  highlander: 'Highlander',
+  tokyotalkies: 'Tokyo Talkies',
+  mastandharbour: 'Mast & Harbour',
+  urbanic: 'Urbanic',
+  redtape: 'Red Tape',
+
+  // International Fashion Brands
+  hm: 'H&M India',
+  uniqlo: 'Uniqlo India',
+  marksandspencer: 'Marks & Spencer India',
+  levis: 'Levi\'s India',
+  benetton: 'United Colors of Benetton',
+  tommyhilfiger: 'Tommy Hilfiger India',
+  calvinklein: 'Calvin Klein India',
+  uspoloassn: 'US Polo Assn India',
+  forever21: 'Forever 21 India',
+  jackjones: 'Jack & Jones India',
+  only: 'Only India',
+  veromoda: 'Vero Moda India',
+  superdry: 'Superdry India',
+  gasjeans: 'Gas Jeans India',
+
+  // Ethnic Wear
+  fabindia: 'Fabindia',
+  manyavar: 'Manyavar',
+  mohey: 'Mohey',
+  wforwoman: 'W for Woman',
+  aurelia: 'Aurelia',
+  biba: 'Biba',
+  globaldesi: 'Global Desi',
+  houseofindya: 'House of Indya',
+  libas: 'Libas',
+  soch: 'Soch',
+  meenabazaar: 'Meena Bazaar',
+  nallisilks: 'Nalli Silks',
+  karagiri: 'Karagiri',
+  suta: 'Suta',
+  kalkifashion: 'Kalki Fashion',
+
+  // Footwear
+  bata: 'Bata India',
+  metroshoes: 'Metro Shoes',
+  mochishoes: 'Mochi Shoes',
+  libertyshoes: 'Liberty Shoes',
+  khadims: 'Khadim\'s',
+  paragon: 'Paragon',
+  campusshoes: 'Campus Shoes',
+  relaxo: 'Sparx / Relaxo',
+  woodland: 'Woodland India',
+  crocs: 'Crocs India',
+  skechers: 'Skechers India',
+  nike: 'Nike India',
+  reebok: 'Reebok India',
+
+  // Electronics & Appliances
+  sony: 'Sony India',
+  xiaomi: 'Xiaomi India',
+  realme: 'Realme India',
+  vivo: 'Vivo India',
+  oppo: 'Oppo India',
+  motorola: 'Motorola India',
+  dell: 'Dell India',
+  asus: 'Asus India',
+  acer: 'Acer India',
+  whirlpool: 'Whirlpool India',
+  godrej: 'Godrej Appliances',
+  haier: 'Haier India',
+  voltas: 'Voltas',
+  bluestar: 'Blue Star',
+
+  // Retailers & Audio
+  boat: 'boAt Lifestyle',
+  noise: 'Noise',
+  boult: 'Boult Audio',
+  mivi: 'Mivi',
+  fireboltt: 'Fire-Boltt',
+  zebronics: 'Zebronics',
+  portronics: 'Portronics',
+  jbl: 'JBL India',
+  anker: 'Anker India',
+  sennheiser: 'Sennheiser India',
+  ambrane: 'Ambrane',
+  leafstudios: 'Leaf Studios',
+
+  // Jewelry
+  caratlane: 'CaratLane',
+  bluestone: 'BlueStone',
+  giva: 'GIVA',
+  melorra: 'Melorra',
+  miabytanishq: 'Mia by Tanishq',
+  kalyanjewellers: 'Kalyan Jewellers',
+  malabargold: 'Malabar Gold & Diamonds',
+  sencogold: 'Senco Gold & Diamonds',
+  pcjeweller: 'PC Jeweller',
+  voylla: 'Voylla',
+  orrajewellery: 'Orra Jewellery',
+  candere: 'Candere by Kalyan Jewellers',
+  kushals: 'Kushal\'s Fashion Jewellery',
+
+  // Watches & Accessories
+  titan: 'Titan',
+  fastrack: 'Fastrack',
+  sonata: 'Sonata',
+  casio: 'Casio India',
+  fossil: 'Fossil India',
+  danielwellington: 'Daniel Wellington India',
+  ethoswatches: 'Ethos Watches',
+  helioswatches: 'Helios Watches',
+  baggit: 'Baggit',
+  caprese: 'Caprese',
+  lavie: 'Lavie',
+  hidesign: 'Hidesign',
+  damilano: 'Da Milano',
+  wildhorn: 'Wildhorn',
+
+  // Eyewear
+  titaneyeplus: 'Titan Eyeplus',
+  johnjacobs: 'John Jacobs',
+  coolwinks: 'Coolwinks',
+  rayban: 'Ray-Ban India',
+  sunglasshut: 'Sunglass Hut India',
+  specsmakers: 'Specsmakers',
+  lenspick: 'Lenspick',
+  cleardekho: 'ClearDekho',
+  vincentchase: 'Vincent Chase',
+
+  // Beauty & Personal Care
+  purplle: 'Purplle',
+  myglamm: 'MyGlamm',
+  sugarcosmetics: 'Sugar Cosmetics',
+  mamaearth: 'Mamaearth',
+  wowskin: 'Wow Skin Science',
+  dermaco: 'The Derma Co',
+  plumgoodness: 'Plum Goodness',
+  mcaffeine: 'mCaffeine',
+  forestessentials: 'Forest Essentials',
+  kamaayurveda: 'Kama Ayurveda',
+  biotique: 'Biotique',
+  lotusherbals: 'Lotus Herbals',
+  himalaya: 'Himalaya Wellness',
+  minimalist: 'Minimalist',
+  foxtale: 'Foxtale',
+  pilgrim: 'Pilgrim',
+  dotandkey: 'Dot & Key',
+  facescanada: 'Faces Canada',
+
+  // Home & Kitchen
+  urbanladder: 'Urban Ladder',
+  woodenstreet: 'Wooden Street',
+  homecentre: 'Home Centre',
+  ikea: 'IKEA India',
+  sleepwell: 'Sleepwell',
+  wakefit: 'Wakefit',
+  flomattress: 'Flo Mattress',
+  thesleepcompany: 'The Sleep Company',
+  borosil: 'Borosil',
+  wonderchef: 'Wonderchef',
+  pigeon: 'Pigeon',
+  prestige: 'Prestige',
+  hawkins: 'Hawkins Cookers',
+
+  // Kids & Sports
+  hopscotch: 'Hopscotch',
+  hamleys: 'Hamleys India',
+  decathlon: 'Decathlon India',
+  vectorx: 'Vector X',
+  cosco: 'Cosco India',
+  nivia: 'Nivia Sports',
+  yonex: 'Yonex India',
+  starsports: 'Star India Sports',
+
   blinkit: 'Blinkit',
   zepto: 'Zepto',
   instamart: 'Swiggy Instamart',
@@ -442,6 +648,211 @@ export function getStoreLink(store, query) {
     case 'snitch': return `https://www.snitch.co.in/search?q=${q}`;
     case 'cultstore': return `https://cult.sport/search?q=${q}`;
     case 'vishalmegamart': return `https://www.vishalmegamart.com/search?q=${q}`;
+
+    // New General E-Commerce
+    case 'shopsy': return `https://www.shopsy.in/search?q=${q}`;
+    case 'paytmmall': return `https://paytmmall.com/shop/search?q=${q}`;
+    case 'dealshare': return `https://www.dealshare.in`;
+    case 'citymall': return `https://www.citymall.live`;
+    case 'udaan': return `https://udaan.com/search?q=${q}`;
+    case 'ondc': return `https://ondc.org`;
+
+    // New Fashion & Lifestyle Marketplaces
+    case 'tatacliq_luxury': return `https://luxury.tatacliq.com/search/?text=${q}`;
+    case 'nnnow': return `https://nnnow.com/search?q=${q}`;
+    case 'lifestylestores': return `https://www.lifestylestores.com/in/en/search?q=${q}`;
+    case 'shoppersstop': return `https://www.shoppersstop.com/search/?text=${q}`;
+    case 'westside': return `https://www.westside.com/search?q=${q}`;
+    case 'zudio': return `https://www.zudio.com`;
+    case 'azorte': return `https://azorte.ajio.com/search?text=${q}`;
+    case 'reliancetrends': return `https://trends.ajio.com/search?text=${q}`;
+    case 'yousta': return `https://yousta.in`;
+    case 'centro': return `https://centro.co.in`;
+
+    // New D2C Apparel & Casual
+    case 'souledstore': return `https://www.thesouledstore.com/search?q=${q}`;
+    case 'rarerabbit': return `https://the-rare-rabbit.com/search?q=${q}`;
+    case 'bombayshirt': return `https://bombayshirts.com/search?q=${q}`;
+    case 'powerlook': return `https://www.powerlook.in/search?q=${q}`;
+    case 'beyoung': return `https://www.beyoung.in/search?q=${q}`;
+    case 'redwolf': return `https://www.redwolf.in/search?q=${q}`;
+    case 'campussutra': return `https://campussutra.com/search?q=${q}`;
+    case 'hubberholme': return `https://hubberholme.com/search?q=${q}`;
+    case 'mufti': return `https://www.muftijeans.in/search?q=${q}`;
+    case 'spykar': return `https://www.spykar.com/search?q=${q}`;
+    case 'killerjeans': return `https://killerjeans.com/search?q=${q}`;
+    case 'flyingmachine': return `https://flyingmachine.co.in/search?q=${q}`;
+    case 'roadster': return `https://www.myntra.com/roadster?rawQuery=roadster%20${q}`;
+    case 'highlander': return `https://www.myntra.com/highlander?rawQuery=highlander%20${q}`;
+    case 'tokyotalkies': return `https://www.myntra.com/tokyotalkies?rawQuery=tokyo%20talkies%20${q}`;
+    case 'mastandharbour': return `https://www.myntra.com/mast-and-harbour?rawQuery=mast%20and%20harbour%20${q}`;
+    case 'urbanic': return `https://in.urbanic.com/search?q=${q}`;
+    case 'redtape': return `https://redtape.com/search?q=${q}`;
+
+    // New International Fashion
+    case 'hm': return `https://www2.hm.com/en_in/search-results.html?q=${q}`;
+    case 'uniqlo': return `https://www.uniqlo.com/in/en/search?q=${q}`;
+    case 'marksandspencer': return `https://www.marksandspencer.in/search?q=${q}`;
+    case 'levis': return `https://www.levi.in/search?q=${q}`;
+    case 'benetton': return `https://in.benetton.com/search?q=${q}`;
+    case 'tommyhilfiger': return `https://tommy.com/search?q=${q}`;
+    case 'calvinklein': return `https://calvinklein.in/search?q=${q}`;
+    case 'uspoloassn': return `https://uspoloassn.in/search?q=${q}`;
+    case 'forever21': return `https://www.forever21.in/search?q=${q}`;
+    case 'jackjones': return `https://www.jackjones.in/search?q=${q}`;
+    case 'only': return `https://www.only.in/search?q=${q}`;
+    case 'veromoda': return `https://www.veromoda.in/search?q=${q}`;
+    case 'superdry': return `https://www.superdry.in/search?q=${q}`;
+    case 'gasjeans': return `https://gasjeans.in`;
+
+    // New Ethnic Wear
+    case 'fabindia': return `https://www.fabindia.com/search?q=${q}`;
+    case 'manyavar': return `https://www.manyavar.com/search?q=${q}`;
+    case 'mohey': return `https://www.manyavar.com/en-in/mohey/search?q=${q}`;
+    case 'wforwoman': return `https://wforwoman.com/search?q=${q}`;
+    case 'aurelia': return `https://shopforaurelia.com/search?q=${q}`;
+    case 'biba': return `https://www.biba.in/search?q=${q}`;
+    case 'globaldesi': return `https://www.houseofanitadongre.com/global-desi/search?q=${q}`;
+    case 'houseofindya': return `https://www.houseofindya.com/search?q=${q}`;
+    case 'libas': return `https://www.libas.in/search?q=${q}`;
+    case 'soch': return `https://www.soch.com/search?q=${q}`;
+    case 'meenabazaar': return `https://meenabazaar.com/search?q=${q}`;
+    case 'nallisilks': return `https://www.nalli.com/search?q=${q}`;
+    case 'karagiri': return `https://karagiri.com/search?q=${q}`;
+    case 'suta': return `https://suta.in/search?q=${q}`;
+    case 'kalkifashion': return `https://www.kalkifashion.com/search?q=${q}`;
+
+    // New Footwear
+    case 'bata': return `https://www.bata.com/in/search?q=${q}`;
+    case 'metroshoes': return `https://www.metroshoes.com/search?q=${q}`;
+    case 'mochishoes': return `https://www.mochishoes.com/search?q=${q}`;
+    case 'libertyshoes': return `https://libertyshoesonline.com/search?q=${q}`;
+    case 'khadims': return `https://www.khadims.com/search?q=${q}`;
+    case 'paragon': return `https://www.paragonfootwear.com/search?q=${q}`;
+    case 'campusshoes': return `https://www.campusshoes.com/search?q=${q}`;
+    case 'relaxo': return `https://www.relaxofootwear.com/search?q=${q}`;
+    case 'woodland': return `https://www.woodlandstores.com/search?q=${q}`;
+    case 'crocs': return `https://www.crocs.in/search?q=${q}`;
+    case 'skechers': return `https://www.skechers.in/search?q=${q}`;
+    case 'nike': return `https://www.nike.com/in/w?q=${q}`;
+    case 'reebok': return `https://reebok.abfrl.in/search?q=${q}`;
+
+    // New Electronics & Appliances
+    case 'sony': return `https://www.sony.co.in/search?query=${q}`;
+    case 'xiaomi': return `https://www.mi.com/in/search?query=${q}`;
+    case 'realme': return `https://www.realme.com/in/search?q=${q}`;
+    case 'vivo': return `https://shop.vivo.com/in/search?q=${q}`;
+    case 'oppo': return `https://shop.oppo.com/in/search?q=${q}`;
+    case 'motorola': return `https://www.motorola.in/search?q=${q}`;
+    case 'dell': return `https://www.dell.com/en-in/search/${q}`;
+    case 'asus': return `https://www.asus.com/in/search/${q}`;
+    case 'acer': return `https://store.acer.com/en-in/catalogsearch/result/?q=${q}`;
+    case 'whirlpool': return `https://www.whirlpool.india.com/catalogsearch/result/?q=${q}`;
+    case 'godrej': return `https://www.godrej.com/appliances/search?q=${q}`;
+    case 'haier': return `https://www.haier.com/in/search?q=${q}`;
+    case 'voltas': return `https://www.voltas.com/search?q=${q}`;
+    case 'bluestar': return `https://www.bluestarindia.com/search?q=${q}`;
+
+    // New Retailers & Audio
+    case 'boat': return `https://www.boat-lifestyle.com/search?q=${q}`;
+    case 'noise': return `https://www.gonoise.com/search?q=${q}`;
+    case 'boult': return `https://www.boultaudio.com/search?q=${q}`;
+    case 'mivi': return `https://www.mivi.in/search?q=${q}`;
+    case 'fireboltt': return `https://www.fireboltt.com/search?q=${q}`;
+    case 'zebronics': return `https://zebronics.com/search?q=${q}`;
+    case 'portronics': return `https://www.portronics.com/search?q=${q}`;
+    case 'jbl': return `https://in.jbl.com/search?q=${q}`;
+    case 'anker': return `https://www.ankerindia.com/search?q=${q}`;
+    case 'sennheiser': return `https://www.sennheiser-hearing.com/en-IN/search?query=${q}`;
+    case 'ambrane': return `https://ambraneindia.com/search?q=${q}`;
+    case 'leafstudios': return `https://www.leafstudios.in/search?q=${q}`;
+
+    // New Jewelry
+    case 'caratlane': return `https://www.caratlane.com/search?q=${q}`;
+    case 'bluestone': return `https://www.bluestone.com/search?q=${q}`;
+    case 'giva': return `https://www.giva.co/search?q=${q}`;
+    case 'melorra': return `https://www.melorra.com/search?q=${q}`;
+    case 'miabytanishq': return `https://www.miabytanishq.com/search?q=${q}`;
+    case 'kalyanjewellers': return `https://www.kalyanjewellers.net/search?q=${q}`;
+    case 'malabargold': return `https://www.malabargoldanddiamonds.com/search?q=${q}`;
+    case 'sencogold': return `https://sencogoldtonline.com/search?q=${q}`;
+    case 'pcjeweller': return `https://www.pcjeweller.com/search?q=${q}`;
+    case 'voylla': return `https://www.voylla.com/search?q=${q}`;
+    case 'orrajewellery': return `https://www.orra.co.in/search?q=${q}`;
+    case 'candere': return `https://www.candere.com/search?q=${q}`;
+    case 'kushals': return `https://www.kushals.com/search?q=${q}`;
+
+    // New Watches & Accessories
+    case 'titan': return `https://www.titan.co.in/search?q=${q}`;
+    case 'fastrack': return `https://www.fastrack.in/search?q=${q}`;
+    case 'sonata': return `https://www.sonata.co.in/search?q=${q}`;
+    case 'casio': return `https://www.casioindiashop.com/search?q=${q}`;
+    case 'fossil': return `https://www.fossil.com/en-in/search?q=${q}`;
+    case 'danielwellington': return `https://www.danielwellington.com/in/search?q=${q}`;
+    case 'ethoswatches': return `https://www.ethoswatches.com/search?q=${q}`;
+    case 'helioswatches': return `https://www.helioswatchstore.com/search?q=${q}`;
+    case 'baggit': return `https://www.baggit.com/search?q=${q}`;
+    case 'caprese': return `https://www.capresebags.com/search?q=${q}`;
+    case 'lavie': return `https://www.lavieworld.com/search?q=${q}`;
+    case 'hidesign': return `https://hidesign.com/search?q=${q}`;
+    case 'damilano': return `https://www.damilano.com/search?q=${q}`;
+    case 'wildhorn': return `https://wildhorn.in/search?q=${q}`;
+
+    // New Eyewear
+    case 'titaneyeplus': return `https://www.titaneyeplus.com/search?q=${q}`;
+    case 'johnjacobs': return `https://www.johnjacobseyewear.com/search?q=${q}`;
+    case 'coolwinks': return `https://www.coolwinks.com/search?q=${q}`;
+    case 'rayban': return `https://india.ray-ban.com/search?q=${q}`;
+    case 'sunglasshut': return `https://www.sunglasshut.com/in/search?q=${q}`;
+    case 'specsmakers': return `https://www.specsmakers.in/search?q=${q}`;
+    case 'lenspick': return `https://www.lenspick.com/search?q=${q}`;
+    case 'cleardekho': return `https://www.cleardekho.com/search?q=${q}`;
+    case 'vincentchase': return `https://www.lenskart.com/search?q=vincent%20chase%20${q}`;
+
+    // New Beauty & Personal Care
+    case 'purplle': return `https://www.purplle.com/search?q=${q}`;
+    case 'myglamm': return `https://www.myglamm.com/search?q=${q}`;
+    case 'sugarcosmetics': return `https://sugarcosmetics.com/search?q=${q}`;
+    case 'mamaearth': return `https://mamaearth.in/search?q=${q}`;
+    case 'wowskin': return `https://buywow.in/search?q=${q}`;
+    case 'dermaco': return `https://thedermaco.com/search?q=${q}`;
+    case 'plumgoodness': return `https://plumgoodness.com/search?q=${q}`;
+    case 'mcaffeine': return `https://www.mcaffeine.com/search?q=${q}`;
+    case 'forestessentials': return `https://www.forestessentialsindia.com/catalogsearch/result/?q=${q}`;
+    case 'kamaayurveda': return `https://www.kamaayurveda.com/catalogsearch/result/?q=${q}`;
+    case 'biotique': return `https://www.biotique.com/catalogsearch/result/?q=${q}`;
+    case 'lotusherbals': return `https://www.lotusherbals.com/search?q=${q}`;
+    case 'himalaya': return `https://himalayawellness.in/search?q=${q}`;
+    case 'minimalist': return `https://www.beminimalist.co/search?q=${q}`;
+    case 'foxtale': return `https://foxtale.in/search?q=${q}`;
+    case 'pilgrim': return `https://discoverpilgrim.com/search?q=${q}`;
+    case 'dotandkey': return `https://www.dotandkey.com/search?q=${q}`;
+    case 'facescanada': return `https://www.facescanada.com/search?q=${q}`;
+
+    // New Home & Kitchen
+    case 'urbanladder': return `https://www.urbanladder.com/search?q=${q}`;
+    case 'woodenstreet': return `https://www.woodenstreet.com/search?q=${q}`;
+    case 'homecentre': return `https://www.homecentre.in/in/en/search?q=${q}`;
+    case 'ikea': return `https://www.ikea.com/in/en/search/?q=${q}`;
+    case 'sleepwell': return `https://mysleepwell.com/search?q=${q}`;
+    case 'wakefit': return `https://www.wakefit.co/search?q=${q}`;
+    case 'flomattress': return `https://www.flomattress.com/search?q=${q}`;
+    case 'thesleepcompany': return `https://thesleepcompany.in/search?q=${q}`;
+    case 'borosil': return `https://myborosil.com/search?q=${q}`;
+    case 'wonderchef': return `https://wonderchef.com/search?q=${q}`;
+    case 'pigeon': return `https://pigeonappliances.com/search?q=${q}`;
+    case 'prestige': return `https://shop.ttkprestige.com/catalogsearch/result/?q=${q}`;
+    case 'hawkins': return `https://www.hawkinscookers.com/search?q=${q}`;
+
+    // New Kids & Sports
+    case 'hopscotch': return `https://www.hopscotch.in/search?q=${q}`;
+    case 'hamleys': return `https://www.hamleys.in/search?q=${q}`;
+    case 'decathlon': return `https://www.decathlon.in/search?q=${q}`;
+    case 'vectorx': return `https://vectorx.co.in/search?q=${q}`;
+    case 'cosco': return `https://cosco.in/search?q=${q}`;
+    case 'nivia': return `https://www.niviasports.com/search?q=${q}`;
+    case 'yonex': return `https://www.google.com/search?q=yonex+india+${q}`;
+    case 'starsports': return `https://sportsmith.in/search?q=${q}`;
     
     // Quick commerce
     case 'blinkit': return `https://blinkit.com/s/?q=${q}`;
@@ -693,35 +1104,61 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     const q = query.toLowerCase();
     
     // Categorize query
-    const isFashion = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt', 'apparel', 'jeans', 't-shirt', 'wear', 'pantaloons', 'max', 'bewakoof', 'zara', 'puma', 'adidas', 'snitch', 'cult'].some(kw => q.includes(kw));
+    const isFashion = ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie', 'tshirt', 'apparel', 'jeans', 't-shirt', 'wear', 'pantaloons', 'max', 'bewakoof', 'zara', 'puma', 'adidas', 'snitch', 'cult', 'ethnic', 'saree', 'traditional', 'footwear', 'sandal', 'kurta', 'suit', 'jeans', 'shirt', 'top', 'trousers', 'designer', 'brands'].some(kw => q.includes(kw));
     const isBooks = ['book', 'novel', 'biography', 'comic', 'fiction', 'read', 'literature'].some(kw => q.includes(kw));
-    const isBeauty = ['nykaa', 'lipstick', 'makeup', 'cream', 'shampoo', 'perfume', 'beauty', 'cosmetics', 'serum', 'lotion'].some(kw => q.includes(kw));
-    const isBaby = ['firstcry', 'baby', 'toy', 'diaper', 'infant', 'kid', 'maternity'].some(kw => q.includes(kw));
-    const isFurniture = ['pepperfry', 'furniture', 'sofa', 'chair', 'table', 'bed', 'decor', 'etsy', 'handicraft'].some(kw => q.includes(kw));
-    const isWholesale = ['indiamart', 'alibaba', 'aliexpress', 'wholesale', 'bulk'].some(kw => q.includes(kw));
-    const isJewelry = ['gold', 'diamond', 'jewel', 'ring', 'necklace', 'tanishq', 'joyalukkas', 'ornament'].some(kw => q.includes(kw));
+    const isBeauty = ['nykaa', 'lipstick', 'makeup', 'cream', 'shampoo', 'perfume', 'beauty', 'cosmetics', 'serum', 'lotion', 'personal care', 'eyeliner', 'wellness', 'fragrance', 'skincare', 'haircare'].some(kw => q.includes(kw));
+    const isBaby = ['firstcry', 'baby', 'toy', 'diaper', 'infant', 'kid', 'maternity', 'toys', 'kinder'].some(kw => q.includes(kw));
+    const isFurniture = ['pepperfry', 'furniture', 'sofa', 'chair', 'table', 'bed', 'decor', 'etsy', 'handicraft', 'mattress', 'kitchen', 'cooker', 'homeware', 'appliance', 'kitchenware', 'utensil', 'pan', 'cookware'].some(kw => q.includes(kw));
+    const isWholesale = ['indiamart', 'alibaba', 'aliexpress', 'wholesale', 'bulk', 'b2b'].some(kw => q.includes(kw));
+    const isJewelry = ['gold', 'diamond', 'jewel', 'ring', 'necklace', 'tanishq', 'joyalukkas', 'ornament', 'silver', 'jewelry', 'earrings', 'pendant', 'bracelet'].some(kw => q.includes(kw));
 
     if (isFashion) {
-      targetStores = ['myntra', 'ajio', 'flipkart', 'nykaafashion', 'meesho', 'amazon', 'zara', 'puma', 'adidas', 'pantaloons', 'maxfashion', 'bewakoof', 'snitch', 'cultstore'];
+      targetStores = [
+        'myntra', 'ajio', 'flipkart', 'nykaafashion', 'meesho', 'amazon', 'zara', 'puma', 'adidas', 'pantaloons', 'maxfashion', 'bewakoof', 'snitch', 'cultstore',
+        'shopsy', 'paytmmall', 'tatacliq_luxury', 'nnnow', 'lifestylestores', 'shoppersstop', 'westside', 'zudio', 'azorte', 'reliancetrends', 'yousta', 'centro',
+        'souledstore', 'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine',
+        'roadster', 'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape', 'hm', 'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger',
+        'calvinklein', 'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans', 'fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia',
+        'biba', 'globaldesi', 'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion', 'bata', 'metroshoes', 'mochishoes',
+        'libertyshoes', 'khadims', 'paragon', 'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers', 'nike', 'reebok'
+      ];
     } else if (isBooks) {
       targetStores = ['bookswagon', 'amazon', 'ebay', 'flipkart'];
     } else if (isBeauty) {
-      targetStores = ['nykaa', 'nykaafashion', 'amazon', 'myntra'];
+      targetStores = [
+        'nykaa', 'nykaafashion', 'amazon', 'myntra',
+        'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 'dotandkey', 'facescanada'
+      ];
     } else if (isBaby) {
-      targetStores = ['firstcry', 'amazon', 'flipkart', 'meesho'];
+      targetStores = ['firstcry', 'amazon', 'flipkart', 'meesho', 'hopscotch', 'hamleys'];
     } else if (isFurniture) {
-      targetStores = ['pepperfry', 'etsy', 'amazon', 'ebay', 'chumbak'];
+      targetStores = [
+        'pepperfry', 'etsy', 'amazon', 'ebay', 'chumbak',
+        'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 'prestige', 'hawkins'
+      ];
     } else if (isWholesale) {
-      targetStores = ['indiamart', 'alibaba', 'aliexpress'];
+      targetStores = ['indiamart', 'alibaba', 'aliexpress', 'udaan'];
     } else if (isJewelry) {
-      targetStores = ['tanishq', 'joyalukkas', 'etsy', 'amazon', 'flipkart'];
+      targetStores = [
+        'tanishq', 'joyalukkas', 'etsy', 'amazon', 'flipkart',
+        'caratlane', 'bluestone', 'giva', 'melorra', 'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 'voylla', 'orrajewellery', 'candere', 'kushals'
+      ];
     } else {
       // General Electronics / Retail / Brand Store defaults
-      const isTech = ['phone', 'mobile', 'samsung', 'apple', 'oneplus', 'hp', 'lenovo', 'lg', 'laptop', 'television', 'tv', 'croma', 'reliance', 'vijay', 'headphone', 'earphone'].some(kw => q.includes(kw));
+      const isTech = ['phone', 'mobile', 'samsung', 'apple', 'oneplus', 'hp', 'lenovo', 'lg', 'laptop', 'television', 'tv', 'croma', 'reliance', 'vijay', 'headphone', 'earphone', 'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase'].some(kw => q.includes(kw));
       if (isTech) {
-        targetStores = ['amazon', 'flipkart', 'croma', 'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'lg', 'headphones', 'dailyobjects', 'lenskart'];
+        targetStores = [
+          'amazon', 'flipkart', 'croma', 'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'lg', 'headphones', 'dailyobjects', 'lenskart',
+          'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'boat', 'noise', 'boult',
+          'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'titan', 'fastrack', 'sonata', 'casio', 'fossil',
+          'danielwellington', 'ethoswatches', 'helioswatches', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick',
+          'cleardekho', 'vincentchase'
+        ];
       } else {
-        targetStores = ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'walmart', 'vishalmegamart', 'shopclues', 'etsy'];
+        targetStores = [
+          'amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'walmart', 'vishalmegamart', 'shopclues', 'etsy',
+          'shopsy', 'paytmmall', 'dealshare', 'citymall', 'udaan', 'ondc'
+        ];
       }
     }
 

@@ -28,7 +28,7 @@ const STORE_NAMES = {
   firstcry: 'FirstCry',
   pepperfry: 'Pepperfry',
   bookswagon: 'Bookswagon',
-  ebay: 'eBay',
+  ebay: 'eBay India',
   etsy: 'Etsy',
   alibaba: 'Alibaba',
   aliexpress: 'AliExpress',
@@ -57,6 +57,212 @@ const STORE_NAMES = {
   snitch: 'Snitch',
   cultstore: 'Cultsport',
   vishalmegamart: 'Vishal Mega Mart',
+
+  // General E-Commerce
+  shopsy: 'Shopsy',
+  paytmmall: 'Paytm Mall',
+  dealshare: 'DealShare',
+  citymall: 'CityMall',
+  udaan: 'Udaan',
+  ondc: 'ONDC',
+
+  // Fashion & Lifestyle Marketplaces
+  tatacliq_luxury: 'Tata CLiQ Luxury',
+  nnnow: 'Nnnow',
+  lifestylestores: 'Lifestyle Stores',
+  shoppersstop: 'Shoppers Stop',
+  westside: 'Westside',
+  zudio: 'Zudio',
+  azorte: 'Azorte',
+  reliancetrends: 'Reliance Trends',
+  yousta: 'Yousta',
+  centro: 'Centro',
+
+  // D2C Fashion & Apparel
+  souledstore: 'The Souled Store',
+  rarerabbit: 'Rare Rabbit',
+  bombayshirt: 'Bombay Shirt Company',
+  powerlook: 'Powerlook',
+  beyoung: 'Beyoung',
+  redwolf: 'Redwolf',
+  campussutra: 'Campus Sutra',
+  hubberholme: 'Hubberholme',
+  mufti: 'Mufti',
+  spykar: 'Spykar',
+  killerjeans: 'Killer Jeans',
+  flyingmachine: 'Flying Machine',
+  roadster: 'Roadster',
+  highlander: 'Highlander',
+  tokyotalkies: 'Tokyo Talkies',
+  mastandharbour: 'Mast & Harbour',
+  urbanic: 'Urbanic',
+  redtape: 'Red Tape',
+
+  // International Fashion Brands
+  hm: 'H&M India',
+  uniqlo: 'Uniqlo India',
+  marksandspencer: 'Marks & Spencer India',
+  levis: 'Levi\'s India',
+  benetton: 'United Colors of Benetton',
+  tommyhilfiger: 'Tommy Hilfiger India',
+  calvinklein: 'Calvin Klein India',
+  uspoloassn: 'US Polo Assn India',
+  forever21: 'Forever 21 India',
+  jackjones: 'Jack & Jones India',
+  only: 'Only India',
+  veromoda: 'Vero Moda India',
+  superdry: 'Superdry India',
+  gasjeans: 'Gas Jeans India',
+
+  // Ethnic Wear
+  fabindia: 'Fabindia',
+  manyavar: 'Manyavar',
+  mohey: 'Mohey',
+  wforwoman: 'W for Woman',
+  aurelia: 'Aurelia',
+  biba: 'Biba',
+  globaldesi: 'Global Desi',
+  houseofindya: 'House of Indya',
+  libas: 'Libas',
+  soch: 'Soch',
+  meenabazaar: 'Meena Bazaar',
+  nallisilks: 'Nalli Silks',
+  karagiri: 'Karagiri',
+  suta: 'Suta',
+  kalkifashion: 'Kalki Fashion',
+
+  // Footwear
+  bata: 'Bata India',
+  metroshoes: 'Metro Shoes',
+  mochishoes: 'Mochi Shoes',
+  libertyshoes: 'Liberty Shoes',
+  khadims: 'Khadim\'s',
+  paragon: 'Paragon',
+  campusshoes: 'Campus Shoes',
+  relaxo: 'Sparx / Relaxo',
+  woodland: 'Woodland India',
+  crocs: 'Crocs India',
+  skechers: 'Skechers India',
+  nike: 'Nike India',
+  reebok: 'Reebok India',
+
+  // Electronics & Appliances
+  sony: 'Sony India',
+  xiaomi: 'Xiaomi India',
+  realme: 'Realme India',
+  vivo: 'Vivo India',
+  oppo: 'Oppo India',
+  motorola: 'Motorola India',
+  dell: 'Dell India',
+  asus: 'Asus India',
+  acer: 'Acer India',
+  whirlpool: 'Whirlpool India',
+  godrej: 'Godrej Appliances',
+  haier: 'Haier India',
+  voltas: 'Voltas',
+  bluestar: 'Blue Star',
+
+  // Retailers & Audio
+  boat: 'boAt Lifestyle',
+  noise: 'Noise',
+  boult: 'Boult Audio',
+  mivi: 'Mivi',
+  fireboltt: 'Fire-Boltt',
+  zebronics: 'Zebronics',
+  portronics: 'Portronics',
+  jbl: 'JBL India',
+  anker: 'Anker India',
+  sennheiser: 'Sennheiser India',
+  ambrane: 'Ambrane',
+  leafstudios: 'Leaf Studios',
+
+  // Jewelry
+  caratlane: 'CaratLane',
+  bluestone: 'BlueStone',
+  giva: 'GIVA',
+  melorra: 'Melorra',
+  miabytanishq: 'Mia by Tanishq',
+  kalyanjewellers: 'Kalyan Jewellers',
+  malabargold: 'Malabar Gold & Diamonds',
+  sencogold: 'Senco Gold & Diamonds',
+  pcjeweller: 'PC Jeweller',
+  voylla: 'Voylla',
+  orrajewellery: 'Orra Jewellery',
+  candere: 'Candere by Kalyan Jewellers',
+  kushals: 'Kushal\'s Fashion Jewellery',
+
+  // Watches & Accessories
+  titan: 'Titan',
+  fastrack: 'Fastrack',
+  sonata: 'Sonata',
+  casio: 'Casio India',
+  fossil: 'Fossil India',
+  danielwellington: 'Daniel Wellington India',
+  ethoswatches: 'Ethos Watches',
+  helioswatches: 'Helios Watches',
+  baggit: 'Baggit',
+  caprese: 'Caprese',
+  lavie: 'Lavie',
+  hidesign: 'Hidesign',
+  damilano: 'Da Milano',
+  wildhorn: 'Wildhorn',
+
+  // Eyewear
+  titaneyeplus: 'Titan Eyeplus',
+  johnjacobs: 'John Jacobs',
+  coolwinks: 'Coolwinks',
+  rayban: 'Ray-Ban India',
+  sunglasshut: 'Sunglass Hut India',
+  specsmakers: 'Specsmakers',
+  lenspick: 'Lenspick',
+  cleardekho: 'ClearDekho',
+  vincentchase: 'Vincent Chase',
+
+  // Beauty & Personal Care
+  purplle: 'Purplle',
+  myglamm: 'MyGlamm',
+  sugarcosmetics: 'Sugar Cosmetics',
+  mamaearth: 'Mamaearth',
+  wowskin: 'Wow Skin Science',
+  dermaco: 'The Derma Co',
+  plumgoodness: 'Plum Goodness',
+  mcaffeine: 'mCaffeine',
+  forestessentials: 'Forest Essentials',
+  kamaayurveda: 'Kama Ayurveda',
+  biotique: 'Biotique',
+  lotusherbals: 'Lotus Herbals',
+  himalaya: 'Himalaya Wellness',
+  minimalist: 'Minimalist',
+  foxtale: 'Foxtale',
+  pilgrim: 'Pilgrim',
+  dotandkey: 'Dot & Key',
+  facescanada: 'Faces Canada',
+
+  // Home & Kitchen
+  urbanladder: 'Urban Ladder',
+  woodenstreet: 'Wooden Street',
+  homecentre: 'Home Centre',
+  ikea: 'IKEA India',
+  sleepwell: 'Sleepwell',
+  wakefit: 'Wakefit',
+  flomattress: 'Flo Mattress',
+  thesleepcompany: 'The Sleep Company',
+  borosil: 'Borosil',
+  wonderchef: 'Wonderchef',
+  pigeon: 'Pigeon',
+  prestige: 'Prestige',
+  hawkins: 'Hawkins Cookers',
+
+  // Kids & Sports
+  hopscotch: 'Hopscotch',
+  hamleys: 'Hamleys India',
+  decathlon: 'Decathlon India',
+  vectorx: 'Vector X',
+  cosco: 'Cosco India',
+  nivia: 'Nivia Sports',
+  yonex: 'Yonex India',
+  starsports: 'Star India Sports',
+
   blinkit: 'Blinkit',
   zepto: 'Zepto',
   instamart: 'Swiggy Instamart',
@@ -272,51 +478,256 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
               >
                 {category === 'ecommerce' && (
                   <>
-                    <option value="all">All E-Commerce (43 Stores)</option>
-                    <option value="amazon">Amazon India</option>
-                    <option value="flipkart">Flipkart</option>
-                    <option value="meesho">Meesho</option>
-                    <option value="snapdeal">Snapdeal</option>
-                    <option value="jiomart">JioMart</option>
-                    <option value="tatacliq">Tata CLiQ</option>
-                    <option value="shopclues">ShopClues</option>
-                    <option value="indiamart">IndiaMART</option>
-                    <option value="myntra">Myntra</option>
-                    <option value="ajio">AJIO</option>
-                    <option value="nykaa">Nykaa</option>
-                    <option value="nykaafashion">Nykaa Fashion</option>
-                    <option value="firstcry">FirstCry</option>
-                    <option value="pepperfry">Pepperfry</option>
-                    <option value="bookswagon">Bookswagon</option>
-                    <option value="ebay">eBay</option>
-                    <option value="etsy">Etsy</option>
-                    <option value="alibaba">Alibaba</option>
-                    <option value="aliexpress">AliExpress</option>
-                    <option value="walmart">Walmart</option>
-                    <option value="croma">Croma</option>
-                    <option value="reliance">Reliance Digital</option>
-                    <option value="samsung">Samsung Store</option>
-                    <option value="vijaysales">Vijay Sales</option>
-                    <option value="hp">HP World</option>
-                    <option value="oneplus">OnePlus Store</option>
-                    <option value="lenovo">Lenovo Store</option>
-                    <option value="lg">LG Brand Store</option>
-                    <option value="dailyobjects">Daily Objects</option>
-                    <option value="headphones">Headphone Zone</option>
-                    <option value="apple">Apple Store</option>
-                    <option value="puma">Puma</option>
-                    <option value="lenskart">Lenskart</option>
-                    <option value="zara">Zara</option>
-                    <option value="tanishq">Tanishq</option>
-                    <option value="pantaloons">Pantaloons</option>
-                    <option value="adidas">Adidas Store</option>
-                    <option value="maxfashion">Max Fashion</option>
-                    <option value="bewakoof">Bewakoof</option>
-                    <option value="chumbak">Chumbak</option>
-                    <option value="joyalukkas">Joyalukkas</option>
-                    <option value="snitch">Snitch</option>
-                    <option value="cultstore">Cultsport</option>
-                    <option value="vishalmegamart">Vishal Mega Mart</option>
+                    <option value="all">All E-Commerce (174 Stores)</option>
+                    <optgroup label="Marketplaces">
+                      <option value="amazon">Amazon India</option>
+                      <option value="flipkart">Flipkart</option>
+                      <option value="meesho">Meesho</option>
+                      <option value="snapdeal">Snapdeal</option>
+                      <option value="jiomart">JioMart</option>
+                      <option value="tatacliq">Tata CLiQ</option>
+                      <option value="shopsy">Shopsy</option>
+                      <option value="paytmmall">Paytm Mall</option>
+                      <option value="shopclues">ShopClues</option>
+                      <option value="dealshare">DealShare</option>
+                      <option value="citymall">CityMall</option>
+                      <option value="indiamart">IndiaMART</option>
+                      <option value="udaan">Udaan</option>
+                      <option value="ebay">eBay India</option>
+                      <option value="etsy">Etsy</option>
+                      <option value="alibaba">Alibaba</option>
+                      <option value="aliexpress">AliExpress</option>
+                      <option value="walmart">Walmart</option>
+                      <option value="ondc">ONDC</option>
+                    </optgroup>
+                    <optgroup label="Fashion & Lifestyle Marketplaces">
+                      <option value="myntra">Myntra</option>
+                      <option value="ajio">AJIO</option>
+                      <option value="nykaafashion">Nykaa Fashion</option>
+                      <option value="tatacliq_luxury">Tata CLiQ Luxury</option>
+                      <option value="nnnow">Nnnow</option>
+                      <option value="lifestylestores">Lifestyle Stores</option>
+                      <option value="shoppersstop">Shoppers Stop</option>
+                      <option value="pantaloons">Pantaloons</option>
+                      <option value="maxfashion">Max Fashion</option>
+                      <option value="westside">Westside</option>
+                      <option value="zudio">Zudio</option>
+                      <option value="azorte">Azorte</option>
+                      <option value="reliancetrends">Reliance Trends</option>
+                      <option value="yousta">Yousta</option>
+                      <option value="centro">Centro</option>
+                    </optgroup>
+                    <optgroup label="D2C Apparel & Casual Fashion">
+                      <option value="snitch">Snitch</option>
+                      <option value="souledstore">The Souled Store</option>
+                      <option value="bewakoof">Bewakoof</option>
+                      <option value="rarerabbit">Rare Rabbit</option>
+                      <option value="bombayshirt">Bombay Shirt Company</option>
+                      <option value="powerlook">Powerlook</option>
+                      <option value="beyoung">Beyoung</option>
+                      <option value="redwolf">Redwolf</option>
+                      <option value="campussutra">Campus Sutra</option>
+                      <option value="hubberholme">Hubberholme</option>
+                      <option value="mufti">Mufti</option>
+                      <option value="spykar">Spykar</option>
+                      <option value="killerjeans">Killer Jeans</option>
+                      <option value="flyingmachine">Flying Machine</option>
+                      <option value="roadster">Roadster</option>
+                      <option value="highlander">Highlander</option>
+                      <option value="tokyotalkies">Tokyo Talkies</option>
+                      <option value="mastandharbour">Mast & Harbour</option>
+                      <option value="urbanic">Urbanic</option>
+                      <option value="redtape">Red Tape</option>
+                    </optgroup>
+                    <optgroup label="International Fashion Brands">
+                      <option value="hm">H&M India</option>
+                      <option value="zara">Zara</option>
+                      <option value="uniqlo">Uniqlo India</option>
+                      <option value="marksandspencer">Marks & Spencer India</option>
+                      <option value="levis">Levi's India</option>
+                      <option value="benetton">United Colors of Benetton</option>
+                      <option value="tommyhilfiger">Tommy Hilfiger India</option>
+                      <option value="calvinklein">Calvin Klein India</option>
+                      <option value="uspoloassn">US Polo Assn India</option>
+                      <option value="forever21">Forever 21 India</option>
+                      <option value="jackjones">Jack & Jones India</option>
+                      <option value="only">Only India</option>
+                      <option value="veromoda">Vero Moda India</option>
+                      <option value="superdry">Superdry India</option>
+                      <option value="gasjeans">Gas Jeans India</option>
+                    </optgroup>
+                    <optgroup label="Ethnic & Traditional Wear">
+                      <option value="fabindia">Fabindia</option>
+                      <option value="manyavar">Manyavar</option>
+                      <option value="mohey">Mohey</option>
+                      <option value="wforwoman">W for Woman</option>
+                      <option value="aurelia">Aurelia</option>
+                      <option value="biba">Biba</option>
+                      <option value="globaldesi">Global Desi</option>
+                      <option value="houseofindya">House of Indya</option>
+                      <option value="libas">Libas</option>
+                      <option value="soch">Soch</option>
+                      <option value="meenabazaar">Meena Bazaar</option>
+                      <option value="nallisilks">Nalli Silks</option>
+                      <option value="karagiri">Karagiri</option>
+                      <option value="suta">Suta</option>
+                      <option value="kalkifashion">Kalki Fashion</option>
+                    </optgroup>
+                    <optgroup label="Footwear Brands & Stores">
+                      <option value="bata">Bata India</option>
+                      <option value="metroshoes">Metro Shoes</option>
+                      <option value="mochishoes">Mochi Shoes</option>
+                      <option value="libertyshoes">Liberty Shoes</option>
+                      <option value="khadims">Khadim's</option>
+                      <option value="paragon">Paragon</option>
+                      <option value="campusshoes">Campus Shoes</option>
+                      <option value="relaxo">Sparx / Relaxo</option>
+                      <option value="woodland">Woodland India</option>
+                      <option value="crocs">Crocs India</option>
+                      <option value="skechers">Skechers India</option>
+                      <option value="puma">Puma</option>
+                      <option value="adidas">Adidas Store</option>
+                      <option value="nike">Nike India</option>
+                      <option value="reebok">Reebok India</option>
+                    </optgroup>
+                    <optgroup label="Electronics & Appliance Brands">
+                      <option value="sony">Sony India</option>
+                      <option value="samsung">Samsung Store</option>
+                      <option value="lg">LG Brand Store</option>
+                      <option value="apple">Apple Store</option>
+                      <option value="xiaomi">Xiaomi India</option>
+                      <option value="oneplus">OnePlus Store</option>
+                      <option value="realme">Realme India</option>
+                      <option value="vivo">Vivo India</option>
+                      <option value="oppo">Oppo India</option>
+                      <option value="motorola">Motorola India</option>
+                      <option value="hp">HP World</option>
+                      <option value="dell">Dell India</option>
+                      <option value="lenovo">Lenovo Store</option>
+                      <option value="asus">Asus India</option>
+                      <option value="acer">Acer India</option>
+                      <option value="whirlpool">Whirlpool India</option>
+                      <option value="godrej">Godrej Appliances</option>
+                      <option value="haier">Haier India</option>
+                      <option value="voltas">Voltas</option>
+                      <option value="bluestar">Blue Star</option>
+                    </optgroup>
+                    <optgroup label="Electronics Retailers & Audio">
+                      <option value="croma">Croma</option>
+                      <option value="reliance">Reliance Digital</option>
+                      <option value="vijaysales">Vijay Sales</option>
+                      <option value="boat">boAt Lifestyle</option>
+                      <option value="noise">Noise</option>
+                      <option value="boult">Boult Audio</option>
+                      <option value="mivi">Mivi</option>
+                      <option value="fireboltt">Fire-Boltt</option>
+                      <option value="zebronics">Zebronics</option>
+                      <option value="portronics">Portronics</option>
+                      <option value="jbl">JBL India</option>
+                      <option value="anker">Anker India</option>
+                      <option value="sennheiser">Sennheiser India</option>
+                      <option value="ambrane">Ambrane</option>
+                      <option value="leafstudios">Leaf Studios</option>
+                      <option value="headphones">Headphone Zone</option>
+                      <option value="dailyobjects">Daily Objects</option>
+                    </optgroup>
+                    <optgroup label="Fine Jewelry">
+                      <option value="tanishq">Tanishq</option>
+                      <option value="joyalukkas">Joyalukkas</option>
+                      <option value="caratlane">CaratLane</option>
+                      <option value="bluestone">BlueStone</option>
+                      <option value="giva">GIVA</option>
+                      <option value="melorra">Melorra</option>
+                      <option value="miabytanishq">Mia by Tanishq</option>
+                      <option value="kalyanjewellers">Kalyan Jewellers</option>
+                      <option value="malabargold">Malabar Gold & Diamonds</option>
+                      <option value="sencogold">Senco Gold & Diamonds</option>
+                      <option value="pcjeweller">PC Jeweller</option>
+                      <option value="voylla">Voylla</option>
+                      <option value="orrajewellery">Orra Jewellery</option>
+                      <option value="candere">Candere by Kalyan Jewellers</option>
+                      <option value="kushals">Kushal's Fashion Jewellery</option>
+                    </optgroup>
+                    <optgroup label="Watches & Fashion Accessories">
+                      <option value="titan">Titan</option>
+                      <option value="fastrack">Fastrack</option>
+                      <option value="sonata">Sonata</option>
+                      <option value="casio">Casio India</option>
+                      <option value="fossil">Fossil India</option>
+                      <option value="danielwellington">Daniel Wellington India</option>
+                      <option value="ethoswatches">Ethos Watches</option>
+                      <option value="helioswatches">Helios Watches</option>
+                      <option value="baggit">Baggit</option>
+                      <option value="caprese">Caprese</option>
+                      <option value="lavie">Lavie</option>
+                      <option value="hidesign">Hidesign</option>
+                      <option value="damilano">Da Milano</option>
+                      <option value="wildhorn">Wildhorn</option>
+                    </optgroup>
+                    <optgroup label="Eyewear & Sunglasses">
+                      <option value="lenskart">Lenskart</option>
+                      <option value="titaneyeplus">Titan Eyeplus</option>
+                      <option value="johnjacobs">John Jacobs</option>
+                      <option value="coolwinks">Coolwinks</option>
+                      <option value="rayban">Ray-Ban India</option>
+                      <option value="sunglasshut">Sunglass Hut India</option>
+                      <option value="specsmakers">Specsmakers</option>
+                      <option value="lenspick">Lenspick</option>
+                      <option value="cleardekho">ClearDekho</option>
+                      <option value="vincentchase">Vincent Chase</option>
+                    </optgroup>
+                    <optgroup label="Beauty & Personal Care">
+                      <option value="nykaa">Nykaa</option>
+                      <option value="purplle">Purplle</option>
+                      <option value="myglamm">MyGlamm</option>
+                      <option value="sugarcosmetics">Sugar Cosmetics</option>
+                      <option value="mamaearth">Mamaearth</option>
+                      <option value="wowskin">Wow Skin Science</option>
+                      <option value="dermaco">The Derma Co</option>
+                      <option value="plumgoodness">Plum Goodness</option>
+                      <option value="mcaffeine">mCaffeine</option>
+                      <option value="forestessentials">Forest Essentials</option>
+                      <option value="kamaayurveda">Kama Ayurveda</option>
+                      <option value="biotique">Biotique</option>
+                      <option value="lotusherbals">Lotus Herbals</option>
+                      <option value="himalaya">Himalaya Wellness</option>
+                      <option value="minimalist">Minimalist</option>
+                      <option value="foxtale">Foxtale</option>
+                      <option value="pilgrim">Pilgrim</option>
+                      <option value="dotandkey">Dot & Key</option>
+                      <option value="facescanada">Faces Canada</option>
+                    </optgroup>
+                    <optgroup label="Home Decor & Kitchenware">
+                      <option value="pepperfry">Pepperfry</option>
+                      <option value="urbanladder">Urban Ladder</option>
+                      <option value="woodenstreet">Wooden Street</option>
+                      <option value="homecentre">Home Centre</option>
+                      <option value="ikea">IKEA India</option>
+                      <option value="sleepwell">Sleepwell</option>
+                      <option value="wakefit">Wakefit</option>
+                      <option value="flomattress">Flo Mattress</option>
+                      <option value="thesleepcompany">The Sleep Company</option>
+                      <option value="borosil">Borosil</option>
+                      <option value="wonderchef">Wonderchef</option>
+                      <option value="pigeon">Pigeon</option>
+                      <option value="prestige">Prestige</option>
+                      <option value="hawkins">Hawkins Cookers</option>
+                      <option value="chumbak">Chumbak</option>
+                    </optgroup>
+                    <optgroup label="Kids, Sports & Fitness">
+                      <option value="firstcry">FirstCry</option>
+                      <option value="hopscotch">Hopscotch</option>
+                      <option value="hamleys">Hamleys India</option>
+                      <option value="decathlon">Decathlon India</option>
+                      <option value="cultstore">Cultsport</option>
+                      <option value="vectorx">Vector X</option>
+                      <option value="cosco">Cosco India</option>
+                      <option value="nivia">Nivia Sports</option>
+                      <option value="yonex">Yonex India</option>
+                      <option value="starsports">Star India Sports</option>
+                      <option value="bookswagon">Bookswagon</option>
+                      <option value="vishalmegamart">Vishal Mega Mart</option>
+                    </optgroup>
                   </>
                 )}
                 {category === 'quickcommerce' && (

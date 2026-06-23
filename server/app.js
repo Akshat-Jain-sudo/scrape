@@ -68,7 +68,7 @@ app.post('/api/cart/optimize', async (req, res) => {
       ? ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes']
       : category === 'food' 
         ? ['zomato', 'swiggy']
-        : ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq'];
+        : ['amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'shopsy', 'paytmmall', 'meesho', 'shopclues', 'ebay'];
 
     // Initialize stores in the result
     targetStores.forEach(store => {
@@ -191,7 +191,50 @@ app.post('/api/scrape', async (req, res) => {
         'reliance', 'samsung', 'vijaysales', 'hp', 'oneplus', 'lenovo', 'lg',
         'dailyobjects', 'headphones', 'apple', 'puma', 'lenskart', 'zara',
         'tanishq', 'pantaloons', 'adidas', 'maxfashion', 'bewakoof', 'chumbak',
-        'joyalukkas', 'snitch', 'cultstore', 'vishalmegamart'
+        'joyalukkas', 'snitch', 'cultstore', 'vishalmegamart',
+        
+        // General E-Commerce
+        'shopsy', 'paytmmall', 'dealshare', 'citymall', 'udaan', 'ondc',
+
+        // Fashion & Lifestyle Marketplaces
+        'tatacliq_luxury', 'nnnow', 'lifestylestores', 'shoppersstop', 'westside', 'zudio', 'azorte', 'reliancetrends', 'yousta', 'centro',
+
+        // D2C Fashion & Apparel
+        'souledstore', 'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine',
+        'roadster', 'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape',
+
+        // International Fashion Brands
+        'hm', 'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans',
+
+        // Ethnic Wear
+        'fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion',
+
+        // Footwear
+        'bata', 'metroshoes', 'mochishoes', 'libertyshoes', 'khadims', 'paragon', 'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers', 'nike', 'reebok',
+
+        // Electronics & Appliances
+        'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar',
+
+        // Retailers & Audio
+        'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios',
+
+        // Jewelry
+        'caratlane', 'bluestone', 'giva', 'melorra', 'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 'voylla', 'orrajewellery', 'candere', 'kushals',
+
+        // Watches & Accessories
+        'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'baggit', 'caprese', 'lavie', 'hidesign', 'damilano', 'wildhorn',
+
+        // Eyewear
+        'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase',
+
+        // Beauty & Personal Care
+        'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 'dotandkey', 'facescanada',
+
+        // Home & Kitchen
+        'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 'prestige', 'hawkins',
+
+        // Kids & Sports
+        'hopscotch', 'hamleys', 'decathlon', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports'
       ];
 
       for (const store of simulatedEcommerceStores) {
