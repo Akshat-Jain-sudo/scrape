@@ -9,7 +9,9 @@ import {
   ShoppingCart,
   FileSpreadsheet,
   FileText,
-  FileJson
+  FileJson,
+  Mic,
+  MicOff
 } from 'lucide-react';
 
 const STORE_NAMES = {
@@ -286,8 +288,45 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
   const [consoleLogs, setConsoleLogs] = useState([]);
   const [results, setResults] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [isListening, setIsListening] = useState(false);
   
   const consoleEndRef = useRef(null);
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      addToast('Speech recognition is not supported in this browser.', 'warning');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      addToast('Listening for search query...', 'info');
+    };
+
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+      addToast('Voice input timed out or failed.', 'error');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = async (e) => {
+      const transcript = e.results[0][0].transcript;
+      addToast(`Transcribed: "${transcript}"`, 'info');
+      setQuery(transcript);
+    };
+
+    recognition.start();
+  };
 
   // Auto-scroll console logs to bottom
   useEffect(() => {
@@ -326,6 +365,9 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
 
       for (const st of activeStores) {
         const name = STORE_NAMES[st] || st.toUpperCase();
+        const proxyIP = `103.22.201.${Math.floor(Math.random() * 254) + 1}`;
+        addLog(`PROXY: Rotated IP pool to ${proxyIP}:8080 (ScrapingBee India Agent)`, 'accent');
+        await new Promise(r => setTimeout(r, 100));
         addLog(`FETCH [${st.toUpperCase()}]: Checking local restaurants on ${name}...`, 'info');
         await new Promise(r => setTimeout(r, 150));
       }
@@ -341,11 +383,17 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
 
       for (const st of activeStores) {
         const name = STORE_NAMES[st] || st.toUpperCase();
+        const proxyIP = `103.22.201.${Math.floor(Math.random() * 254) + 1}`;
+        addLog(`PROXY: Rotated IP pool to ${proxyIP}:8080 (ScrapingBee India Agent)`, 'accent');
+        await new Promise(r => setTimeout(r, 100));
         addLog(`FETCH [${st.toUpperCase()}]: Querying ${name} express catalog...`, 'info');
         await new Promise(r => setTimeout(r, 150));
       }
     } else {
       addLog(`AGENT: Preparing rotated request headers...`, 'info');
+      await new Promise(r => setTimeout(r, 150));
+      const proxyIP = `103.22.201.${Math.floor(Math.random() * 254) + 1}`;
+      addLog(`PROXY: Rotated IP pool to ${proxyIP}:8080 (ScrapingBee India Agent)`, 'accent');
       await new Promise(r => setTimeout(r, 150));
       addLog(`RATE: Delay buffer (1.2s - 2.8s) between page indexes`, 'info');
       await new Promise(r => setTimeout(r, 150));
@@ -440,15 +488,28 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
           <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="input-box-wrapper">
               <label className="input-label">Product Search Query</label>
-              <input 
-                type="text" 
-                placeholder="e.g. laptop, milk, sneakers..." 
-                className="console-input"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                disabled={loading}
-                onKeyDown={(e) => e.key === 'Enter' && simulateScrapeLogs()}
-              />
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. laptop, milk, sneakers..." 
+                  className="console-input"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  disabled={loading}
+                  onKeyDown={(e) => e.key === 'Enter' && simulateScrapeLogs()}
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  type="button" 
+                  className={`btn btn-secondary ${isListening ? 'listening-mic-btn' : ''}`}
+                  style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', color: isListening ? 'var(--danger)' : 'var(--text-primary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onClick={handleVoiceSearch}
+                  title="Voice Search Assistant"
+                  disabled={loading}
+                >
+                  {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                </button>
+              </div>
             </div>
 
             <div className="input-box-wrapper">

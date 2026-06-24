@@ -12,7 +12,10 @@ import {
   Sparkles, 
   TrendingUp, 
   ShoppingCart, 
-  RefreshCw 
+  RefreshCw,
+  Mic,
+  MicOff,
+  Brain
 } from 'lucide-react';
 
 const STORE_NAMES = {
@@ -391,6 +394,31 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
   const [loading, setLoading] = useState(true);
   const [compData, setCompData] = useState(null);
   const [error, setError] = useState(null);
+  const [aiRecommendation, setAiRecommendation] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAIRecommendation = async (data) => {
+    setAiLoading(true);
+    setAiRecommendation('');
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          cartData: { products: Object.entries(data.comparison).map(([store, details]) => ({ name: data.productName, price: details.price, rating: details.rating, source: store, discount: details.discount })) }, 
+          type: 'product' 
+        })
+      });
+      if (response.ok) {
+        const resData = await response.json();
+        setAiRecommendation(resData.analysis);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const fetchComparison = async (force = false) => {
     setLoading(true);
@@ -404,6 +432,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
       if (response.ok) {
         const data = await response.json();
         setCompData(data);
+        fetchAIRecommendation(data);
       } else {
         throw new Error('Comparison failed');
       }
@@ -599,6 +628,25 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
                 );
               })}
             </div>
+
+            {/* Gemini AI Analyst Recommendation Panel */}
+            <div className="gemini-analyst-panel glass-card stagger-in" style={{ padding: '0.75rem', border: '1px solid rgba(245,114,36,0.15)', background: 'rgba(245,114,36,0.01)', margin: '0.75rem 0', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                <Brain size={14} color="var(--accent-primary)" />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gemini Value Analyst</span>
+                {aiLoading && <RefreshCw size={10} className="animate-spin" style={{ color: 'var(--accent-primary)' }} />}
+              </div>
+              {aiLoading ? (
+                <div className="shimmer-lines">
+                  <div className="shimmer-line" style={{ height: '8px' }}></div>
+                  <div className="shimmer-line" style={{ height: '8px', width: '70%' }}></div>
+                </div>
+              ) : aiRecommendation ? (
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }} dangerouslySetInnerHTML={{ __html: aiRecommendation }}></p>
+              ) : (
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>Generating value summary...</p>
+              )}
+            </div>
             
             <SpeedCostMatrix comparisonData={compData} />
           </>
@@ -636,6 +684,67 @@ function Dashboard({
   const [customComp, setCustomComp] = useState(null);
   const [searching, setSearching] = useState(false);
   const [showLocationMenu, setShowLocationMenu] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      addToast('Speech recognition is not supported in this browser.', 'warning');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      addToast('Listening for product name...', 'info');
+    };
+
+    recognition.onerror = (e) => {
+      console.error(e);
+      setIsListening(false);
+      addToast('Voice search timed out or failed.', 'error');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = async (e) => {
+      const transcript = e.results[0][0].transcript;
+      addToast(`Searching for: "${transcript}"`, 'info');
+      setSearchQuery(transcript);
+      
+      setSearching(true);
+      setCustomComp(null);
+
+      try {
+        const response = await fetch('/api/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: transcript.trim(), category: activeCategory, location: userLocation })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCustomComp(data);
+          addToast(`Found comparisons for "${transcript}"`, 'success');
+        } else {
+          throw new Error('Comparison failed');
+        }
+      } catch (error) {
+        console.error(error);
+        addToast('Failed to compare prices.', 'error');
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    recognition.start();
+  };
 
   // Fetch trending products config
   useEffect(() => {
@@ -786,6 +895,16 @@ function Dashboard({
             disabled={searching}
             onKeyDown={(e) => e.key === 'Enter' && handleCustomSearch()}
           />
+          <button 
+            type="button" 
+            className={`btn btn-secondary ${isListening ? 'listening-mic-btn' : ''}`}
+            style={{ padding: '0.6rem 0.75rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', color: isListening ? 'var(--danger)' : 'var(--text-primary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={handleVoiceSearch}
+            title="Voice Search Assistant"
+            disabled={searching}
+          >
+            {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+          </button>
           <button 
             className="btn btn-primary" 
             onClick={handleCustomSearch}

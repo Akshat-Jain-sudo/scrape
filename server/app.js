@@ -19,6 +19,7 @@ import {
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { initDb, readDb, writeDb } from './db.js';
+import { startPriceHistoryScheduler } from './cron.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,8 +32,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Initialize DB (runs asynchronously on load)
-initDb().catch(err => console.error('Database initialization failed:', err));
+// Initialize DB and Cron background scheduler
+initDb()
+  .then(() => {
+    startPriceHistoryScheduler();
+  })
+  .catch(err => console.error('Database initialization failed:', err));
 
 // ── GET /api/trending — Get trending deals configuration ──
 app.get('/api/trending', (req, res) => {
@@ -87,39 +92,49 @@ app.post('/api/cart/optimize', async (req, res) => {
       };
     });
 
+    const itemPrices = [];
+    const itemProducts = [];
+
     // Scrape/simulate each item
     for (const itemQuery of items) {
       const queryStr = itemQuery.trim();
       if (!queryStr) continue;
 
+      const pricesForQuery = {};
+      const productsForQuery = {};
+
       for (const store of targetStores) {
         const storeProducts = simulateStoreSearch(queryStr, store, 1, location);
+        let bestMatch = null;
         if (storeProducts && storeProducts.length > 0) {
-          // Find the cheapest match
-          const bestMatch = storeProducts.sort((a, b) => a.price - b.price)[0];
-          cartByStore[store].items.push({
-            query: queryStr,
-            name: bestMatch.name,
-            price: bestMatch.price,
-            priceFormatted: bestMatch.priceFormatted,
-            imageUrl: bestMatch.imageUrl,
-            productLink: bestMatch.productLink
-          });
-          cartByStore[store].subtotal += bestMatch.price;
+          bestMatch = storeProducts.sort((a, b) => a.price - b.price)[0];
         } else {
-          // Fallback if no item found
           const estPrice = getEstimatedBasePrice(queryStr, category);
-          cartByStore[store].items.push({
+          bestMatch = {
             query: queryStr,
             name: `${store.toUpperCase()} ${queryStr} (Simulated)`,
             price: estPrice,
             priceFormatted: `₹${estPrice}`,
             imageUrl: '',
             productLink: getStoreLink(store, queryStr)
-          });
-          cartByStore[store].subtotal += estPrice;
+          };
         }
+        
+        cartByStore[store].items.push({
+          query: queryStr,
+          name: bestMatch.name,
+          price: bestMatch.price,
+          priceFormatted: bestMatch.priceFormatted,
+          imageUrl: bestMatch.imageUrl,
+          productLink: bestMatch.productLink
+        });
+        cartByStore[store].subtotal += bestMatch.price;
+
+        pricesForQuery[store] = bestMatch.price;
+        productsForQuery[store] = bestMatch;
       }
+      itemPrices.push(pricesForQuery);
+      itemProducts.push(productsForQuery);
     }
 
     // Compute totals
@@ -142,11 +157,106 @@ app.post('/api/cart/optimize', async (req, res) => {
 
     const savings = mostExpensiveTotal - cheapestTotal;
 
+    // Mathematical Split-Cart Solver (Branch-and-Bound Backtracking)
+    const N = itemPrices.length;
+    const storeOverheads = {};
+    targetStores.forEach(store => {
+      storeOverheads[store] = cartByStore[store].deliveryFee + cartByStore[store].packagingFee;
+    });
+
+    let bestTotal = cheapestTotal; // Start with single cheapest total as upper bound
+    let bestAssignments = [];      // Best store for each item index
+
+    // Default to cheapest single store
+    for (let i = 0; i < N; i++) {
+      bestAssignments.push(cheapestStore);
+    }
+
+    function solve(itemIdx, currentItemCost, usedStoresSet, currentAssignments) {
+      if (itemIdx === N) {
+        let overhead = 0;
+        usedStoresSet.forEach(s => {
+          overhead += storeOverheads[s];
+        });
+        const grandTotal = currentItemCost + overhead;
+        if (grandTotal < bestTotal) {
+          bestTotal = grandTotal;
+          bestAssignments = [...currentAssignments];
+        }
+        return;
+      }
+
+      for (const store of targetStores) {
+        const price = itemPrices[itemIdx][store];
+        const isNewStore = !usedStoresSet.has(store);
+        const addedOverhead = isNewStore ? storeOverheads[store] : 0;
+
+        let currentOverhead = 0;
+        usedStoresSet.forEach(s => {
+          currentOverhead += storeOverheads[s];
+        });
+
+        if (currentItemCost + price + currentOverhead + addedOverhead >= bestTotal) {
+          continue; // Branch-and-bound prune
+        }
+
+        currentAssignments.push(store);
+        if (isNewStore) usedStoresSet.add(store);
+
+        solve(itemIdx + 1, currentItemCost + price, usedStoresSet, currentAssignments);
+
+        if (isNewStore) usedStoresSet.delete(store);
+        currentAssignments.pop();
+      }
+    }
+
+    if (N > 0) {
+      solve(0, 0, new Set(), []);
+    }
+
+    // Build the splitCart response
+    const splitCartBreakdown = {};
+    const usedStoresList = Array.from(new Set(bestAssignments));
+
+    usedStoresList.forEach(store => {
+      splitCartBreakdown[store] = {
+        storeName: STORE_NAMES[store] || store,
+        items: [],
+        subtotal: 0,
+        deliveryFee: cartByStore[store].deliveryFee,
+        packagingFee: cartByStore[store].packagingFee,
+        total: 0,
+        deliveryTime: cartByStore[store].deliveryTime
+      };
+    });
+
+    for (let i = 0; i < N; i++) {
+      const assignedStore = bestAssignments[i];
+      const product = itemProducts[i][assignedStore];
+      splitCartBreakdown[assignedStore].items.push(product);
+      splitCartBreakdown[assignedStore].subtotal += product.price;
+    }
+
+    let splitGrandTotal = 0;
+    usedStoresList.forEach(store => {
+      const breakdown = splitCartBreakdown[store];
+      breakdown.total = breakdown.subtotal + breakdown.deliveryFee + breakdown.packagingFee;
+      splitGrandTotal += breakdown.total;
+    });
+
+    const splitCart = {
+      grandTotal: splitGrandTotal,
+      savings: Math.max(0, cheapestTotal - splitGrandTotal),
+      usedStores: usedStoresList,
+      storeBreakdown: splitCartBreakdown
+    };
+
     res.json({
       cartByStore,
       cheapestStore,
       cheapestTotal,
       savings,
+      splitCart,
       location,
       category
     });
@@ -578,6 +688,152 @@ app.get('/api/proxy-image', async (req, res) => {
   } catch (error) {
     console.error(`Image proxy failed for ${url}:`, error.message);
     res.redirect('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200');
+  }
+});
+
+// ── POST /api/ai/analyze — Gemini AI / NLP Analyst recommendation ──
+app.post('/api/ai/analyze', async (req, res) => {
+  const { cartData, type = 'cart' } = req.body;
+  if (!cartData) {
+    return res.status(400).json({ error: 'Cart data is required' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    try {
+      const prompt = `You are FlipScrape Value Analyst, an expert shopping assistant. Analyze this price comparison payload:
+${JSON.stringify(cartData, null, 2)}
+
+Provide a natural language recommendation (approx 3-5 sentences) on where the user should shop. Factor in total cost, delivery times, ratings, distance, and whether the split-cart option offers better value. Write in a premium, helpful, and concise tone. Reference specific store names and savings values (use ₹ symbol for currency).`;
+
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          contents: [{ parts: [{ text: prompt }] }]
+        },
+        { headers: { 'Content-Type': 'application/json' }, timeout: 8000 }
+      );
+
+      const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        return res.json({ analysis: text.trim(), source: 'gemini' });
+      }
+    } catch (err) {
+      console.warn('Gemini API call failed, falling back to local NLP analyst:', err.message);
+    }
+  }
+
+  // Local rule-based NLP Fallback Analyst
+  try {
+    let analysis = '';
+    if (type === 'cart') {
+      const { cartByStore, cheapestStore, cheapestTotal, splitCart, category } = cartData;
+      const cheapestStoreName = cartByStore[cheapestStore]?.storeName || cheapestStore;
+      
+      let splitInfo = '';
+      if (splitCart && splitCart.savings > 0) {
+        const storesStr = splitCart.usedStores.map(s => cartByStore[s]?.storeName || s).join(' and ');
+        splitInfo = ` Alternatively, by splitting your cart across ${storesStr}, you can reduce your total outlay to ₹${splitCart.grandTotal}, pocketing an extra ₹${splitCart.savings} in net savings after accounting for all delivery fees.`;
+      }
+
+      analysis = `Based on our Smart Value analysis, **${cheapestStoreName}** offers the best single-store value for your cart, bringing your grand total to **₹${cheapestTotal}** (including delivery & packaging).${splitInfo} We recommend completing checkout with this optimized distribution to maximize your budget efficiency.`;
+    } else {
+      // Product comparison mode
+      const { products } = cartData;
+      if (products && products.length > 0) {
+        const sorted = [...products].sort((a, b) => a.price - b.price);
+        const cheapest = sorted[0];
+        const highestRated = [...products].sort((a, b) => b.rating - a.rating)[0];
+        
+        analysis = `Our value scan recommends the **${cheapest.name}** on **${cheapest.source.toUpperCase()}** as the most economical option at **₹${cheapest.price}** (${cheapest.discount}% off). However, if quality is your priority, the **${highestRated.name}** on **${highestRated.source.toUpperCase()}** boasts the highest consumer rating of **${highestRated.rating}★** for ₹${highestRated.price}.`;
+      } else {
+        analysis = "No products were found in the query response. Try broadening your keywords to compare features, prices, and shipping options across major marketplaces.";
+      }
+    }
+    res.json({ analysis, source: 'fallback-nlp' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to run NLP analysis' });
+  }
+});
+
+// ── POST /api/ai/parse-voice — AI/NLP Speech-to-Cart parser ──
+app.post('/api/ai/parse-voice', async (req, res) => {
+  const { transcription } = req.body;
+  if (!transcription) {
+    return res.status(400).json({ error: 'Transcription text is required' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    try {
+      const prompt = `You are a voice shopping assistant. Extract the list of product items and determine the category ("quickcommerce", "food", or "ecommerce") from this speech:
+"${transcription}"
+
+Respond with ONLY a valid JSON object. Do not include markdown code block formatting or backticks. Format:
+{
+  "items": ["item1", "item2", ...],
+  "category": "quickcommerce"
+}`;
+
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          contents: [{ parts: [{ text: prompt }] }]
+        },
+        { headers: { 'Content-Type': 'application/json' }, timeout: 8000 }
+      );
+
+      const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        // Clean JSON formatting from text
+        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanedText);
+        return res.json(parsed);
+      }
+    } catch (err) {
+      console.warn('Gemini Voice Parser failed, falling back to local parser:', err.message);
+    }
+  }
+
+  // Regex-based Local Fallback NLP Parser
+  try {
+    const text = transcription.toLowerCase();
+    let category = 'quickcommerce'; // default
+
+    if (/\b(food|restaurant|dinner|lunch|breakfast|pizza|burger|biryani|paneer|curry|roti|zomato|swiggy)\b/.test(text)) {
+      category = 'food';
+    } else if (/\b(ecommerce|amazon|flipkart|snapdeal|phone|laptop|jeans|shirt|clothing|shoes|tshirt|hoodie)\b/.test(text)) {
+      category = 'ecommerce';
+    }
+
+    // Attempt to extract items
+    // Look for phrases like "search for", "add", "buy", "get", "need"
+    let listPart = text;
+    const match = text.match(/(?:search for|add|buy|get|need)\s+(.+)/i);
+    if (match) {
+      listPart = match[1];
+    }
+
+    // Split on "and", "or", commas
+    const rawItems = listPart.split(/\band\b|,|\bor\b/);
+    const items = rawItems
+      .map(item => {
+        // Clean up common fillers, numbers, articles
+        return item
+          .replace(/\b(a|an|the|some|please|packs? of|kgs?|litres?|cans? of|bottles? of|pieces?|box|to the cart|to cart)\b/g, '')
+          .replace(/\b\d+\s*\b/g, '') // remove numbers
+          .trim();
+      })
+      .filter(item => item.length > 2);
+
+    res.json({
+      items: items.length > 0 ? items : [transcription],
+      category
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to parse voice query' });
   }
 });
 
