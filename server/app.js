@@ -411,10 +411,70 @@ app.post('/api/scrape', async (req, res) => {
       return true;
     });
 
+    // Find bestPriceDeal across all stores in the category
+    let bestPriceDeal = null;
+    let lowestPrice = Infinity;
+
+    const simulatedEcommerceStores = [
+      'amazon', 'meesho', 'jiomart', 'tatacliq', 'shopclues', 'indiamart',
+      'myntra', 'ajio', 'nykaa', 'nykaafashion', 'firstcry', 'pepperfry',
+      'bookswagon', 'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'croma',
+      'reliance', 'samsung', 'vijaysales', 'hp', 'oneplus', 'lenovo', 'lg',
+      'dailyobjects', 'headphones', 'apple', 'puma', 'lenskart', 'zara',
+      'tanishq', 'pantaloons', 'adidas', 'maxfashion', 'bewakoof', 'chumbak',
+      'joyalukkas', 'snitch', 'cultstore', 'vishalmegamart',
+      'shopsy', 'paytmmall', 'dealshare', 'citymall', 'udaan', 'ondc',
+      'tatacliq_luxury', 'nnnow', 'lifestylestores', 'shoppersstop', 'westside', 'zudio', 'azorte', 'reliancetrends', 'yousta', 'centro',
+      'souledstore', 'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine',
+      'roadster', 'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape',
+      'hm', 'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans',
+      'fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion',
+      'bata', 'metroshoes', 'mochishoes', 'libertyshoes', 'khadims', 'paragon', 'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers', 'nike', 'reebok',
+      'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar',
+      'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios',
+      'caratlane', 'bluestone', 'giva', 'melorra', 'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 'voylla', 'orrajewellery', 'candere', 'kushals',
+      'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'baggit', 'caprese', 'lavie', 'hidesign', 'damilano', 'wildhorn',
+      'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase',
+      'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 'dotandkey', 'facescanada',
+      'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 'prestige', 'hawkins',
+      'hopscotch', 'hamleys', 'decathlon', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports'
+    ];
+
+    const allStoresList = category === 'ecommerce'
+      ? ['flipkart', 'snapdeal', ...simulatedEcommerceStores]
+      : category === 'food'
+        ? ['zomato', 'swiggy']
+        : [
+            'blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes',
+            'amazonfresh', 'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight'
+          ];
+
+    for (const store of allStoresList) {
+      let storeProducts = [];
+      const matchesActive = matchesSource(store);
+      
+      if (store === 'flipkart' && matchesActive) {
+        storeProducts = uniqueProducts.filter(p => p.source === 'flipkart');
+      } else if (store === 'snapdeal' && matchesActive) {
+        storeProducts = uniqueProducts.filter(p => p.source === 'snapdeal');
+      } else {
+        storeProducts = simulateStoreSearch(query.trim(), store, 1, location);
+      }
+
+      if (storeProducts && storeProducts.length > 0) {
+        const cheapestInStore = storeProducts.reduce((lowest, p) => p.price < lowest.price ? p : lowest, storeProducts[0]);
+        if (cheapestInStore && cheapestInStore.price < lowestPrice) {
+          lowestPrice = cheapestInStore.price;
+          bestPriceDeal = cheapestInStore;
+        }
+      }
+    }
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     const result = {
       products: uniqueProducts,
+      bestPriceDeal,
       meta: {
         query: query.trim(),
         category,

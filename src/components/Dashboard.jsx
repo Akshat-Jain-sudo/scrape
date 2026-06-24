@@ -283,6 +283,101 @@ const STORE_NAMES = {
   swiggy: 'Swiggy'
 };
 
+const DEFAULT_SOURCES = {
+  ecommerce: ['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio'],
+  quickcommerce: ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes'],
+  food: ['zomato', 'swiggy']
+};
+
+const STORE_GROUPS = {
+  ecommerce: [
+    {
+      id: 'marketplaces',
+      name: 'Marketplaces',
+      stores: ['amazon', 'flipkart', 'meesho', 'snapdeal', 'jiomart', 'tatacliq', 'shopsy', 'paytmmall', 'shopclues', 'dealshare', 'citymall', 'indiamart', 'udaan', 'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'ondc']
+    },
+    {
+      id: 'fashion',
+      name: 'Fashion & Lifestyle',
+      stores: ['myntra', 'ajio', 'nykaafashion', 'tatacliq_luxury', 'nnnow', 'lifestylestores', 'shoppersstop', 'pantaloons', 'maxfashion', 'westside', 'zudio', 'azorte', 'reliancetrends', 'yousta', 'centro']
+    },
+    {
+      id: 'd2c',
+      name: 'D2C Apparel & Casual',
+      stores: ['snitch', 'souledstore', 'bewakoof', 'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine', 'roadster', 'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape']
+    },
+    {
+      id: 'international',
+      name: 'International Brands',
+      stores: ['hm', 'zara', 'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans']
+    },
+    {
+      id: 'ethnic',
+      name: 'Ethnic & Traditional',
+      stores: ['fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion']
+    },
+    {
+      id: 'footwear',
+      name: 'Footwear Brands',
+      stores: ['bata', 'metroshoes', 'mochishoes', 'libertyshoes', 'khadims', 'paragon', 'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers', 'puma', 'adidas', 'nike', 'reebok']
+    },
+    {
+      id: 'electronics_brands',
+      name: 'Electronics Brands',
+      stores: ['sony', 'samsung', 'lg', 'apple', 'xiaomi', 'oneplus', 'realme', 'vivo', 'oppo', 'motorola', 'hp', 'dell', 'lenovo', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar']
+    },
+    {
+      id: 'electronics_retailers',
+      name: 'Electronics Retailers & Audio',
+      stores: ['croma', 'reliance', 'vijaysales', 'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'headphones', 'dailyobjects']
+    },
+    {
+      id: 'jewelry',
+      name: 'Fine Jewelry',
+      stores: ['tanishq', 'joyalukkas', 'caratlane', 'bluestone', 'giva', 'melorra', 'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 'voylla', 'orrajewellery', 'candere', 'kushals']
+    },
+    {
+      id: 'watches',
+      name: 'Watches & Accessories',
+      stores: ['titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'baggit', 'caprese', 'lavie', 'hidesign', 'damilano', 'wildhorn']
+    },
+    {
+      id: 'eyewear',
+      name: 'Eyewear & Sunglasses',
+      stores: ['lenskart', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase']
+    },
+    {
+      id: 'beauty',
+      name: 'Beauty & Personal Care',
+      stores: ['nykaa', 'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 'dotandkey', 'facescanada']
+    },
+    {
+      id: 'home',
+      name: 'Home & Kitchen',
+      stores: ['pepperfry', 'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 'prestige', 'hawkins', 'chumbak']
+    },
+    {
+      id: 'kids_sports',
+      name: 'Kids & Sports',
+      stores: ['firstcry', 'hopscotch', 'hamleys', 'decathlon', 'cultstore', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports', 'bookswagon', 'vishalmegamart']
+    }
+  ],
+  quickcommerce: [
+    {
+      id: 'quick',
+      name: 'Quick Commerce Stores',
+      stores: ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 'amazonfresh', 'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight']
+    }
+  ],
+  food: [
+    {
+      id: 'food_delivery',
+      name: 'Food Delivery Apps',
+      stores: ['zomato', 'swiggy']
+    }
+  ]
+};
+
 function SpeedCostMatrix({ comparisonData }) {
   if (!comparisonData || !comparisonData.comparison) return null;
   
@@ -390,7 +485,7 @@ function SpeedCostMatrix({ comparisonData }) {
 }
 
 // Sub-component to manage real-time comparison for a single product card in the feed
-function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, userLocation, onAddToCart }) {
+function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, userLocation, onAddToCart, selectedSources = [] }) {
   const [loading, setLoading] = useState(true);
   const [compData, setCompData] = useState(null);
   const [error, setError] = useState(null);
@@ -559,14 +654,24 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
         ) : (
           <>
             <div className="comp-stores-table">
-              {Object.entries(compData.comparison).map(([store, details]) => {
-                const isBest = store === compData.bestPriceStore;
-                return (
-                  <div key={store} className={`comp-store-row ${isBest ? 'is-best' : ''}`}>
-                    <div>
-                      <span className={getStoreBadgeClass(store)}>
-                        {store}
-                      </span>
+              {Object.entries(compData.comparison)
+                .filter(([store]) => {
+                  return selectedSources.length === 0 || selectedSources.includes(store) || store === compData.bestPriceStore;
+                })
+                .map(([store, details]) => {
+                  const isBest = store === compData.bestPriceStore;
+                  const isSelected = selectedSources.length === 0 || selectedSources.includes(store);
+                  return (
+                    <div key={store} className={`comp-store-row ${isBest ? 'is-best' : ''}`}>
+                      <div>
+                        <span className={getStoreBadgeClass(store)}>
+                          {store}
+                        </span>
+                        {!isSelected && isBest && (
+                          <span style={{ fontSize: '0.65rem', color: 'var(--success)', fontWeight: 700, marginLeft: '0.35rem', background: 'rgba(16,185,129,0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', display: 'inline-block', verticalAlign: 'middle' }}>
+                            ★ Best Deal (Unselected Store)
+                          </span>
+                        )}
                       {details.restaurantName && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
                           🏪 {details.restaurantName}
@@ -686,7 +791,56 @@ function Dashboard({
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
+  const [selectedSources, setSelectedSources] = useState(['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']);
+  const [storeSearch, setStoreSearch] = useState('');
+
+  // Sync selectedSources with category
+  useEffect(() => {
+    setSelectedSources(DEFAULT_SOURCES[activeCategory] || []);
+    setStoreSearch('');
+  }, [activeCategory]);
+
+  const toggleSource = (storeKey) => {
+    setSelectedSources(prev => {
+      if (prev.includes(storeKey)) {
+        return prev.filter(s => s !== storeKey);
+      } else {
+        return [...prev, storeKey];
+      }
+    });
+  };
+
+  const selectAllStores = () => {
+    const allCategoryStores = (STORE_GROUPS[activeCategory] || []).reduce((acc, group) => {
+      return [...acc, ...group.stores];
+    }, []);
+    setSelectedSources(allCategoryStores);
+  };
+
+  const clearAllStores = () => {
+    setSelectedSources([]);
+  };
+
+  const selectPresetStores = () => {
+    setSelectedSources(DEFAULT_SOURCES[activeCategory] || []);
+  };
+
+  const filteredGroups = (STORE_GROUPS[activeCategory] || []).map(group => {
+    const matchingStores = group.stores.filter(storeKey => {
+      const storeName = STORE_NAMES[storeKey] || storeKey;
+      return storeName.toLowerCase().includes(storeSearch.toLowerCase());
+    });
+    return {
+      ...group,
+      stores: matchingStores
+    };
+  }).filter(group => group.stores.length > 0);
+
   const handleVoiceSearch = () => {
+    if (selectedSources.length === 0) {
+      addToast('Please select at least one shopping website to compare', 'warning');
+      return;
+    }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       addToast('Speech recognition is not supported in this browser.', 'warning');
@@ -766,6 +920,10 @@ function Dashboard({
 
   const handleCustomSearch = async () => {
     if (!searchQuery.trim()) return;
+    if (selectedSources.length === 0) {
+      addToast('Please select at least one shopping website to compare', 'warning');
+      return;
+    }
 
     setSearching(true);
     setCustomComp(null);
@@ -923,6 +1081,136 @@ function Dashboard({
             )}
           </button>
         </div>
+
+        {/* Website Selection Panel (dashboard) */}
+        <div style={{ marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0, textTransform: 'none', letterSpacing: 'normal' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>Select Target Websites to Compare:</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                {selectedSources.length} selected
+              </span>
+            </label>
+
+            {/* Search & Actions Bar */}
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                placeholder="Search websites..." 
+                className="console-input"
+                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.2)', width: '200px', flexGrow: 1 }}
+                value={storeSearch}
+                onChange={(e) => setStoreSearch(e.target.value)}
+                disabled={searching}
+              />
+              
+              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', borderRadius: '6px' }}
+                  onClick={selectAllStores}
+                  disabled={searching}
+                >
+                  Select All
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', borderRadius: '6px' }}
+                  onClick={clearAllStores}
+                  disabled={searching}
+                >
+                  Clear All
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', borderRadius: '6px' }}
+                  onClick={selectPresetStores}
+                  disabled={searching}
+                >
+                  Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Checkbox Grid */}
+            <div className="store-checkbox-scroll-box" style={{
+              maxHeight: '180px',
+              overflowY: 'auto',
+              border: '1px solid var(--border-color)',
+              borderRadius: '10px',
+              padding: '0.75rem',
+              background: 'rgba(0,0,0,0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              {filteredGroups.length === 0 ? (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+                  No websites match your search
+                </div>
+              ) : (
+                filteredGroups.map(group => (
+                  <div key={group.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.2rem' }}>
+                      {group.name}
+                    </span>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.4rem' }}>
+                      {group.stores.map(storeKey => {
+                        const isSelected = selectedSources.includes(storeKey);
+                        const storeName = STORE_NAMES[storeKey] || storeKey;
+                        
+                        return (
+                          <button
+                            key={storeKey}
+                            type="button"
+                            onClick={() => toggleSource(storeKey)}
+                            disabled={searching}
+                            className={`store-toggle-badge ${isSelected ? 'active' : ''}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              padding: '0.4rem 0.5rem',
+                              borderRadius: '6px',
+                              border: isSelected ? '1px solid var(--accent-primary)' : '1px solid rgba(255,255,255,0.06)',
+                              background: isSelected ? 'var(--accent-glow)' : 'rgba(255,255,255,0.02)',
+                              color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                              fontSize: '0.75rem',
+                              fontWeight: 500,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              textAlign: 'left',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title={storeName}
+                          >
+                            <input 
+                              type="checkbox"
+                              checked={isSelected}
+                              readOnly
+                              style={{
+                                margin: 0,
+                                accentColor: 'var(--accent-primary)',
+                                pointerEvents: 'none'
+                              }}
+                            />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{storeName}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Custom Comparison Result Card */}
@@ -938,6 +1226,7 @@ function Dashboard({
             savedProducts={savedProducts}
             userLocation={userLocation}
             onAddToCart={onAddToCart}
+            selectedSources={selectedSources}
           />
         </div>
       )}
@@ -981,6 +1270,7 @@ function Dashboard({
                 savedProducts={savedProducts}
                 userLocation={userLocation}
                 onAddToCart={onAddToCart}
+                selectedSources={selectedSources}
               />
             ))}
           </div>

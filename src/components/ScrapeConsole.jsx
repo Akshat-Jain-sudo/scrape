@@ -394,6 +394,42 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
     setStoreSearch('');
   }, [category]);
 
+  const toggleSource = (storeKey) => {
+    setSelectedSources(prev => {
+      if (prev.includes(storeKey)) {
+        return prev.filter(s => s !== storeKey);
+      } else {
+        return [...prev, storeKey];
+      }
+    });
+  };
+
+  const selectAllStores = () => {
+    const allCategoryStores = (STORE_GROUPS[category] || []).reduce((acc, group) => {
+      return [...acc, ...group.stores];
+    }, []);
+    setSelectedSources(allCategoryStores);
+  };
+
+  const clearAllStores = () => {
+    setSelectedSources([]);
+  };
+
+  const selectPresetStores = () => {
+    setSelectedSources(DEFAULT_SOURCES[category] || []);
+  };
+
+  const filteredGroups = (STORE_GROUPS[category] || []).map(group => {
+    const matchingStores = group.stores.filter(storeKey => {
+      const storeName = STORE_NAMES[storeKey] || storeKey;
+      return storeName.toLowerCase().includes(storeSearch.toLowerCase());
+    });
+    return {
+      ...group,
+      stores: matchingStores
+    };
+  }).filter(group => group.stores.length > 0);
+
   const handleVoiceSearch = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -823,7 +859,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
             <>
               {/* Featured Lowest Price Showcase Card */}
               {(() => {
-                const cheapest = results.products.reduce((lowest, p) => p.price < lowest.price ? p : lowest, results.products[0]);
+                const cheapest = results.bestPriceDeal || results.products.reduce((lowest, p) => p.price < lowest.price ? p : lowest, results.products[0]);
                 if (!cheapest) return null;
                 return (
                   <div className="glass-card cheapest-product-showcase stagger-in" style={{
@@ -1003,7 +1039,25 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
                             </span>
                           </td>
                           <td className="product-name-cell" title={product.name}>
-                            {product.name}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              {product.imageUrl ? (
+                                <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', border: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                                  <img 
+                                    src={product.imageUrl.startsWith('http') && !product.imageUrl.includes('unsplash.com') ? `/api/proxy-image?url=${encodeURIComponent(product.imageUrl)}` : product.imageUrl} 
+                                    alt={product.name} 
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                    onError={(e) => {
+                                      e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                                  <ShoppingCart size={16} style={{ color: 'var(--text-muted)', opacity: 0.3 }} />
+                                </div>
+                              )}
+                              <span>{product.name}</span>
+                            </div>
                           </td>
                           <td className="price-cell">
                             <div>{product.priceFormatted}</div>
