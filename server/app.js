@@ -14,7 +14,8 @@ import {
   STORE_NAMES,
   getStoreLink,
   getStoreDeliveryTime,
-  getEstimatedBasePrice
+  getEstimatedBasePrice,
+  doesStoreSellQuery
 } from './scraper.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -104,19 +105,34 @@ app.post('/api/cart/optimize', async (req, res) => {
       const productsForQuery = {};
 
       for (const store of targetStores) {
-        const storeProducts = simulateStoreSearch(queryStr, store, 1, location);
+        const isSold = doesStoreSellQuery(store, queryStr);
         let bestMatch = null;
-        if (storeProducts && storeProducts.length > 0) {
-          bestMatch = storeProducts.sort((a, b) => a.price - b.price)[0];
+
+        if (isSold) {
+          const storeProducts = simulateStoreSearch(queryStr, store, 1, location);
+          if (storeProducts && storeProducts.length > 0) {
+            bestMatch = { ...storeProducts.sort((a, b) => a.price - b.price)[0], available: true };
+          } else {
+            const estPrice = getEstimatedBasePrice(queryStr, category);
+            bestMatch = {
+              query: queryStr,
+              name: `${store.toUpperCase()} ${queryStr} (Simulated)`,
+              price: estPrice,
+              priceFormatted: `₹${estPrice}`,
+              imageUrl: '',
+              productLink: getStoreLink(store, queryStr),
+              available: true
+            };
+          }
         } else {
-          const estPrice = getEstimatedBasePrice(queryStr, category);
           bestMatch = {
             query: queryStr,
-            name: `${store.toUpperCase()} ${queryStr} (Simulated)`,
-            price: estPrice,
-            priceFormatted: `₹${estPrice}`,
+            name: `${STORE_NAMES[store] || store.toUpperCase()} does not sell "${queryStr}"`,
+            price: 9999999, // Penalty price
+            priceFormatted: 'N/A',
             imageUrl: '',
-            productLink: getStoreLink(store, queryStr)
+            productLink: getStoreLink(store, queryStr),
+            available: false
           };
         }
         
@@ -126,9 +142,13 @@ app.post('/api/cart/optimize', async (req, res) => {
           price: bestMatch.price,
           priceFormatted: bestMatch.priceFormatted,
           imageUrl: bestMatch.imageUrl,
-          productLink: bestMatch.productLink
+          productLink: bestMatch.productLink,
+          available: bestMatch.available
         });
-        cartByStore[store].subtotal += bestMatch.price;
+        
+        if (bestMatch.available) {
+          cartByStore[store].subtotal += bestMatch.price;
+        }
 
         pricesForQuery[store] = bestMatch.price;
         productsForQuery[store] = bestMatch;
@@ -137,25 +157,35 @@ app.post('/api/cart/optimize', async (req, res) => {
       itemProducts.push(productsForQuery);
     }
 
-    // Compute totals
-    let cheapestStore = targetStores[0];
+    // Compute totals for single store options (only valid if store can fulfill ALL items)
+    let cheapestStore = null;
     let cheapestTotal = Infinity;
     let mostExpensiveTotal = 0;
 
     targetStores.forEach(store => {
       const storeCart = cartByStore[store];
-      storeCart.total = storeCart.subtotal + storeCart.deliveryFee + storeCart.packagingFee;
-      
-      if (storeCart.total < cheapestTotal) {
-        cheapestTotal = storeCart.total;
-        cheapestStore = store;
-      }
-      if (storeCart.total > mostExpensiveTotal) {
-        mostExpensiveTotal = storeCart.total;
+      const hasUnavailable = storeCart.items.some(item => !item.available);
+
+      if (hasUnavailable) {
+        storeCart.total = 'N/A';
+        storeCart.subtotalFormatted = 'N/A';
+        storeCart.totalFormatted = 'N/A';
+      } else {
+        storeCart.total = storeCart.subtotal + storeCart.deliveryFee + storeCart.packagingFee;
+        storeCart.subtotalFormatted = `₹${storeCart.subtotal}`;
+        storeCart.totalFormatted = `₹${storeCart.total}`;
+        
+        if (storeCart.total < cheapestTotal) {
+          cheapestTotal = storeCart.total;
+          cheapestStore = store;
+        }
+        if (storeCart.total > mostExpensiveTotal) {
+          mostExpensiveTotal = storeCart.total;
+        }
       }
     });
 
-    const savings = mostExpensiveTotal - cheapestTotal;
+    const savings = cheapestTotal !== Infinity && mostExpensiveTotal > 0 ? mostExpensiveTotal - cheapestTotal : 0;
 
     // Mathematical Split-Cart Solver (Branch-and-Bound Backtracking)
     const N = itemPrices.length;
@@ -164,12 +194,12 @@ app.post('/api/cart/optimize', async (req, res) => {
       storeOverheads[store] = cartByStore[store].deliveryFee + cartByStore[store].packagingFee;
     });
 
-    let bestTotal = cheapestTotal; // Start with single cheapest total as upper bound
+    let bestTotal = cheapestTotal === Infinity ? 9999999 : cheapestTotal; // Start with single cheapest total (or large number) as upper bound
     let bestAssignments = [];      // Best store for each item index
 
-    // Default to cheapest single store
+    // Default to cheapest single store if it exists
     for (let i = 0; i < N; i++) {
-      bestAssignments.push(cheapestStore);
+      bestAssignments.push(cheapestStore || 'none');
     }
 
     function solve(itemIdx, currentItemCost, usedStoresSet, currentAssignments) {
@@ -188,6 +218,9 @@ app.post('/api/cart/optimize', async (req, res) => {
 
       for (const store of targetStores) {
         const price = itemPrices[itemIdx][store];
+        if (price >= 9999999) {
+          continue; // Mismatch: store does not sell this item
+        }
         const isNewStore = !usedStoresSet.has(store);
         const addedOverhead = isNewStore ? storeOverheads[store] : 0;
 
@@ -215,46 +248,49 @@ app.post('/api/cart/optimize', async (req, res) => {
     }
 
     // Build the splitCart response
-    const splitCartBreakdown = {};
-    const usedStoresList = Array.from(new Set(bestAssignments));
+    let splitCart = null;
+    if (bestTotal < 9999999 && bestAssignments.length > 0 && !bestAssignments.includes('none')) {
+      const splitCartBreakdown = {};
+      const usedStoresList = Array.from(new Set(bestAssignments));
 
-    usedStoresList.forEach(store => {
-      splitCartBreakdown[store] = {
-        storeName: STORE_NAMES[store] || store,
-        items: [],
-        subtotal: 0,
-        deliveryFee: cartByStore[store].deliveryFee,
-        packagingFee: cartByStore[store].packagingFee,
-        total: 0,
-        deliveryTime: cartByStore[store].deliveryTime
+      usedStoresList.forEach(store => {
+        splitCartBreakdown[store] = {
+          storeName: STORE_NAMES[store] || store,
+          items: [],
+          subtotal: 0,
+          deliveryFee: cartByStore[store].deliveryFee,
+          packagingFee: cartByStore[store].packagingFee,
+          total: 0,
+          deliveryTime: cartByStore[store].deliveryTime
+        };
+      });
+
+      for (let i = 0; i < N; i++) {
+        const assignedStore = bestAssignments[i];
+        const product = itemProducts[i][assignedStore];
+        splitCartBreakdown[assignedStore].items.push(product);
+        splitCartBreakdown[assignedStore].subtotal += product.price;
+      }
+
+      let splitGrandTotal = 0;
+      usedStoresList.forEach(store => {
+        const breakdown = splitCartBreakdown[store];
+        breakdown.total = breakdown.subtotal + breakdown.deliveryFee + breakdown.packagingFee;
+        splitGrandTotal += breakdown.total;
+      });
+
+      splitCart = {
+        grandTotal: splitGrandTotal,
+        savings: cheapestTotal !== Infinity ? Math.max(0, cheapestTotal - splitGrandTotal) : 0,
+        usedStores: usedStoresList,
+        storeBreakdown: splitCartBreakdown
       };
-    });
-
-    for (let i = 0; i < N; i++) {
-      const assignedStore = bestAssignments[i];
-      const product = itemProducts[i][assignedStore];
-      splitCartBreakdown[assignedStore].items.push(product);
-      splitCartBreakdown[assignedStore].subtotal += product.price;
     }
-
-    let splitGrandTotal = 0;
-    usedStoresList.forEach(store => {
-      const breakdown = splitCartBreakdown[store];
-      breakdown.total = breakdown.subtotal + breakdown.deliveryFee + breakdown.packagingFee;
-      splitGrandTotal += breakdown.total;
-    });
-
-    const splitCart = {
-      grandTotal: splitGrandTotal,
-      savings: Math.max(0, cheapestTotal - splitGrandTotal),
-      usedStores: usedStoresList,
-      storeBreakdown: splitCartBreakdown
-    };
 
     res.json({
       cartByStore,
-      cheapestStore,
-      cheapestTotal,
+      cheapestStore: cheapestStore === 'none' ? null : cheapestStore,
+      cheapestTotal: cheapestTotal === Infinity ? 'N/A' : cheapestTotal,
       savings,
       splitCart,
       location,
@@ -277,18 +313,28 @@ app.post('/api/scrape', async (req, res) => {
   const startTime = Date.now();
 
   try {
-    console.log(`\n🔍 Scrape request: "${query}" | Category: ${category} | Source: ${source} | Pages: ${pageCount} | Location: ${location}`);
+    console.log(`\n🔍 Scrape request: "${query}" | Category: ${category} | Sources: ${JSON.stringify(source)} | Pages: ${pageCount} | Location: ${location}`);
     
     let products = [];
     
+    // Support multi-source array or comma-separated string
+    const activeSources = Array.isArray(source) 
+      ? source 
+      : typeof source === 'string' && source.includes(',') 
+        ? source.split(',').map(s => s.trim()) 
+        : [source];
+
+    const matchesSource = (storeKey) => activeSources.includes('all') || activeSources.includes(storeKey);
+    const isSingleRequest = activeSources.length === 1 && !activeSources.includes('all');
+
     if (category === 'ecommerce') {
       // 1. Live Scrapers
-      if (source === 'flipkart' || source === 'all') {
+      if (matchesSource('flipkart')) {
         const fkProducts = await scrapeFlipkartSearch(query.trim(), pageCount);
         products = [...products, ...fkProducts];
       }
       
-      if (source === 'snapdeal' || source === 'all') {
+      if (matchesSource('snapdeal')) {
         const sdProducts = await scrapeSnapdealSearch(query.trim(), pageCount);
         products = [...products, ...sdProducts];
       }
@@ -302,54 +348,26 @@ app.post('/api/scrape', async (req, res) => {
         'dailyobjects', 'headphones', 'apple', 'puma', 'lenskart', 'zara',
         'tanishq', 'pantaloons', 'adidas', 'maxfashion', 'bewakoof', 'chumbak',
         'joyalukkas', 'snitch', 'cultstore', 'vishalmegamart',
-        
-        // General E-Commerce
         'shopsy', 'paytmmall', 'dealshare', 'citymall', 'udaan', 'ondc',
-
-        // Fashion & Lifestyle Marketplaces
         'tatacliq_luxury', 'nnnow', 'lifestylestores', 'shoppersstop', 'westside', 'zudio', 'azorte', 'reliancetrends', 'yousta', 'centro',
-
-        // D2C Fashion & Apparel
         'souledstore', 'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine',
         'roadster', 'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape',
-
-        // International Fashion Brands
         'hm', 'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans',
-
-        // Ethnic Wear
         'fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion',
-
-        // Footwear
         'bata', 'metroshoes', 'mochishoes', 'libertyshoes', 'khadims', 'paragon', 'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers', 'nike', 'reebok',
-
-        // Electronics & Appliances
         'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar',
-
-        // Retailers & Audio
         'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios',
-
-        // Jewelry
         'caratlane', 'bluestone', 'giva', 'melorra', 'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 'voylla', 'orrajewellery', 'candere', 'kushals',
-
-        // Watches & Accessories
         'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'baggit', 'caprese', 'lavie', 'hidesign', 'damilano', 'wildhorn',
-
-        // Eyewear
         'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase',
-
-        // Beauty & Personal Care
         'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 'dotandkey', 'facescanada',
-
-        // Home & Kitchen
         'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 'prestige', 'hawkins',
-
-        // Kids & Sports
         'hopscotch', 'hamleys', 'decathlon', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports'
       ];
 
       for (const store of simulatedEcommerceStores) {
-        if (source === store || source === 'all') {
-          if (source !== 'all') {
+        if (matchesSource(store)) {
+          if (isSingleRequest) {
             await new Promise(r => setTimeout(r, 200));
           }
           const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
@@ -357,11 +375,10 @@ app.post('/api/scrape', async (req, res) => {
         }
       }
     } else if (category === 'food') {
-      // Food Delivery (Zomato & Swiggy)
       const foodStores = ['zomato', 'swiggy'];
       for (const store of foodStores) {
-        if (source === store || source === 'all') {
-          if (source !== 'all') {
+        if (matchesSource(store)) {
+          if (isSingleRequest) {
             await new Promise(r => setTimeout(r, 200));
           }
           const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
@@ -369,15 +386,14 @@ app.post('/api/scrape', async (req, res) => {
         }
       }
     } else {
-      // Quick Commerce
       const quickCommerceStores = [
         'blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 
         'amazonfresh', 'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight'
       ];
 
       for (const store of quickCommerceStores) {
-        if (source === store || source === 'all') {
-          if (source !== 'all') {
+        if (matchesSource(store)) {
+          if (isSingleRequest) {
             await new Promise(r => setTimeout(r, 200));
           }
           const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);

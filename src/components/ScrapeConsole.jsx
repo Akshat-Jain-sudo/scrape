@@ -279,10 +279,106 @@ const STORE_NAMES = {
   swiggy: 'Swiggy'
 };
 
+const DEFAULT_SOURCES = {
+  ecommerce: ['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio'],
+  quickcommerce: ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes'],
+  food: ['zomato', 'swiggy']
+};
+
+const STORE_GROUPS = {
+  ecommerce: [
+    {
+      id: 'marketplaces',
+      name: 'Marketplaces',
+      stores: ['amazon', 'flipkart', 'meesho', 'snapdeal', 'jiomart', 'tatacliq', 'shopsy', 'paytmmall', 'shopclues', 'dealshare', 'citymall', 'indiamart', 'udaan', 'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'ondc']
+    },
+    {
+      id: 'fashion',
+      name: 'Fashion & Lifestyle',
+      stores: ['myntra', 'ajio', 'nykaafashion', 'tatacliq_luxury', 'nnnow', 'lifestylestores', 'shoppersstop', 'pantaloons', 'maxfashion', 'westside', 'zudio', 'azorte', 'reliancetrends', 'yousta', 'centro']
+    },
+    {
+      id: 'd2c',
+      name: 'D2C Apparel & Casual',
+      stores: ['snitch', 'souledstore', 'bewakoof', 'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine', 'roadster', 'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape']
+    },
+    {
+      id: 'international',
+      name: 'International Brands',
+      stores: ['hm', 'zara', 'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans']
+    },
+    {
+      id: 'ethnic',
+      name: 'Ethnic & Traditional',
+      stores: ['fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion']
+    },
+    {
+      id: 'footwear',
+      name: 'Footwear Brands',
+      stores: ['bata', 'metroshoes', 'mochishoes', 'libertyshoes', 'khadims', 'paragon', 'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers', 'puma', 'adidas', 'nike', 'reebok']
+    },
+    {
+      id: 'electronics_brands',
+      name: 'Electronics Brands',
+      stores: ['sony', 'samsung', 'lg', 'apple', 'xiaomi', 'oneplus', 'realme', 'vivo', 'oppo', 'motorola', 'hp', 'dell', 'lenovo', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar']
+    },
+    {
+      id: 'electronics_retailers',
+      name: 'Electronics Retailers & Audio',
+      stores: ['croma', 'reliance', 'vijaysales', 'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'headphones', 'dailyobjects']
+    },
+    {
+      id: 'jewelry',
+      name: 'Fine Jewelry',
+      stores: ['tanishq', 'joyalukkas', 'caratlane', 'bluestone', 'giva', 'melorra', 'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 'voylla', 'orrajewellery', 'candere', 'kushals']
+    },
+    {
+      id: 'watches',
+      name: 'Watches & Accessories',
+      stores: ['titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'baggit', 'caprese', 'lavie', 'hidesign', 'damilano', 'wildhorn']
+    },
+    {
+      id: 'eyewear',
+      name: 'Eyewear & Sunglasses',
+      stores: ['lenskart', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase']
+    },
+    {
+      id: 'beauty',
+      name: 'Beauty & Personal Care',
+      stores: ['nykaa', 'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 'dotandkey', 'facescanada']
+    },
+    {
+      id: 'home',
+      name: 'Home & Kitchen',
+      stores: ['pepperfry', 'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 'prestige', 'hawkins', 'chumbak']
+    },
+    {
+      id: 'kids_sports',
+      name: 'Kids & Sports',
+      stores: ['firstcry', 'hopscotch', 'hamleys', 'decathlon', 'cultstore', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports', 'bookswagon', 'vishalmegamart']
+    }
+  ],
+  quickcommerce: [
+    {
+      id: 'quick',
+      name: 'Quick Commerce Stores',
+      stores: ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 'amazonfresh', 'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight']
+    }
+  ],
+  food: [
+    {
+      id: 'food_delivery',
+      name: 'Food Delivery Apps',
+      stores: ['zomato', 'swiggy']
+    }
+  ]
+};
+
 function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, onAddToCart }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('ecommerce');
-  const [source, setSource] = useState('all');
+  const [selectedSources, setSelectedSources] = useState(['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']);
+  const [storeSearch, setStoreSearch] = useState('');
   const [pages, setPages] = useState(3);
   const [loading, setLoading] = useState(false);
   const [consoleLogs, setConsoleLogs] = useState([]);
@@ -291,6 +387,12 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
   const [isListening, setIsListening] = useState(false);
   
   const consoleEndRef = useRef(null);
+
+  // Sync selectedSources with category
+  useEffect(() => {
+    setSelectedSources(DEFAULT_SOURCES[category] || []);
+    setStoreSearch('');
+  }, [category]);
 
   const handleVoiceSearch = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -342,6 +444,10 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
 
   const simulateScrapeLogs = async () => {
     if (!query.trim()) return;
+    if (selectedSources.length === 0) {
+      addToast('Please select at least one shopping website to scrape', 'warning');
+      return;
+    }
 
     setConsoleLogs([]);
     setLoading(true);
@@ -350,7 +456,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
 
     addLog(`INIT: FlipScrape scraper cluster starting...`, 'info');
     await new Promise(r => setTimeout(r, 200));
-    addLog(`CONFIG: Category=${category.toUpperCase()} | Query="${query}" | Source=${source.toUpperCase()} | Pages=${pages}`, 'accent');
+    addLog(`CONFIG: Category=${category.toUpperCase()} | Query="${query}" | Sources=${selectedSources.join(', ').toUpperCase()} | Pages=${pages}`, 'accent');
     await new Promise(r => setTimeout(r, 200));
 
     if (category === 'food') {
@@ -359,9 +465,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
       addLog(`AGENT: Fetching menus based on localized GPS coordinates...`, 'info');
       await new Promise(r => setTimeout(r, 150));
 
-      const activeStores = source === 'all' 
-        ? ['zomato', 'swiggy'] 
-        : [source];
+      const activeStores = selectedSources;
 
       for (const st of activeStores) {
         const name = STORE_NAMES[st] || st.toUpperCase();
@@ -377,9 +481,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
       addLog(`AGENT: Overriding coordinate request headers...`, 'info');
       await new Promise(r => setTimeout(r, 150));
 
-      const activeStores = source === 'all' 
-        ? ['blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes'] 
-        : [source];
+      const activeStores = selectedSources;
 
       for (const st of activeStores) {
         const name = STORE_NAMES[st] || st.toUpperCase();
@@ -398,9 +500,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
       addLog(`RATE: Delay buffer (1.2s - 2.8s) between page indexes`, 'info');
       await new Promise(r => setTimeout(r, 150));
       
-      const activeStores = source === 'all'
-        ? ['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']
-        : [source];
+      const activeStores = selectedSources;
 
       for (const st of activeStores) {
         const name = STORE_NAMES[st] || st.toUpperCase();
@@ -416,7 +516,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query.trim(), category, source, pages, location: userLocation })
+        body: JSON.stringify({ query: query.trim(), category, source: selectedSources, pages, location: userLocation })
       });
 
       if (!response.ok) {
@@ -519,7 +619,6 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
                 value={category}
                 onChange={(e) => {
                   setCategory(e.target.value);
-                  setSource('all');
                 }}
                 disabled={loading}
               >
@@ -529,291 +628,131 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
               </select>
             </div>
 
-            <div className="input-box-wrapper">
-              <label className="input-label">Target Shopping Store</label>
-              <select 
-                className="console-select"
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                disabled={loading}
-              >
-                {category === 'ecommerce' && (
-                  <>
-                    <option value="all">All E-Commerce (174 Stores)</option>
-                    <optgroup label="Marketplaces">
-                      <option value="amazon">Amazon India</option>
-                      <option value="flipkart">Flipkart</option>
-                      <option value="meesho">Meesho</option>
-                      <option value="snapdeal">Snapdeal</option>
-                      <option value="jiomart">JioMart</option>
-                      <option value="tatacliq">Tata CLiQ</option>
-                      <option value="shopsy">Shopsy</option>
-                      <option value="paytmmall">Paytm Mall</option>
-                      <option value="shopclues">ShopClues</option>
-                      <option value="dealshare">DealShare</option>
-                      <option value="citymall">CityMall</option>
-                      <option value="indiamart">IndiaMART</option>
-                      <option value="udaan">Udaan</option>
-                      <option value="ebay">eBay India</option>
-                      <option value="etsy">Etsy</option>
-                      <option value="alibaba">Alibaba</option>
-                      <option value="aliexpress">AliExpress</option>
-                      <option value="walmart">Walmart</option>
-                      <option value="ondc">ONDC</option>
-                    </optgroup>
-                    <optgroup label="Fashion & Lifestyle Marketplaces">
-                      <option value="myntra">Myntra</option>
-                      <option value="ajio">AJIO</option>
-                      <option value="nykaafashion">Nykaa Fashion</option>
-                      <option value="tatacliq_luxury">Tata CLiQ Luxury</option>
-                      <option value="nnnow">Nnnow</option>
-                      <option value="lifestylestores">Lifestyle Stores</option>
-                      <option value="shoppersstop">Shoppers Stop</option>
-                      <option value="pantaloons">Pantaloons</option>
-                      <option value="maxfashion">Max Fashion</option>
-                      <option value="westside">Westside</option>
-                      <option value="zudio">Zudio</option>
-                      <option value="azorte">Azorte</option>
-                      <option value="reliancetrends">Reliance Trends</option>
-                      <option value="yousta">Yousta</option>
-                      <option value="centro">Centro</option>
-                    </optgroup>
-                    <optgroup label="D2C Apparel & Casual Fashion">
-                      <option value="snitch">Snitch</option>
-                      <option value="souledstore">The Souled Store</option>
-                      <option value="bewakoof">Bewakoof</option>
-                      <option value="rarerabbit">Rare Rabbit</option>
-                      <option value="bombayshirt">Bombay Shirt Company</option>
-                      <option value="powerlook">Powerlook</option>
-                      <option value="beyoung">Beyoung</option>
-                      <option value="redwolf">Redwolf</option>
-                      <option value="campussutra">Campus Sutra</option>
-                      <option value="hubberholme">Hubberholme</option>
-                      <option value="mufti">Mufti</option>
-                      <option value="spykar">Spykar</option>
-                      <option value="killerjeans">Killer Jeans</option>
-                      <option value="flyingmachine">Flying Machine</option>
-                      <option value="roadster">Roadster</option>
-                      <option value="highlander">Highlander</option>
-                      <option value="tokyotalkies">Tokyo Talkies</option>
-                      <option value="mastandharbour">Mast & Harbour</option>
-                      <option value="urbanic">Urbanic</option>
-                      <option value="redtape">Red Tape</option>
-                    </optgroup>
-                    <optgroup label="International Fashion Brands">
-                      <option value="hm">H&M India</option>
-                      <option value="zara">Zara</option>
-                      <option value="uniqlo">Uniqlo India</option>
-                      <option value="marksandspencer">Marks & Spencer India</option>
-                      <option value="levis">Levi's India</option>
-                      <option value="benetton">United Colors of Benetton</option>
-                      <option value="tommyhilfiger">Tommy Hilfiger India</option>
-                      <option value="calvinklein">Calvin Klein India</option>
-                      <option value="uspoloassn">US Polo Assn India</option>
-                      <option value="forever21">Forever 21 India</option>
-                      <option value="jackjones">Jack & Jones India</option>
-                      <option value="only">Only India</option>
-                      <option value="veromoda">Vero Moda India</option>
-                      <option value="superdry">Superdry India</option>
-                      <option value="gasjeans">Gas Jeans India</option>
-                    </optgroup>
-                    <optgroup label="Ethnic & Traditional Wear">
-                      <option value="fabindia">Fabindia</option>
-                      <option value="manyavar">Manyavar</option>
-                      <option value="mohey">Mohey</option>
-                      <option value="wforwoman">W for Woman</option>
-                      <option value="aurelia">Aurelia</option>
-                      <option value="biba">Biba</option>
-                      <option value="globaldesi">Global Desi</option>
-                      <option value="houseofindya">House of Indya</option>
-                      <option value="libas">Libas</option>
-                      <option value="soch">Soch</option>
-                      <option value="meenabazaar">Meena Bazaar</option>
-                      <option value="nallisilks">Nalli Silks</option>
-                      <option value="karagiri">Karagiri</option>
-                      <option value="suta">Suta</option>
-                      <option value="kalkifashion">Kalki Fashion</option>
-                    </optgroup>
-                    <optgroup label="Footwear Brands & Stores">
-                      <option value="bata">Bata India</option>
-                      <option value="metroshoes">Metro Shoes</option>
-                      <option value="mochishoes">Mochi Shoes</option>
-                      <option value="libertyshoes">Liberty Shoes</option>
-                      <option value="khadims">Khadim's</option>
-                      <option value="paragon">Paragon</option>
-                      <option value="campusshoes">Campus Shoes</option>
-                      <option value="relaxo">Sparx / Relaxo</option>
-                      <option value="woodland">Woodland India</option>
-                      <option value="crocs">Crocs India</option>
-                      <option value="skechers">Skechers India</option>
-                      <option value="puma">Puma</option>
-                      <option value="adidas">Adidas Store</option>
-                      <option value="nike">Nike India</option>
-                      <option value="reebok">Reebok India</option>
-                    </optgroup>
-                    <optgroup label="Electronics & Appliance Brands">
-                      <option value="sony">Sony India</option>
-                      <option value="samsung">Samsung Store</option>
-                      <option value="lg">LG Brand Store</option>
-                      <option value="apple">Apple Store</option>
-                      <option value="xiaomi">Xiaomi India</option>
-                      <option value="oneplus">OnePlus Store</option>
-                      <option value="realme">Realme India</option>
-                      <option value="vivo">Vivo India</option>
-                      <option value="oppo">Oppo India</option>
-                      <option value="motorola">Motorola India</option>
-                      <option value="hp">HP World</option>
-                      <option value="dell">Dell India</option>
-                      <option value="lenovo">Lenovo Store</option>
-                      <option value="asus">Asus India</option>
-                      <option value="acer">Acer India</option>
-                      <option value="whirlpool">Whirlpool India</option>
-                      <option value="godrej">Godrej Appliances</option>
-                      <option value="haier">Haier India</option>
-                      <option value="voltas">Voltas</option>
-                      <option value="bluestar">Blue Star</option>
-                    </optgroup>
-                    <optgroup label="Electronics Retailers & Audio">
-                      <option value="croma">Croma</option>
-                      <option value="reliance">Reliance Digital</option>
-                      <option value="vijaysales">Vijay Sales</option>
-                      <option value="boat">boAt Lifestyle</option>
-                      <option value="noise">Noise</option>
-                      <option value="boult">Boult Audio</option>
-                      <option value="mivi">Mivi</option>
-                      <option value="fireboltt">Fire-Boltt</option>
-                      <option value="zebronics">Zebronics</option>
-                      <option value="portronics">Portronics</option>
-                      <option value="jbl">JBL India</option>
-                      <option value="anker">Anker India</option>
-                      <option value="sennheiser">Sennheiser India</option>
-                      <option value="ambrane">Ambrane</option>
-                      <option value="leafstudios">Leaf Studios</option>
-                      <option value="headphones">Headphone Zone</option>
-                      <option value="dailyobjects">Daily Objects</option>
-                    </optgroup>
-                    <optgroup label="Fine Jewelry">
-                      <option value="tanishq">Tanishq</option>
-                      <option value="joyalukkas">Joyalukkas</option>
-                      <option value="caratlane">CaratLane</option>
-                      <option value="bluestone">BlueStone</option>
-                      <option value="giva">GIVA</option>
-                      <option value="melorra">Melorra</option>
-                      <option value="miabytanishq">Mia by Tanishq</option>
-                      <option value="kalyanjewellers">Kalyan Jewellers</option>
-                      <option value="malabargold">Malabar Gold & Diamonds</option>
-                      <option value="sencogold">Senco Gold & Diamonds</option>
-                      <option value="pcjeweller">PC Jeweller</option>
-                      <option value="voylla">Voylla</option>
-                      <option value="orrajewellery">Orra Jewellery</option>
-                      <option value="candere">Candere by Kalyan Jewellers</option>
-                      <option value="kushals">Kushal's Fashion Jewellery</option>
-                    </optgroup>
-                    <optgroup label="Watches & Fashion Accessories">
-                      <option value="titan">Titan</option>
-                      <option value="fastrack">Fastrack</option>
-                      <option value="sonata">Sonata</option>
-                      <option value="casio">Casio India</option>
-                      <option value="fossil">Fossil India</option>
-                      <option value="danielwellington">Daniel Wellington India</option>
-                      <option value="ethoswatches">Ethos Watches</option>
-                      <option value="helioswatches">Helios Watches</option>
-                      <option value="baggit">Baggit</option>
-                      <option value="caprese">Caprese</option>
-                      <option value="lavie">Lavie</option>
-                      <option value="hidesign">Hidesign</option>
-                      <option value="damilano">Da Milano</option>
-                      <option value="wildhorn">Wildhorn</option>
-                    </optgroup>
-                    <optgroup label="Eyewear & Sunglasses">
-                      <option value="lenskart">Lenskart</option>
-                      <option value="titaneyeplus">Titan Eyeplus</option>
-                      <option value="johnjacobs">John Jacobs</option>
-                      <option value="coolwinks">Coolwinks</option>
-                      <option value="rayban">Ray-Ban India</option>
-                      <option value="sunglasshut">Sunglass Hut India</option>
-                      <option value="specsmakers">Specsmakers</option>
-                      <option value="lenspick">Lenspick</option>
-                      <option value="cleardekho">ClearDekho</option>
-                      <option value="vincentchase">Vincent Chase</option>
-                    </optgroup>
-                    <optgroup label="Beauty & Personal Care">
-                      <option value="nykaa">Nykaa</option>
-                      <option value="purplle">Purplle</option>
-                      <option value="myglamm">MyGlamm</option>
-                      <option value="sugarcosmetics">Sugar Cosmetics</option>
-                      <option value="mamaearth">Mamaearth</option>
-                      <option value="wowskin">Wow Skin Science</option>
-                      <option value="dermaco">The Derma Co</option>
-                      <option value="plumgoodness">Plum Goodness</option>
-                      <option value="mcaffeine">mCaffeine</option>
-                      <option value="forestessentials">Forest Essentials</option>
-                      <option value="kamaayurveda">Kama Ayurveda</option>
-                      <option value="biotique">Biotique</option>
-                      <option value="lotusherbals">Lotus Herbals</option>
-                      <option value="himalaya">Himalaya Wellness</option>
-                      <option value="minimalist">Minimalist</option>
-                      <option value="foxtale">Foxtale</option>
-                      <option value="pilgrim">Pilgrim</option>
-                      <option value="dotandkey">Dot & Key</option>
-                      <option value="facescanada">Faces Canada</option>
-                    </optgroup>
-                    <optgroup label="Home Decor & Kitchenware">
-                      <option value="pepperfry">Pepperfry</option>
-                      <option value="urbanladder">Urban Ladder</option>
-                      <option value="woodenstreet">Wooden Street</option>
-                      <option value="homecentre">Home Centre</option>
-                      <option value="ikea">IKEA India</option>
-                      <option value="sleepwell">Sleepwell</option>
-                      <option value="wakefit">Wakefit</option>
-                      <option value="flomattress">Flo Mattress</option>
-                      <option value="thesleepcompany">The Sleep Company</option>
-                      <option value="borosil">Borosil</option>
-                      <option value="wonderchef">Wonderchef</option>
-                      <option value="pigeon">Pigeon</option>
-                      <option value="prestige">Prestige</option>
-                      <option value="hawkins">Hawkins Cookers</option>
-                      <option value="chumbak">Chumbak</option>
-                    </optgroup>
-                    <optgroup label="Kids, Sports & Fitness">
-                      <option value="firstcry">FirstCry</option>
-                      <option value="hopscotch">Hopscotch</option>
-                      <option value="hamleys">Hamleys India</option>
-                      <option value="decathlon">Decathlon India</option>
-                      <option value="cultstore">Cultsport</option>
-                      <option value="vectorx">Vector X</option>
-                      <option value="cosco">Cosco India</option>
-                      <option value="nivia">Nivia Sports</option>
-                      <option value="yonex">Yonex India</option>
-                      <option value="starsports">Star India Sports</option>
-                      <option value="bookswagon">Bookswagon</option>
-                      <option value="vishalmegamart">Vishal Mega Mart</option>
-                    </optgroup>
-                  </>
+            <div className="input-box-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Select Target Websites</span>
+                <span style={{ fontSize: '0.75rem', textTransform: 'none', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                  {selectedSources.length} selected
+                </span>
+              </label>
+
+              {/* Search & Actions Bar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="Search websites..." 
+                  className="console-input"
+                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.2)' }}
+                  value={storeSearch}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  disabled={loading}
+                />
+                
+                <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline" 
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', borderRadius: '6px' }}
+                    onClick={selectAllStores}
+                    disabled={loading}
+                  >
+                    Select All
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline" 
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', borderRadius: '6px' }}
+                    onClick={clearAllStores}
+                    disabled={loading}
+                  >
+                    Clear All
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline" 
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.72rem', borderRadius: '6px' }}
+                    onClick={selectPresetStores}
+                    disabled={loading}
+                  >
+                    Reset Defaults
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Checkbox Grid */}
+              <div className="store-checkbox-scroll-box" style={{
+                maxHeight: '280px',
+                overflowY: 'auto',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '0.75rem',
+                background: 'rgba(0,0,0,0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                {filteredGroups.length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+                    No websites match your search
+                  </div>
+                ) : (
+                  filteredGroups.map(group => (
+                    <div key={group.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.2rem' }}>
+                        {group.name}
+                      </span>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.4rem' }}>
+                        {group.stores.map(storeKey => {
+                          const isSelected = selectedSources.includes(storeKey);
+                          const storeName = STORE_NAMES[storeKey] || storeKey;
+                          
+                          return (
+                            <button
+                              key={storeKey}
+                              type="button"
+                              onClick={() => toggleSource(storeKey)}
+                              disabled={loading}
+                              className={`store-toggle-badge ${isSelected ? 'active' : ''}`}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.4rem 0.5rem',
+                                borderRadius: '6px',
+                                border: isSelected ? '1px solid var(--accent-primary)' : '1px solid rgba(255,255,255,0.06)',
+                                background: isSelected ? 'var(--accent-glow)' : 'rgba(255,255,255,0.02)',
+                                color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                textAlign: 'left',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title={storeName}
+                            >
+                              <input 
+                                type="checkbox"
+                                checked={isSelected}
+                                readOnly
+                                style={{
+                                  margin: 0,
+                                  accentColor: 'var(--accent-primary)',
+                                  pointerEvents: 'none'
+                                }}
+                              />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{storeName}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
                 )}
-                {category === 'quickcommerce' && (
-                  <>
-                    <option value="all">All Quick Commerce (10 Stores)</option>
-                    <option value="blinkit">Blinkit</option>
-                    <option value="zepto">Zepto</option>
-                    <option value="instamart">Swiggy Instamart</option>
-                    <option value="bbnow">BigBasket Now</option>
-                    <option value="fkminutes">Flipkart Minutes</option>
-                    <option value="amazonfresh">Amazon Fresh</option>
-                    <option value="jiomartexpress">JioMart Express</option>
-                    <option value="bbdaily">BB Daily</option>
-                    <option value="dunzo">Dunzo</option>
-                    <option value="countrydelight">Country Delight</option>
-                  </>
-                )}
-                {category === 'food' && (
-                  <>
-                    <option value="all">All Food Delivery (2 Stores)</option>
-                    <option value="zomato">Zomato</option>
-                    <option value="swiggy">Swiggy</option>
-                  </>
-                )}
-              </select>
+              </div>
             </div>
 
             <div className="input-box-wrapper">
@@ -882,6 +821,134 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
             </div>
           ) : (
             <>
+              {/* Featured Lowest Price Showcase Card */}
+              {(() => {
+                const cheapest = results.products.reduce((lowest, p) => p.price < lowest.price ? p : lowest, results.products[0]);
+                if (!cheapest) return null;
+                return (
+                  <div className="glass-card cheapest-product-showcase stagger-in" style={{
+                    background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(40,116,240,0.06) 100%)',
+                    border: '1px solid rgba(16,185,129,0.3)',
+                    boxShadow: '0 0 25px rgba(16,185,129,0.15)',
+                    padding: '1.25rem 1.5rem',
+                    borderRadius: '16px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Badge */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: 'linear-gradient(135deg, var(--success), #059669)',
+                      color: 'white',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      padding: '0.3rem 0.75rem',
+                      borderRadius: '20px',
+                      boxShadow: '0 4px 10px rgba(16,185,129,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      zIndex: 2
+                    }}>
+                      <Star size={12} fill="white" />
+                      <span>Best Price Deal</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {/* Product Image */}
+                      {cheapest.imageUrl && (
+                        <div className="showcase-img-wrapper" style={{
+                          width: '100px',
+                          height: '100px',
+                          borderRadius: '12px',
+                          background: '#111827',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0.5rem',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          flexShrink: 0
+                        }}>
+                          <img 
+                            src={cheapest.imageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(cheapest.imageUrl)}` : cheapest.imageUrl} 
+                            alt={cheapest.name} 
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Product Details */}
+                      <div style={{ flex: 1, minWidth: '200px' }}>
+                        <span className={`store-badge store-badge-${cheapest.source || 'flipkart'}`} style={{ marginBottom: '0.4rem' }}>
+                          {STORE_NAMES[cheapest.source] || cheapest.source}
+                        </span>
+                        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {cheapest.name}
+                        </h2>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                          <div className="price-row" style={{ marginBottom: 0, gap: '0.5rem' }}>
+                            <span className="price-current" style={{ fontSize: '1.45rem', color: 'var(--success)' }}>
+                              {cheapest.priceFormatted || `₹${cheapest.price}`}
+                            </span>
+                            {cheapest.originalPrice && (
+                              <span className="price-original" style={{ fontSize: '0.9rem' }}>
+                                {cheapest.originalPriceFormatted || `₹${cheapest.originalPrice}`}
+                              </span>
+                            )}
+                            {cheapest.discount > 0 && (
+                              <span className="price-discount" style={{ fontSize: '0.8rem' }}>
+                                {cheapest.discountFormatted || `${cheapest.discount}% off`}
+                              </span>
+                            )}
+                          </div>
+
+                          {cheapest.rating && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <span className={`star-rating-badge high`} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                                {cheapest.rating} ★
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          {cheapest.deliveryTime && <span>🚚 {cheapest.deliveryTime}</span>}
+                          {cheapest.distance && <span>📍 {cheapest.distance}</span>}
+                          {cheapest.deliveryFee !== null && <span>• Delivery: ₹{cheapest.deliveryFee}</span>}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap' }}>
+                        {cheapest.productLink && (
+                          <a 
+                            href={cheapest.productLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-primary"
+                            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', textDecoration: 'none' }}
+                          >
+                            Buy on Website <ExternalLink size={12} />
+                          </a>
+                        )}
+                        {onAddToCart && (
+                          <button 
+                            className="btn btn-blue"
+                            onClick={() => onAddToCart(cheapest.name)}
+                            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+                          >
+                            <ShoppingCart size={12} /> Add to Cart Optimizer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Summary Stats */}
               <div className="glass-card" style={{ animation: 'fadeIn 0.3s ease-out' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>

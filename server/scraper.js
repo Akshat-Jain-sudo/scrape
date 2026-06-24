@@ -1005,8 +1005,172 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
   };
 }
 
+// ── Store Niche Validator ──
+export function doesStoreSellQuery(store, query) {
+  const s = store.toLowerCase();
+  const q = query.toLowerCase();
+
+  // General Marketplaces sell everything
+  const generalMarketplaces = [
+    'amazon', 'flipkart', 'meesho', 'snapdeal', 'jiomart', 'tatacliq', 'shopsy', 
+    'paytmmall', 'shopclues', 'dealshare', 'citymall', 'indiamart', 'udaan', 
+    'ebay', 'etsy', 'alibaba', 'aliexpress', 'walmart', 'ondc', 'vishalmegamart'
+  ];
+  if (generalMarketplaces.includes(s)) {
+    return true;
+  }
+
+  // Food delivery apps
+  if (['zomato', 'swiggy'].includes(s)) {
+    return true; // Assume any query in food mode is food-related
+  }
+
+  // Define keyword sets
+  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loafers|crocs)\b/.test(q);
+  
+  const isApparel = /\b(clothing|shirt|shirts|t-shirt|tshirts|tshirt|jeans|jean|jacket|jackets|hoodie|hoodies|dress|dresses|saree|sarees|kurta|kurtas|top|tops|trousers|suit|suits|coat|coats|scarf|innerwear|socks|activewear|wear|blazer|gown|lehenga)\b/.test(q);
+  
+  const isElectronics = /\b(laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|ipad|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds)\b/.test(q);
+  
+  const isJewelry = /\b(jewelry|jewellery|ring|rings|necklace|necklaces|earring|earrings|pendant|pendants|bracelet|bracelets|gold|diamond|diamonds|silver|platinum|bangles|ornaments|gemstone)\b/.test(q);
+  
+  const isWatches = /\b(watch|watches|smartwatch|smart watch|smartwatches|clock|clocks)\b/.test(q);
+  
+  const isEyewear = /\b(glasses|sunglasses|lens|lenses|frame|frames|spectacles|goggles|eyeplus|contact lens)\b/.test(q);
+  
+  const isBeauty = /\b(makeup|lipstick|lipsticks|cream|creams|lotion|lotions|shampoo|conditioner|face wash|perfume|perfumes|scent|skincare|cosmetics|eyeliner|eyeshadow|nail polish|serum|serums|moisturizer|sunscreen|haircare|body wash)\b/.test(q);
+  
+  const isHome = /\b(furniture|bed|sofa|sofas|chair|chairs|table|tables|mattress|mattresses|pillow|pillows|sheet|sheets|curtain|curtains|decor|kitchen|cooker|cookers|pan|pans|pot|pots|plate|plates|borosil|induction|stove|kettle|wardrobe|cushion)\b/.test(q);
+  
+  const isKids = /\b(toy|toys|diaper|diapers|baby|baby care|stroller|strollers|cradle|kids clothing|romper|maternity)\b/.test(q);
+  
+  const isSports = /\b(sports|bat|bats|ball|balls|racket|rackets|shuttlecock|shuttles|gym|fitness|dumbbell|dumbbells|cycle|bicycle|jersey|yoga mat|treadmill)\b/.test(q);
+  
+  const isBooks = /\b(book|books|novel|novels|comic|comics|dictionary|literature|paperback|hardcover)\b/.test(q);
+  
+  const isGrocery = /\b(milk|bread|cheese|butter|vegetable|vegetables|fruit|fruits|onion|onions|tomato|tomatoes|potato|potatoes|grocery|groceries|snack|snacks|coke|beverage|drink|drinks|juice|tea|coffee|atta|rice|dal|oil|salt|sugar|wheat|paneer|masala|egg|eggs)\b/.test(q);
+
+  // Group 1: Footwear only stores
+  const footwearOnlyStores = [
+    'bata', 'metroshoes', 'mochishoes', 'libertyshoes', 'khadims', 'paragon', 
+    'campusshoes', 'relaxo', 'woodland', 'crocs', 'skechers'
+  ];
+  if (footwearOnlyStores.includes(s)) {
+    return isFootwear;
+  }
+
+  // Group 2: Sports & Fitness (who also sell sportswear and sports shoes)
+  const sportsStores = ['decathlon', 'cultstore', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports'];
+  if (sportsStores.includes(s)) {
+    return isSports || isFootwear || isApparel;
+  }
+
+  // Group 3: Fashion & Apparel stores
+  const fashionStores = [
+    'myntra', 'ajio', 'nykaafashion', 'tatacliq_luxury', 'nnnow', 'lifestylestores', 
+    'shoppersstop', 'pantaloons', 'maxfashion', 'westside', 'zudio', 'azorte', 
+    'reliancetrends', 'yousta', 'centro', 'snitch', 'souledstore', 'bewakoof', 
+    'rarerabbit', 'bombayshirt', 'powerlook', 'beyoung', 'redwolf', 'campussutra', 
+    'hubberholme', 'mufti', 'spykar', 'killerjeans', 'flyingmachine', 'roadster', 
+    'highlander', 'tokyotalkies', 'mastandharbour', 'urbanic', 'redtape', 'hm', 
+    'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 
+    'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans', 
+    'fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 
+    'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion'
+  ];
+  if (fashionStores.includes(s)) {
+    return isApparel || isFootwear || isEyewear || isWatches || isJewelry || isBeauty;
+  }
+
+  // Group 4: Electronics only stores
+  const electronicsStores = [
+    'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 
+    'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'boat', 
+    'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 
+    'anker', 'sennheiser', 'ambrane', 'leafstudios', 'headphones', 'croma', 
+    'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'lg', 'dailyobjects'
+  ];
+  if (electronicsStores.includes(s)) {
+    return isElectronics || isWatches;
+  }
+
+  // Group 5: Jewelry only stores
+  const jewelryStores = [
+    'tanishq', 'joyalukkas', 'caratlane', 'bluestone', 'giva', 'melorra', 
+    'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 
+    'voylla', 'orrajewellery', 'candere', 'kushals'
+  ];
+  if (jewelryStores.includes(s)) {
+    return isJewelry;
+  }
+
+  // Group 6: Watches only stores
+  const watchesStores = [
+    'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 
+    'ethoswatches', 'helioswatches'
+  ];
+  if (watchesStores.includes(s)) {
+    return isWatches || isEyewear;
+  }
+
+  // Group 7: Eyewear only stores
+  const eyewearStores = [
+    'lenskart', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 
+    'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase'
+  ];
+  if (eyewearStores.includes(s)) {
+    return isEyewear;
+  }
+
+  // Group 8: Beauty only stores
+  const beautyStores = [
+    'nykaa', 'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 
+    'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 
+    'biotique', 'lotusherbals', 'himalaya', 'minimalist', 'foxtale', 'pilgrim', 
+    'dotandkey', 'facescanada'
+  ];
+  if (beautyStores.includes(s)) {
+    return isBeauty;
+  }
+
+  // Group 9: Home decor & kitchenware
+  const homeStores = [
+    'pepperfry', 'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 
+    'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 
+    'prestige', 'hawkins', 'chumbak'
+  ];
+  if (homeStores.includes(s)) {
+    return isHome;
+  }
+
+  // Group 10: Kids only stores
+  const kidsStores = ['firstcry', 'hopscotch', 'hamleys'];
+  if (kidsStores.includes(s)) {
+    return isKids || isApparel || isFootwear;
+  }
+
+  // Group 11: Books only stores
+  if (s === 'bookswagon') {
+    return isBooks;
+  }
+
+  // Group 12: Quick commerce / grocery
+  const quickCommerceStores = [
+    'blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 'amazonfresh', 
+    'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight'
+  ];
+  if (quickCommerceStores.includes(s)) {
+    return isGrocery || isBeauty || isKids || (isElectronics && /\b(charger|cable|cables|adapter|plug|powerbank|earphone|earphones)\b/.test(q)) || isHome;
+  }
+
+  return true;
+}
+
 // ── Store Search Simulator for Scrape Console ──
 export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai') {
+  if (!doesStoreSellQuery(store, query)) {
+    return []; // Return empty result set if store does not sell this query category
+  }
   const products = [];
   const itemCount = 5 + Math.floor(Math.random() * 8); // 5 to 12 items
   

@@ -792,36 +792,62 @@ function CartOptimizer({ userLocation, addToast }) {
               {/* Recommendation Banner */}
               {!splitView ? (
                 /* Single Store Recommendation */
-                <div className="cart-cheapest-highlight stagger-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ background: 'var(--success-glow)', color: 'var(--success)', padding: '0.75rem', borderRadius: '12px' }}>
-                      <TrendingDown size={28} />
+                results.cheapestStore ? (
+                  <div className="cart-cheapest-highlight stagger-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <div style={{ background: 'var(--success-glow)', color: 'var(--success)', padding: '0.75rem', borderRadius: '12px' }}>
+                        <TrendingDown size={28} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                          Recommended Store: <span style={{ color: 'var(--success)', fontWeight: 700 }}>{results.cartByStore[results.cheapestStore]?.storeName}</span>
+                        </h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                          Grand Total is <strong style={{ color: 'var(--text-primary)' }}>₹{results.cheapestTotal}</strong> (includes ₹{(results.cartByStore[results.cheapestStore]?.deliveryFee || 0) + (results.cartByStore[results.cheapestStore]?.packagingFee || 0)} overheads)
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>
-                        Recommended Store: <span style={{ color: 'var(--success)', fontWeight: 700 }}>{results.cartByStore[results.cheapestStore]?.storeName}</span>
-                      </h3>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                        Grand Total is <strong style={{ color: 'var(--text-primary)' }}>₹{results.cheapestTotal}</strong> (includes ₹{(results.cartByStore[results.cheapestStore]?.deliveryFee || 0) + (results.cartByStore[results.cheapestStore]?.packagingFee || 0)} overheads)
-                      </p>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      {results.savings > 0 && (
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Estimated Savings</div>
+                          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--success)' }}>₹{results.savings}</div>
+                        </div>
+                      )}
+                      <button 
+                        className="btn btn-blue" 
+                        onClick={runCheckoutSimulation}
+                        style={{ padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                      >
+                        <CreditCard size={14} /> Checkout
+                      </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    {results.savings > 0 && (
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Estimated Savings</div>
-                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--success)' }}>₹{results.savings}</div>
+                ) : (
+                  <div className="cart-cheapest-highlight stagger-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--danger)', padding: '1rem 1.25rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <div style={{ background: 'var(--danger-glow)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <AlertCircle size={28} />
                       </div>
-                    )}
+                      <div>
+                        <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                          No Single Store Fulfills Your Cart
+                        </h3>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                          Some items are not sold at any single storefront in this category. Switch to <strong style={{ color: 'var(--accent-primary)' }}>Split-Cart Optimizer</strong> to buy them.
+                        </p>
+                      </div>
+                    </div>
                     <button 
-                      className="btn btn-blue" 
-                      onClick={runCheckoutSimulation}
-                      style={{ padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                      className="btn btn-primary" 
+                      onClick={() => setSplitView(true)}
+                      style={{ padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.8rem' }}
+                      disabled={!results.splitCart}
                     >
-                      <CreditCard size={14} /> Checkout
+                      Use Split Cart
                     </button>
                   </div>
-                </div>
+                )
               ) : (
                 /* Split Cart Recommendation */
                 <div className="cart-cheapest-highlight split-gradient-banner stagger-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(59,130,246,0.1) 100%)', border: '1px solid rgba(16,185,129,0.3)' }}>
@@ -912,18 +938,24 @@ function CartOptimizer({ userLocation, addToast }) {
                                     <span>{item.name}</span>
                                   </div>
                                 </td>
-                                <td className="cart-store-item-price">
-                                  <div>₹{item.price}</div>
-                                  {item.productLink && (
-                                    <a 
-                                      href={item.productLink} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      style={{ color: 'var(--accent-blue)', fontSize: '0.65rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '1px' }}
-                                      title={`Buy directly on ${storeCart.storeName}`}
-                                    >
-                                      Buy <ExternalLink size={8} />
-                                    </a>
+                                 <td className="cart-store-item-price">
+                                  {item.available !== false && item.price < 9999999 ? (
+                                    <>
+                                      <div>₹{item.price}</div>
+                                      {item.productLink && (
+                                        <a 
+                                          href={item.productLink} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          style={{ color: 'var(--accent-blue)', fontSize: '0.65rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '1px' }}
+                                          title={`Buy directly on ${storeCart.storeName}`}
+                                        >
+                                          Buy <ExternalLink size={8} />
+                                        </a>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span style={{ color: 'var(--danger)', fontSize: '0.72rem', fontWeight: 600 }}>N/A</span>
                                   )}
                                 </td>
                               </tr>
@@ -933,26 +965,28 @@ function CartOptimizer({ userLocation, addToast }) {
 
                         <div className="cart-store-summary-row" style={{ marginTop: '0.5rem' }}>
                           <span>Subtotal ({storeCart.items.length} items)</span>
-                          <span>₹{storeCart.subtotal}</span>
+                          <span>{storeCart.total === 'N/A' ? 'N/A' : `₹${storeCart.subtotal}`}</span>
                         </div>
 
                         {storeCart.deliveryFee > 0 && (
                           <div className="cart-store-summary-row">
                             <span>Delivery Fee</span>
-                            <span>₹{storeCart.deliveryFee}</span>
+                            <span>{storeCart.total === 'N/A' ? 'N/A' : `₹${storeCart.deliveryFee}`}</span>
                           </div>
                         )}
 
                         {storeCart.packagingFee > 0 && (
                           <div className="cart-store-summary-row">
                             <span>Packaging & Taxes</span>
-                            <span>₹{storeCart.packagingFee}</span>
+                            <span>{storeCart.total === 'N/A' ? 'N/A' : `₹${storeCart.packagingFee}`}</span>
                           </div>
                         )}
 
                         <div className="cart-store-total-row">
                           <span>Grand Total</span>
-                          <span style={{ color: isCheapest ? 'var(--success)' : 'var(--text-primary)' }}>₹{storeCart.total}</span>
+                          <span style={{ color: isCheapest && storeCart.total !== 'N/A' ? 'var(--success)' : 'var(--text-primary)' }}>
+                            {storeCart.total === 'N/A' ? 'N/A (Missing Items)' : `₹${storeCart.total}`}
+                          </span>
                         </div>
                       </div>
                     );
