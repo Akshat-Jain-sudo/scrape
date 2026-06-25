@@ -977,9 +977,6 @@ function Dashboard({
           <h1>Compare Dashboard</h1>
           <p>Real-time comparative pricing feed across e-commerce, fashion, and quick-commerce stores</p>
         </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Category Navigation Tabs */}

@@ -641,6 +641,7 @@ function App() {
         )}
       </main>
     </div>
+    </LocationProvider>
   );
 }
 
