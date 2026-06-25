@@ -4,7 +4,6 @@ import {
   Terminal, 
   Archive, 
   BarChart3, 
-  ShoppingCart, 
   Sparkles,
   Palette,
   ShoppingBag,
@@ -12,6 +11,7 @@ import {
   LineChart,
   Trash2
 } from 'lucide-react';
+import FlipScrapeLogo from './components/FlipScrapeLogo';
 import Dashboard from './components/Dashboard';
 import ScrapeConsole from './components/ScrapeConsole';
 import InsightHub from './components/InsightHub';
@@ -293,9 +293,7 @@ function App() {
           </svg>
         </button>
         <div className="mobile-logo">
-          <div className="logo-icon" style={{ padding: '0.45rem', borderRadius: '8px', boxShadow: 'none', animation: 'none' }}>
-            <ShoppingCart size={16} />
-          </div>
+          <FlipScrapeLogo size={28} />
           <span className="logo-text" style={{ fontSize: '1.15rem' }}>FlipScrape</span>
         </div>
         <button className="theme-toggle-btn" onClick={toggleTheme} title="Switch Theme">
@@ -326,9 +324,7 @@ function App() {
       {/* Sidebar Navigation */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="logo-section">
-          <div className="logo-icon">
-            <ShoppingCart size={24} />
-          </div>
+          <FlipScrapeLogo size={38} />
           <div className="logo-text">FlipScrape</div>
         </div>
 
