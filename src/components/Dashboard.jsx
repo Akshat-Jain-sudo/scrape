@@ -546,28 +546,35 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
 
   const handleSave = () => {
     if (!compData) return;
-    const productsToSave = Object.entries(compData.comparison).map(([store, details]) => ({
-      id: `${compData.id}-${store}`,
-      name: compData.productName,
-      price: details.price,
-      priceFormatted: details.priceFormatted,
-      originalPrice: details.originalPrice,
-      originalPriceFormatted: details.originalPriceFormatted,
-      discount: details.discount,
-      discountFormatted: details.discountFormatted,
-      rating: details.rating,
-      ratingsCount: details.ratingsCount,
-      productLink: details.productLink,
-      imageUrl: compData.imageUrl || item.image,
-      searchQuery: item.query,
-      source: store,
-      deliveryTime: details.deliveryTime,
-      deliveryFee: details.deliveryFee,
-      packagingFee: details.packagingFee,
-      distance: details.distance,
-      restaurantName: details.restaurantName,
-      scrapedAt: compData.scrapedAt
-    }));
+    const productsToSave = [];
+    Object.entries(compData.comparison).forEach(([store, storeData]) => {
+      const items = Array.isArray(storeData) ? storeData : [storeData];
+      items.forEach((details, index) => {
+        productsToSave.push({
+          id: `${compData.id}-${store}-${index}`,
+          name: details.name || compData.productName,
+          price: details.price,
+          priceFormatted: details.priceFormatted,
+          originalPrice: details.originalPrice,
+          originalPriceFormatted: details.originalPriceFormatted,
+          discount: details.discount,
+          discountFormatted: details.discountFormatted,
+          rating: details.rating,
+          ratingsCount: details.ratingsCount,
+          productLink: details.productLink,
+          imageUrl: details.imageUrl || compData.imageUrl || item.image,
+          searchQuery: item.query,
+          source: store,
+          deliveryTime: details.deliveryTime,
+          deliveryFee: details.deliveryFee,
+          packagingFee: details.packagingFee,
+          distance: details.distance,
+          restaurantName: details.restaurantName,
+          scrapedAt: details.scrapedAt || compData.scrapedAt,
+          sourceMode: details.sourceMode
+        });
+      });
+    });
 
     onSaveComparison(productsToSave);
   };
@@ -660,94 +667,104 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                 .filter(([store]) => {
                   return selectedSources.length === 0 || selectedSources.includes(store) || store === compData.bestPriceStore;
                 })
-                .map(([store, details]) => {
-                  const isBest = store === compData.bestPriceStore;
+                .map(([store, storeData]) => {
+                  const isStoreBest = store === compData.bestPriceStore;
                   const isSelected = selectedSources.length === 0 || selectedSources.includes(store);
-                  return (
-                    <div key={store} className={`comp-store-row ${isBest ? 'is-best' : ''}`}>
-                      <div>
-                        <span className={getStoreBadgeClass(store)}>
-                          {store}
-                        </span>
-                        {details.sourceMode && (
-                          <span style={{ 
-                            fontSize: '0.65rem', 
-                            marginLeft: '0.35rem', 
-                            background: details.sourceMode === 'live' ? 'rgba(16,185,129,0.15)' : 'rgba(156,163,175,0.15)', 
-                            color: details.sourceMode === 'live' ? 'var(--success)' : 'var(--text-muted)',
-                            padding: '0.1rem 0.35rem', 
-                            borderRadius: '4px',
-                            display: 'inline-block',
-                            verticalAlign: 'middle'
-                          }}>
-                            {details.sourceMode === 'live' ? 'Live' : 'Estimated'}
+                  const items = Array.isArray(storeData) ? storeData : [storeData];
+                  
+                  return items.map((details, index) => {
+                    const isBest = isStoreBest && index === 0;
+                    return (
+                      <div key={`${store}-${index}`} className={`comp-store-row ${isBest ? 'is-best' : ''}`}>
+                        <div>
+                          <span className={getStoreBadgeClass(store)}>
+                            {store}
                           </span>
+                          {details.sourceMode && (
+                            <span style={{ 
+                              fontSize: '0.65rem', 
+                              marginLeft: '0.35rem', 
+                              background: details.sourceMode === 'live' ? 'rgba(16,185,129,0.15)' : 'rgba(156,163,175,0.15)', 
+                              color: details.sourceMode === 'live' ? 'var(--success)' : 'var(--text-muted)',
+                              padding: '0.1rem 0.35rem', 
+                              borderRadius: '4px',
+                              display: 'inline-block',
+                              verticalAlign: 'middle'
+                            }}>
+                              {details.sourceMode === 'live' ? 'Live' : 'Estimated'}
+                            </span>
+                          )}
+                          {!isSelected && isBest && (
+                            <span style={{ fontSize: '0.65rem', color: 'var(--success)', fontWeight: 700, marginLeft: '0.35rem', background: 'rgba(16,185,129,0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', display: 'inline-block', verticalAlign: 'middle' }}>
+                              ★ Best Deal (Unselected Store)
+                            </span>
+                          )}
+                        {details.restaurantName && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px', fontWeight: 'bold' }}>
+                            🏪 {details.restaurantName}
+                          </div>
                         )}
-                        {!isSelected && isBest && (
-                          <span style={{ fontSize: '0.65rem', color: 'var(--success)', fontWeight: 700, marginLeft: '0.35rem', background: 'rgba(16,185,129,0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', display: 'inline-block', verticalAlign: 'middle' }}>
-                            ★ Best Deal (Unselected Store)
-                          </span>
+                        {!details.restaurantName && details.name && category === 'quickcommerce' && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
+                            {details.name}
+                          </div>
                         )}
-                      {details.restaurantName && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
-                          🏪 {details.restaurantName}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className="comp-price-val">{details.priceFormatted}</span>
-                      {details.originalPriceFormatted && (
-                        <span className="comp-price-orig">{details.originalPriceFormatted}</span>
-                      )}
-                      {details.discountFormatted && (
-                        <span style={{ color: 'var(--success)', fontSize: '0.75rem', fontWeight: 600 }}>
-                          ({details.discountFormatted})
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        {details.rating && (
-                          <>
-                            <Star size={12} fill="var(--warning)" stroke="var(--warning)" />
-                            <span>{details.rating}</span>
-                          </>
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="comp-price-val">{details.priceFormatted}</span>
+                        {details.originalPriceFormatted && (
+                          <span className="comp-price-orig">{details.originalPriceFormatted}</span>
                         )}
-                        {details.deliveryTime && (
-                          <span style={{ color: 'var(--info)', fontWeight: 500, fontSize: '0.75rem', marginLeft: '0.25rem' }}>
-                            🚚 {details.deliveryTime}
+                        {details.discountFormatted && (
+                          <span style={{ color: 'var(--success)', fontSize: '0.75rem', fontWeight: 600 }}>
+                            ({details.discountFormatted})
                           </span>
                         )}
                       </div>
-                      {details.distance && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          📍 Distance: {details.distance}
-                        </div>
-                      )}
-                      {(details.deliveryFee !== null || details.packagingFee !== null) && (
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          {details.deliveryFee !== null && `Del: ₹${details.deliveryFee}`}
-                          {details.deliveryFee !== null && details.packagingFee !== null && ' | '}
-                          {details.packagingFee !== null && `Pack: ₹${details.packagingFee}`}
-                        </div>
-                      )}
-                    </div>
 
-                    <div>
-                      <a 
-                        href={details.productLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="btn-store-go"
-                      >
-                        Buy <ArrowRight size={12} />
-                      </a>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          {details.rating && (
+                            <>
+                              <Star size={12} fill="var(--warning)" stroke="var(--warning)" />
+                              <span>{details.rating}</span>
+                            </>
+                          )}
+                          {details.deliveryTime && (
+                            <span style={{ color: 'var(--info)', fontWeight: 500, fontSize: '0.75rem', marginLeft: '0.25rem' }}>
+                              🚚 {details.deliveryTime}
+                            </span>
+                          )}
+                        </div>
+                        {details.distance && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            📍 Distance: {details.distance}
+                          </div>
+                        )}
+                        {(details.deliveryFee !== null || details.packagingFee !== null) && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {details.deliveryFee !== null && `Del: ₹${details.deliveryFee}`}
+                            {details.deliveryFee !== null && details.packagingFee !== null && ' | '}
+                            {details.packagingFee !== null && `Pack: ₹${details.packagingFee}`}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <a 
+                          href={details.productLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="btn-store-go"
+                        >
+                          Buy <ArrowRight size={12} />
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                    );
+                  });
+                })}
             </div>
 
             {/* Gemini AI Analyst Recommendation Panel */}

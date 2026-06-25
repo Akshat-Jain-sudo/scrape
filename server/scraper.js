@@ -1422,15 +1422,28 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
   // Generate comparison prices across all target stores using the base product
   const comparisonData = generatePlatformComparison(query, baseProduct, targetStores, location);
   
+  // IF category is food or quickcommerce, inject the actual scraped/simulated products instead of a single mocked item
+  if (category === 'food' || category === 'quickcommerce') {
+    targetStores.forEach(store => {
+      const storeProducts = products.filter(p => p.source === store).sort((a, b) => a.price - b.price);
+      if (storeProducts.length > 0) {
+        comparisonData.comparison[store] = storeProducts;
+      }
+    });
+  }
+
   // Identify cheapest platform
   let cheapestStore = targetStores[0];
   let cheapestPrice = Infinity;
   
   targetStores.forEach(store => {
-    const details = comparisonData.comparison[store];
-    if (details && details.price < cheapestPrice) {
-      cheapestPrice = details.price;
-      cheapestStore = store;
+    const storeData = comparisonData.comparison[store];
+    if (storeData) {
+      const price = Array.isArray(storeData) ? storeData[0].price : storeData.price;
+      if (price < cheapestPrice) {
+        cheapestPrice = price;
+        cheapestStore = store;
+      }
     }
   });
 
