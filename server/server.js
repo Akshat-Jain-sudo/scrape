@@ -1,4 +1,5 @@
 import app from './app.js';
+import { runAllHealthChecks } from './scraperHealth.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -14,4 +15,8 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/export/csv      — Export CSV`);
   console.log(`   GET  /api/export/excel    — Export Excel`);
   console.log(`   GET  /api/history         — Scrape history\n`);
+  
+  // Scraper Health Checks
+  runAllHealthChecks();
+  setInterval(runAllHealthChecks, 6 * 60 * 60 * 1000); // 6 hours
 });

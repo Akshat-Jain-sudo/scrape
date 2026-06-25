@@ -16,10 +16,12 @@ import {
   Brain,
   CreditCard,
   CheckCircle2,
-  Terminal as TerminalIcon,
-  ChevronRight,
-  AlertCircle
+  Camera,
+  PlaySquare,
+  ShieldCheck,
+  Smartphone
 } from 'lucide-react';
+import { useLocationContext } from '../context/LocationContext';
 
 const STORE_BADGE_CLASSES = {
   amazon: 'store-badge-amazon',
@@ -273,14 +275,14 @@ const loadTesseract = () => {
   });
 };
 
-function CartOptimizer({ userLocation, addToast }) {
+function CartOptimizer({ addToast }) {
+  const { location } = useLocationContext();
   const [items, setItems] = useState(() => {
     const saved = localStorage.getItem('optimize_cart_items');
     return saved ? JSON.parse(saved) : ['Milk', 'Bread', 'Eggs', 'Butter'];
   });
   const [newItem, setNewItem] = useState('');
   const [category, setCategory] = useState('quickcommerce');
-  const [location, setLocation] = useState(userLocation || 'Mumbai');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
 
@@ -300,12 +302,6 @@ function CartOptimizer({ userLocation, addToast }) {
   const [otpCode, setOtpCode] = useState('');
   const terminalEndRef = useRef(null);
 
-  // Sync userLocation if it changes
-  useEffect(() => {
-    if (userLocation) {
-      setLocation(userLocation);
-    }
-  }, [userLocation]);
 
   // Persist items in localStorage
   useEffect(() => {

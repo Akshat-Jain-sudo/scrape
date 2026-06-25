@@ -20,7 +20,18 @@ import {
 } from './scraper.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { initDb, readDb, writeDb } from './db.js';
+import { 
+  initDb, 
+  getProducts, 
+  saveProducts, 
+  deleteProduct, 
+  clearAllProducts, 
+  updateTargetPrice,
+  getProductHistory,
+  saveScrapeHistory,
+  getScrapeHistory,
+  getAllScraperHealth
+} from './db.js';
 import { startPriceHistoryScheduler } from './cron.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -490,8 +501,7 @@ app.post('/api/scrape', async (req, res) => {
     };
 
     // Save to scrape history
-    const db = await readDb();
-    db.scrapeHistory.unshift({
+    saveScrapeHistory({
       id: `scrape-${Date.now()}`,
       query: query.trim(),
       category,
@@ -500,8 +510,6 @@ app.post('/api/scrape', async (req, res) => {
       productsFound: uniqueProducts.length,
       timestamp: new Date().toISOString()
     });
-    db.scrapeHistory = db.scrapeHistory.slice(0, 20);
-    await writeDb(db);
 
     res.json(result);
   } catch (error) {
@@ -512,8 +520,12 @@ app.post('/api/scrape', async (req, res) => {
 
 // ── GET /api/products — Get all saved products ──
 app.get('/api/products', async (req, res) => {
-  const db = await readDb();
-  res.json(db.products || []);
+  try {
+    const products = getProducts();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
 });
 
 // ── POST /api/products — Save scraped products (batch) ──
@@ -524,52 +536,35 @@ app.post('/api/products', async (req, res) => {
     return res.status(400).json({ error: 'Products array is required' });
   }
 
-  const db = await readDb();
-  let savedCount = 0;
-  let skippedCount = 0;
+  try {
+    // Generate IDs for new products that don't have them
+    const preparedProducts = products.map(p => ({
+      ...p,
+      id: p.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
 
-  products.forEach(product => {
-    // Check for duplicates by name and source
-    const exists = db.products.find(p => 
-      p.name && product.name && p.name.toLowerCase() === product.name.toLowerCase() &&
-      p.source && product.source && p.source.toLowerCase() === product.source.toLowerCase()
-    );
-    if (!exists) {
-      // Generate simulated price history for the last 5 days
-      const basePrice = product.price || 100;
-      const history = [];
-      for (let d = 4; d >= 0; d--) {
-        const date = new Date();
-        date.setDate(date.getDate() - d);
-        // Variance factor between 0.88 and 1.12
-        const varPercent = 0.88 + Math.random() * 0.24;
-        const histPrice = Math.round(basePrice * varPercent);
-        history.push({
-          price: histPrice,
-          date: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-        });
-      }
+    saveProducts(preparedProducts);
+    
+    res.status(201).json({ 
+      message: `Saved ${preparedProducts.length} products to database`,
+      savedCount: preparedProducts.length
+    });
+  } catch (error) {
+    console.error('Error saving products:', error);
+    res.status(500).json({ error: 'Failed to save products' });
+  }
+});
 
-      db.products.push({
-        ...product,
-        id: product.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        priceHistory: history,
-        targetPrice: null, // default
-        savedAt: new Date().toISOString()
-      });
-      savedCount++;
-    } else {
-      skippedCount++;
-    }
-  });
-
-  await writeDb(db);
-  res.status(201).json({ 
-    message: `Saved ${savedCount} products (${skippedCount} duplicates skipped)`,
-    savedCount,
-    skippedCount,
-    totalInDb: db.products.length
-  });
+// ── GET /api/products/:id/history — Real price history ──
+app.get('/api/products/:id/history', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const history = getProductHistory(id);
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching history:', error);
+    res.status(500).json({ error: 'Failed to fetch product history' });
+  }
 });
 
 // ── PUT /api/products/:id/alert — Update target alert price ──
@@ -577,40 +572,33 @@ app.put('/api/products/:id/alert', async (req, res) => {
   const { id } = req.params;
   const { targetPrice } = req.body;
 
-  const db = await readDb();
-  const product = db.products.find(p => p.id === id);
-  if (!product) {
-    return res.status(404).json({ error: 'Product not found' });
+  try {
+    updateTargetPrice(id, targetPrice ? parseFloat(targetPrice) : null);
+    res.json({ message: 'Target price updated successfully', targetPrice });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update alert' });
   }
-
-  product.targetPrice = targetPrice ? parseFloat(targetPrice) : null;
-  await writeDb(db);
-  res.json({ message: 'Target price updated successfully', targetPrice: product.targetPrice });
 });
 
 // ── DELETE /api/products/:id — Delete a saved product ──
 app.delete('/api/products/:id', async (req, res) => {
   const { id } = req.params;
-  const db = await readDb();
-  
-  const initialLength = db.products.length;
-  db.products = db.products.filter(p => p.id !== id);
-  
-  if (db.products.length === initialLength) {
-    return res.status(404).json({ error: 'Product not found' });
+  try {
+    deleteProduct(id);
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete product' });
   }
-
-  await writeDb(db);
-  res.json({ message: 'Product deleted successfully', id });
 });
 
 // ── DELETE /api/products — Clear all saved products ──
 app.delete('/api/products', async (req, res) => {
-  const db = await readDb();
-  const count = db.products.length;
-  db.products = [];
-  await writeDb(db);
-  res.json({ message: `Cleared ${count} products from database` });
+  try {
+    clearAllProducts();
+    res.json({ message: 'All products cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to clear products' });
+  }
 });
 
 // ── GET /api/analytics — Product analytics ──
@@ -622,9 +610,9 @@ app.get('/api/analytics', async (req, res) => {
 
 // ── GET /api/export/csv — Export saved products as CSV ──
 app.get('/api/export/csv', async (req, res) => {
-  const db = await readDb();
+  const products = getProducts();
   
-  if (db.products.length === 0) {
+  if (products.length === 0) {
     return res.status(404).json({ error: 'No products to export' });
   }
 
@@ -638,7 +626,7 @@ app.get('/api/export/csv', async (req, res) => {
     ];
 
     const parser = new Parser({ fields });
-    const csv = parser.parse(db.products);
+    const csv = parser.parse(products);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=flipkart_products_${Date.now()}.csv`);
@@ -651,9 +639,9 @@ app.get('/api/export/csv', async (req, res) => {
 
 // ── GET /api/export/excel — Export saved products as Excel ──
 app.get('/api/export/excel', async (req, res) => {
-  const db = await readDb();
+  const products = getProducts();
   
-  if (db.products.length === 0) {
+  if (products.length === 0) {
     return res.status(404).json({ error: 'No products to export' });
   }
 
@@ -695,7 +683,7 @@ app.get('/api/export/excel', async (req, res) => {
     headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
     // Add product data
-    db.products.forEach(product => {
+    products.forEach(product => {
       sheet.addRow({
         name: product.name || '',
         price: product.price || '',
@@ -729,8 +717,21 @@ app.get('/api/export/excel', async (req, res) => {
 
 // ── GET /api/history — Get scrape history ──
 app.get('/api/history', async (req, res) => {
-  const db = await readDb();
-  res.json(db.scrapeHistory || []);
+  try {
+    res.json(getScrapeHistory());
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch scrape history' });
+  }
+});
+
+// ── GET /api/health/scrapers — Scraper Health endpoint ──
+app.get('/api/health/scrapers', (req, res) => {
+  try {
+    const health = getAllScraperHealth();
+    res.json(health);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get scraper health' });
+  }
 });
 
 // ── GET /api/proxy-image — Proxy product images to bypass WAF/Hotlinking blocks ──

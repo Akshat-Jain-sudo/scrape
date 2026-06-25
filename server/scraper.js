@@ -200,6 +200,7 @@ export async function scrapeFlipkartSearch(query, pages = 1) {
         productLink,
         imageUrl,
         source: 'flipkart',
+        sourceMode: 'live',
         scrapedAt: new Date().toISOString()
       });
     });
@@ -253,6 +254,7 @@ export async function scrapeSnapdealSearch(query, pages = 1) {
         productLink,
         imageUrl,
         source: 'snapdeal',
+        sourceMode: 'live',
         scrapedAt: new Date().toISOString()
       });
     });
@@ -892,20 +894,30 @@ export function getStoreDeliveryTime(store) {
   }
 }
 
+// ── Helper to normalize complex location objects from the frontend ──
+function normalizeLocation(location) {
+  if (typeof location === 'object' && location !== null) {
+    return {
+      city: location.city || 'Mumbai',
+      locality: location.locality || '',
+      full: location.displayLabel || location.city || 'Mumbai'
+    };
+  }
+  return { city: location || 'Mumbai', locality: '', full: location || 'Mumbai' };
+}
+
 function getRestaurantName(store, location, query, index) {
-  const city = (location || 'Mumbai').toLowerCase();
+  const loc = normalizeLocation(location);
+  const city = loc.city.toLowerCase();
   const q = (query || '').toLowerCase();
   
-  // Areas depending on city
-  let areas = ["Juhu", "Bandra West", "Andheri East", "Colaba", "Versova", "Worli", "Lower Parel"];
-  if (city.includes('delhi') || city.includes('ncr')) {
-    areas = ["Connaught Place", "Karol Bagh", "Lajpat Nagar", "Saket", "Chandni Chowk", "Dwarka", "Rajouri Garden"];
-  } else if (city.includes('bangalore') || city.includes('bengaluru')) {
-    areas = ["Koramangala", "Indiranagar", "Whitefield", "HSR Layout", "Jayanagar", "Electronic City", "Marathahalli"];
-  }
-  const area = areas[index % areas.length];
-
-  // Brands depending on query
+  // Areas depending on city (fallback if locality not provided by Nominatim)
+  let areas = ["Central", "Downtown", "Market Area", "Station Road", "Civil Lines"];
+  if (city.includes('mumbai')) areas = ["Juhu", "Bandra West", "Andheri East", "Colaba", "Versova", "Worli", "Lower Parel"];
+  else if (city.includes('delhi') || city.includes('ncr')) areas = ["Connaught Place", "Karol Bagh", "Lajpat Nagar", "Saket", "Chandni Chowk", "Dwarka", "Rajouri Garden"];
+  else if (city.includes('bangalore') || city.includes('bengaluru')) areas = ["Koramangala", "Indiranagar", "Whitefield", "HSR Layout", "Jayanagar", "Electronic City", "Marathahalli"];
+  
+  const area = loc.locality ? loc.locality : areas[index % areas.length];
   let brands = ['Royal Biryani House', 'Golden Dragon Chinese', 'The Pizza Place', 'Urban Curry Bistro', 'Imperial Spice Kitchen'];
   if (q.includes('pizza')) {
     brands = ["Dominos Pizza", "Pizza Hut", "La Pino'z Pizza", "The Pizza Club", "L'Amour Pizzeria", "Chicago Pizza", "Ovenstory Pizza"];
@@ -927,7 +939,8 @@ function getRestaurantName(store, location, query, index) {
 }
 
 function getFoodProductLink(store, location, restaurantName, query) {
-  const citySlug = (location || 'Mumbai').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const loc = normalizeLocation(location);
+  const citySlug = loc.city.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const cleanRestName = restaurantName
     .replace(/^(Zomato Special:\s*|Swiggy Select:\s*)/i, '')
     .toLowerCase()
@@ -943,6 +956,7 @@ function getFoodProductLink(store, location, restaurantName, query) {
 
 // ── Store Simulation / Fallback Generator ──
 export function generatePlatformComparison(query, baseProduct, targetStores, location = 'Mumbai') {
+  const loc = normalizeLocation(location);
   const comparison = {};
   
   const isQuickComm = targetStores.some(s => isQuickCommerce(s));
@@ -955,7 +969,7 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
   // Set fallback parameters from the best available base product, or estimated values
   const basePrice = baseProduct && baseProduct.price ? baseProduct.price : getEstimatedBasePrice(query, category);
   const baseTitle = isFoodCategory 
-    ? `${location} Food Delivery: ${query.charAt(0).toUpperCase() + query.slice(1)}`
+    ? `${loc.full} Food Delivery: ${query.charAt(0).toUpperCase() + query.slice(1)}`
     : (baseProduct ? baseProduct.name : `Premium ${query}`);
   const baseImg = baseProduct ? baseProduct.imageUrl : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
   
@@ -1168,6 +1182,7 @@ export function doesStoreSellQuery(store, query) {
 
 // ── Store Search Simulator for Scrape Console ──
 export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai') {
+  const loc = normalizeLocation(location);
   if (!doesStoreSellQuery(store, query)) {
     return []; // Return empty result set if store does not sell this query category
   }
@@ -1215,7 +1230,7 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     const ratingsCount = 10 + Math.floor(Math.random() * 1500);
 
     let productName = '';
-    const restaurantName = isFood(store) ? getRestaurantName(store, location, query, i) : null;
+    const restaurantName = isFood(store) ? getRestaurantName(store, loc, query, i) : null;
     if (isFood(store)) {
       productName = `${restaurantName} - ${query.charAt(0).toUpperCase() + query.slice(1)}`;
     } else {
@@ -1227,7 +1242,7 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
     const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
     const itemLink = isFood(store) 
-      ? getFoodProductLink(store, location, restaurantName, query)
+      ? getFoodProductLink(store, loc, restaurantName, query)
       : storeLink;
 
     products.push({
@@ -1250,6 +1265,7 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
       packagingFee,
       distance,
       restaurantName,
+      sourceMode: 'simulated',
       scrapedAt: new Date().toISOString()
     });
   }
@@ -1259,7 +1275,8 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
 
 // ── Multi-Store Compare Engine ──
 export async function compareProductPrices(query, category = 'ecommerce', location = 'Mumbai') {
-  console.log(`Comparing "${query}" under category "${category}" in "${location}" in real-time...`);
+  const loc = normalizeLocation(location);
+  console.log(`Comparing "${query}" under category "${category}" in "${loc.full}" in real-time...`);
   
   let products = [];
   let targetStores = [];
@@ -1794,22 +1811,18 @@ function getSurgeMultiplier() {
  * Compare fares across all cab platforms for a given route.
  */
 export function compareCabFares(pickup, drop, city = 'Mumbai') {
-  const cityKey = city.toLowerCase().replace(/\s+/g, '');
+  const loc = normalizeLocation(city);
+  const cityStr = loc.city;
+  const cityKey = cityStr.toLowerCase().replace(/\s+/g, '');
   const cityMultiplier = CITY_FARE_MULTIPLIERS[cityKey] || 1.0;
-  const route = estimateRouteMetrics(pickup, drop, city);
+  const route = estimateRouteMetrics(pickup, drop, cityStr);
   const surgeMultiplier = getSurgeMultiplier();
 
   const results = [];
 
   for (const [platformId, platform] of Object.entries(CAB_PLATFORMS)) {
-    // Some platforms are city-limited
-    if (platformId === 'nammayatri' && !['bangalore', 'delhi', 'hyderabad', 'chennai', 'kochi'].includes(cityKey)) {
-      continue;
-    }
-    if (platformId === 'blusmart' && !['delhi', 'bangalore', 'mumbai', 'pune', 'hyderabad'].includes(cityKey)) {
-      continue;
-    }
-
+    // Note: Removed strict city limitations so that user can see availability/unavailability based on location rules.
+    
     const platformSurge = platformId === 'blusmart' ? 1.0 : surgeMultiplier; // BluSmart has no surge pricing
     const rides = [];
     let availableCount = 0;

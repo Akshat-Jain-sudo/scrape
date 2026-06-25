@@ -11,8 +11,12 @@ import {
   FileText,
   FileJson,
   Mic,
-  MicOff
+  MicOff,
+  Loader2,
+  Trash2,
+  Filter
 } from 'lucide-react';
+import { useLocationContext } from '../context/LocationContext';
 
 const STORE_NAMES = {
   amazon: 'Amazon India',
@@ -374,7 +378,8 @@ const STORE_GROUPS = {
   ]
 };
 
-function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, onAddToCart }) {
+function ScrapeConsole({ savedProducts, onSaveProducts, addToast, onAddToCart }) {
+  const { location } = useLocationContext();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('ecommerce');
   const [selectedSources, setSelectedSources] = useState(['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']);
@@ -496,7 +501,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
     await new Promise(r => setTimeout(r, 200));
 
     if (category === 'food') {
-      addLog(`LOCATION: Detecting current city boundaries for "${userLocation}"...`, 'info');
+      addLog(`LOCATION: Detecting current city boundaries for "${location.displayLabel}"...`, 'info');
       await new Promise(r => setTimeout(r, 150));
       addLog(`AGENT: Fetching menus based on localized GPS coordinates...`, 'info');
       await new Promise(r => setTimeout(r, 150));
@@ -552,7 +557,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, userLocation, 
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query.trim(), category, source: selectedSources, pages, location: userLocation })
+        body: JSON.stringify({ query: query.trim(), category, source: selectedSources, pages, location })
       });
 
       if (!response.ok) {

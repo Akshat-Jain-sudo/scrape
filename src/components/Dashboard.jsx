@@ -17,6 +17,7 @@ import {
   MicOff,
   Brain
 } from 'lucide-react';
+import { useLocationContext } from '../context/LocationContext';
 
 const STORE_NAMES = {
   amazon: 'Amazon',
@@ -485,10 +486,11 @@ function SpeedCostMatrix({ comparisonData }) {
 }
 
 // Sub-component to manage real-time comparison for a single product card in the feed
-function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, userLocation, onAddToCart, selectedSources = [] }) {
+function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, onAddToCart, selectedSources = [] }) {
   const [loading, setLoading] = useState(true);
   const [compData, setCompData] = useState(null);
   const [error, setError] = useState(null);
+  const { location } = useLocationContext();
   const [aiRecommendation, setAiRecommendation] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -522,7 +524,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: item.query, category, location: userLocation })
+        body: JSON.stringify({ query: item.query, category, location })
       });
       if (response.ok) {
         const data = await response.json();
@@ -540,7 +542,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
 
   useEffect(() => {
     fetchComparison();
-  }, [item.id, category, userLocation]);
+  }, [item.id, category, location]);
 
   const handleSave = () => {
     if (!compData) return;
@@ -667,6 +669,20 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, u
                         <span className={getStoreBadgeClass(store)}>
                           {store}
                         </span>
+                        {details.sourceMode && (
+                          <span style={{ 
+                            fontSize: '0.65rem', 
+                            marginLeft: '0.35rem', 
+                            background: details.sourceMode === 'live' ? 'rgba(16,185,129,0.15)' : 'rgba(156,163,175,0.15)', 
+                            color: details.sourceMode === 'live' ? 'var(--success)' : 'var(--text-muted)',
+                            padding: '0.1rem 0.35rem', 
+                            borderRadius: '4px',
+                            display: 'inline-block',
+                            verticalAlign: 'middle'
+                          }}>
+                            {details.sourceMode === 'live' ? 'Live' : 'Estimated'}
+                          </span>
+                        )}
                         {!isSelected && isBest && (
                           <span style={{ fontSize: '0.65rem', color: 'var(--success)', fontWeight: 700, marginLeft: '0.35rem', background: 'rgba(16,185,129,0.1)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)', display: 'inline-block', verticalAlign: 'middle' }}>
                             ★ Best Deal (Unselected Store)
@@ -775,11 +791,9 @@ function Dashboard({
   onSaveProducts, 
   onNavigateToScraper, 
   addToast, 
-  userLocation, 
-  setUserLocation, 
-  detectLocation,
   onAddToCart
 }) {
+  const { location } = useLocationContext();
   const [activeCategory, setActiveCategory] = useState('ecommerce');
   const [trendingDeals, setTrendingDeals] = useState(null);
   const [loadingTrending, setLoadingTrending] = useState(true);
@@ -788,7 +802,6 @@ function Dashboard({
   const [searchQuery, setSearchQuery] = useState('');
   const [customComp, setCustomComp] = useState(null);
   const [searching, setSearching] = useState(false);
-  const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
   const [selectedSources, setSelectedSources] = useState(['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']);
@@ -879,7 +892,7 @@ function Dashboard({
         const response = await fetch('/api/compare', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: transcript.trim(), category: activeCategory, location: userLocation })
+          body: JSON.stringify({ query: transcript.trim(), category: activeCategory, location })
         });
 
         if (response.ok) {
@@ -932,7 +945,7 @@ function Dashboard({
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery.trim(), category: activeCategory, location: userLocation })
+        body: JSON.stringify({ query: searchQuery.trim(), category: activeCategory, location })
       });
 
       if (response.ok) {
@@ -964,45 +977,6 @@ function Dashboard({
           <h1>Compare Dashboard</h1>
           <p>Real-time comparative pricing feed across e-commerce, fashion, and quick-commerce stores</p>
         </div>
-
-        {/* Geolocation selector widget */}
-        <div className="location-widget-container">
-          <div className="location-widget" onClick={() => setShowLocationMenu(!showLocationMenu)}>
-            <span className="location-pin-icon">
-              <MapPin size={14} />
-            </span>
-            <span>Deliver to: <strong>{userLocation}</strong></span>
-            <ChevronDown size={14} style={{ opacity: 0.7, transform: showLocationMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-          </div>
-          
-          {showLocationMenu && (
-            <div className="location-menu-dropdown">
-              <div 
-                className={`location-dropdown-item ${userLocation === 'Mumbai' ? 'active' : ''}`}
-                onClick={() => { setUserLocation('Mumbai'); setShowLocationMenu(false); addToast('Location set to Mumbai', 'success'); }}
-              >
-                <span>Mumbai</span>
-                {userLocation === 'Mumbai' && <span>✓</span>}
-              </div>
-              <div 
-                className={`location-dropdown-item ${userLocation === 'Delhi' ? 'active' : ''}`}
-                onClick={() => { setUserLocation('Delhi'); setShowLocationMenu(false); addToast('Location set to Delhi', 'success'); }}
-              >
-                <span>Delhi</span>
-                {userLocation === 'Delhi' && <span>✓</span>}
-              </div>
-              <div 
-                className={`location-dropdown-item ${userLocation === 'Bangalore' ? 'active' : ''}`}
-                onClick={() => { setUserLocation('Bangalore'); setShowLocationMenu(false); addToast('Location set to Bangalore', 'success'); }}
-              >
-                <span>Bangalore</span>
-                {userLocation === 'Bangalore' && <span>✓</span>}
-              </div>
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.35rem' }}>
-                <button className="location-btn-detect" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { detectLocation(); setShowLocationMenu(false); }}>
-                  ⚡ Auto-Detect GPS
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -1046,7 +1020,12 @@ function Dashboard({
         <div className="search-box">
           <input 
             type="text"
-            placeholder={`Search and compare in ${activeCategory}...`}
+            placeholder={
+              activeCategory === 'ecommerce' ? 'Search electronics, clothing across Amazon, Flipkart...' :
+              activeCategory === 'quickcommerce' ? 'Search groceries across Blinkit, Zepto, Instamart...' :
+              activeCategory === 'food' ? 'Search restaurants on Zomato & Swiggy...' :
+              `Search and compare in ${activeCategory}...`
+            }
             className="console-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -1224,7 +1203,6 @@ function Dashboard({
             category={activeCategory} 
             onSaveComparison={handleSaveComparison}
             savedProducts={savedProducts}
-            userLocation={userLocation}
             onAddToCart={onAddToCart}
             selectedSources={selectedSources}
           />
@@ -1268,7 +1246,6 @@ function Dashboard({
                 category={activeCategory}
                 onSaveComparison={handleSaveComparison}
                 savedProducts={savedProducts}
-                userLocation={userLocation}
                 onAddToCart={onAddToCart}
                 selectedSources={selectedSources}
               />

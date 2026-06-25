@@ -18,9 +18,39 @@ import ScrapeConsole from './components/ScrapeConsole';
 import InsightHub from './components/InsightHub';
 import CartOptimizer from './components/CartOptimizer';
 import CabCompare from './components/CabCompare';
+import { LocationProvider } from './context/LocationContext';
+import LocationBar from './components/LocationBar';
 
-function SVGLineChart({ history }) {
-  if (!history || history.length === 0) return null;
+function ProductHistoryChart({ productId, currentPrice }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`/api/products/${productId}/history`);
+        if (res.ok) {
+          const data = await res.json();
+          setHistory(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [productId]);
+
+  if (loading) return <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>Loading history...</div>;
+
+  if (!history || history.length < 2) {
+    return (
+      <div style={{ marginTop: '0.75rem', padding: '1rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+        Not enough history yet — check back after a few searches.
+      </div>
+    );
+  }
   
   const prices = history.map(h => h.price);
   const minPrice = Math.min(...prices) * 0.95; // 5% padding
@@ -50,6 +80,9 @@ function SVGLineChart({ history }) {
   
   return (
     <div className="price-chart-container" style={{ marginTop: '0.75rem', animation: 'fadeIn 0.2s ease-out' }}>
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textAlign: 'center' }}>
+        Price History (based on your searches)
+      </div>
       <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
@@ -92,9 +125,9 @@ function App() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [userLocation, setUserLocation] = useState('Mumbai');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'cyberpunk');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [scraperHealth, setScraperHealth] = useState(null);
 
   // Apply theme class to document body
   useEffect(() => {
@@ -146,52 +179,6 @@ function App() {
     }
   }, [addToast]);
 
-  // Geolocation detector
-  const detectLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      addToast('Geolocation is not supported by your browser', 'warning');
-      return;
-    }
-    
-    addToast('Detecting location...', 'info');
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
-          if (response.ok) {
-            const data = await response.json();
-            const city = data.address.city || data.address.town || data.address.suburb || data.address.state || 'Mumbai';
-            setUserLocation(city);
-            addToast(`Location detected: ${city} ✓`, 'success');
-          } else {
-            throw new Error();
-          }
-        } catch (err) {
-          let city = 'Mumbai';
-          if (latitude > 18.8 && latitude < 19.3 && longitude > 72.7 && longitude < 73.1) city = 'Mumbai';
-          else if (latitude > 28.4 && latitude < 28.9 && longitude > 76.9 && longitude < 77.4) city = 'Delhi';
-          else if (latitude > 12.8 && latitude < 13.1 && longitude > 77.4 && longitude < 77.9) city = 'Bangalore';
-          else city = 'Mumbai';
-          
-          setUserLocation(city);
-          addToast(`Location detected (approx): ${city} ✓`, 'success');
-        }
-      },
-      (error) => {
-        console.error(error);
-        addToast('Location access denied. Using Mumbai.', 'info');
-        setUserLocation('Mumbai');
-      },
-      { timeout: 5000 }
-    );
-  }, [addToast]);
-
-  // Detect location on load
-  useEffect(() => {
-    detectLocation();
-  }, [detectLocation]);
-
   // Fetch saved products from Express backend
   const fetchSavedProducts = async () => {
     setLoadingProducts(true);
@@ -212,6 +199,19 @@ function App() {
 
   useEffect(() => {
     fetchSavedProducts();
+    
+    // Scraper Health check
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch('/api/health/scrapers');
+        if (res.ok) setScraperHealth(await res.json());
+      } catch (err) {
+        console.error('Failed to fetch health');
+      }
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 10 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // Save scraped products to backend db (batch)
@@ -280,6 +280,7 @@ function App() {
   }, 0);
 
   return (
+    <LocationProvider>
     <div className="app-container">
       {/* Mobile Top Header */}
       <header className="mobile-header">
@@ -397,23 +398,32 @@ function App() {
             </button>
           </div>
           <p>© 2026 FlipScrape v1.0</p>
-          <p style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-            <Sparkles size={12} color="#f57224" /> Flipkart Product Scraper
-          </p>
+          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {(() => {
+              if (!scraperHealth) return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'grey' }}/> Checking health...</>;
+              const stores = Object.values(scraperHealth);
+              if (stores.length === 0 || stores.every(s => s.status === 'dead')) {
+                return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 5px var(--danger)' }}/> Demo mode</>;
+              }
+              if (stores.some(s => s.status === 'degraded' || s.status === 'dead')) {
+                return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)', boxShadow: '0 0 5px var(--warning)' }}/> Partial live data</>;
+              }
+              return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 5px var(--success)' }}/> Live data</>;
+            })()}
+          </div>
         </div>
       </aside>
 
       {/* Main Panel Content */}
       <main className="main-content">
+        <LocationBar />
+        
         {currentView === 'dashboard' && (
           <Dashboard 
             savedProducts={savedProducts} 
             onSaveProducts={handleSaveProducts} 
             onNavigateToScraper={() => setCurrentView('scraper')}
             addToast={addToast}
-            userLocation={userLocation}
-            setUserLocation={setUserLocation}
-            detectLocation={detectLocation}
             onAddToCart={handleAddToCart}
           />
         )}
@@ -423,7 +433,6 @@ function App() {
             savedProducts={savedProducts}
             onSaveProducts={handleSaveProducts}
             addToast={addToast}
-            userLocation={userLocation}
             onAddToCart={handleAddToCart}
           />
         )}
@@ -566,7 +575,7 @@ function App() {
 
                       {/* Line Chart */}
                       {showCharts[product.id] && (
-                        <SVGLineChart history={product.priceHistory || [{ price: product.price, date: 'Now' }]} />
+                        <ProductHistoryChart productId={product.id} currentPrice={product.price} />
                       )}
 
                       <div className="card-footer">
@@ -620,7 +629,7 @@ function App() {
         )}
 
         {currentView === 'cart' && (
-          <CartOptimizer userLocation={userLocation} addToast={addToast} />
+          <CartOptimizer addToast={addToast} />
         )}
 
         {currentView === 'cab' && (
