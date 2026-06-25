@@ -1909,3 +1909,615 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: var(--accent-primary) !important;
 }
 
+
+/* ══════════════════════════════════════════════════════════════ */
+/* ── CAB FARE COMPARE STYLES ── */
+/* ══════════════════════════════════════════════════════════════ */
+
+/* Input Section */
+.cab-input-section {
+  padding: 1.5rem !important;
+}
+.cab-route-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cab-location-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cab-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cab-input-group:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(245, 114, 36, 0.12);
+}
+.cab-input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cab-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.pickup-dot {
+  background: #4CAF50;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+}
+.drop-dot {
+  background: #F44336;
+  box-shadow: 0 0 6px rgba(244, 67, 54, 0.5);
+}
+.cab-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  padding: 0.85rem 0;
+  font-family: inherit;
+}
+.cab-input::placeholder {
+  color: var(--text-muted);
+}
+
+.cab-swap-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.cab-swap-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+  transform: rotate(180deg);
+}
+
+.cab-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cab-city-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cab-city-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.cab-city-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 0.7rem 1rem 0.7rem 2rem;
+  font-size: 0.88rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 140px;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: auto;
+}
+.cab-city-select:focus {
+  border-color: var(--accent-primary);
+}
+.cab-compare-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600;
+  border-radius: 12px !important;
+}
+
+/* Quick Routes */
+.cab-quick-routes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+.cab-quick-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.cab-quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.cab-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.cab-quick-chip:hover {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+/* Route Info Bar */
+.cab-route-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem !important;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.cab-route-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.cab-route-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cab-metric-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.surge-badge {
+  background: rgba(255, 152, 0, 0.15) !important;
+  border-color: rgba(255, 152, 0, 0.3) !important;
+  color: #FF9800 !important;
+  animation: pulseSurge 2s ease-in-out infinite alternate;
+}
+@keyframes pulseSurge {
+  0% { box-shadow: 0 0 4px rgba(255, 152, 0, 0.2); }
+  100% { box-shadow: 0 0 12px rgba(255, 152, 0, 0.5); }
+}
+
+/* Stats Row */
+.cab-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.cab-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem !important;
+}
+.cab-stat-card.best-deal {
+  border: 1px solid rgba(245, 114, 36, 0.3);
+  background: linear-gradient(135deg, rgba(245, 114, 36, 0.06), rgba(40, 116, 240, 0.04));
+}
+.cab-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+.cab-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.cab-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.cab-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.cab-stat-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Filter Tabs */
+.cab-filter-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.3rem;
+}
+.cab-filter-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.cab-filter-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.cab-filter-tab.active {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 114, 36, 0.3);
+}
+
+/* Platform Cards Grid */
+.cab-platforms-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.cab-platform-card {
+  padding: 0 !important;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+.cab-platform-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.cab-best-deal {
+  border: 1px solid rgba(245, 114, 36, 0.25) !important;
+}
+
+/* Platform Header */
+.cab-platform-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.cab-platform-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.cab-platform-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.cab-platform-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+.cab-platform-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cab-best-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  font-size: 0.62rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.cab-platform-rides-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.cab-platform-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+.cab-platform-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.cab-from-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.cab-price-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+.cab-platform-eta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* Ride Types List */
+.cab-rides-list {
+  border-top: 1px solid var(--border-color);
+  padding: 0.5rem 1.25rem 1rem;
+  animation: fadeIn 0.25s ease-out;
+}
+.cab-ride-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+.cab-ride-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.cab-ride-row.surging {
+  background: rgba(255, 152, 0, 0.05);
+}
+.cab-ride-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.cab-ride-category-icon {
+  font-size: 1.2rem;
+}
+.cab-ride-name {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.cab-ride-cat {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.cab-ride-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.cab-ride-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+.cab-ride-eta {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.cab-surge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: rgba(255, 152, 0, 0.15);
+  color: #FF9800;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.cab-ride-fare {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 55px;
+  text-align: right;
+}
+
+/* Book Button */
+.cab-book-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.65rem;
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.cab-book-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* Comparison Table */
+.cab-comparison-table-wrapper {
+  overflow: hidden;
+}
+.cab-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.cab-comparison-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+.cab-comparison-table td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+.cab-comparison-table tr:last-child td {
+  border-bottom: none;
+}
+.cab-comparison-table .cab-table-best {
+  background: rgba(245, 114, 36, 0.05);
+}
+.cab-comparison-table .cab-table-best td {
+  border-bottom-color: rgba(245, 114, 36, 0.1);
+}
+.cab-table-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Disclaimer */
+.cab-disclaimer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1.5rem;
+  padding: 0 1rem;
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cab-location-inputs {
+    flex-direction: column;
+  }
+  .cab-swap-btn {
+    transform: rotate(90deg);
+  }
+  .cab-swap-btn:hover {
+    transform: rotate(270deg);
+  }
+  .cab-controls-row {
+    flex-direction: column;
+  }
+  .cab-city-select {
+    width: 100%;
+  }
+  .cab-stats-row {
+    grid-template-columns: 1fr;
+  }
+  .cab-route-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cab-filter-tabs {
+    overflow-x: auto;
+  }
+  .cab-platform-header {
+    padding: 0.85rem 1rem;
+  }
+  .cab-platform-right {
+    gap: 0.6rem;
+  }
+  .cab-ride-right {
+    gap: 0.5rem;
+  }
+  .cab-comparison-table {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cab-stats-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .cab-stat-card {
+    padding: 0.75rem 1rem !important;
+  }
+  .cab-platform-name {
+    font-size: 0.88rem;
+  }
+  .cab-price-value {
+    font-size: 1rem;
+  }
+}

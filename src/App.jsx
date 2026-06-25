@@ -9,13 +9,15 @@ import {
   ShoppingBag,
   Bell,
   LineChart,
-  Trash2
+  Trash2,
+  Car
 } from 'lucide-react';
 import FlipScrapeLogo from './components/FlipScrapeLogo';
 import Dashboard from './components/Dashboard';
 import ScrapeConsole from './components/ScrapeConsole';
 import InsightHub from './components/InsightHub';
 import CartOptimizer from './components/CartOptimizer';
+import CabCompare from './components/CabCompare';
 
 function SVGLineChart({ history }) {
   if (!history || history.length === 0) return null;
@@ -351,6 +353,13 @@ function App() {
             <span>Cart Optimizer</span>
           </li>
           <li 
+            className={`nav-item ${currentView === 'cab' ? 'active' : ''}`}
+            onClick={() => { setCurrentView('cab'); setSidebarOpen(false); }}
+          >
+            <Car />
+            <span>Cab Compare</span>
+          </li>
+          <li 
             className={`nav-item ${currentView === 'archive' ? 'active' : ''}`}
             onClick={() => { setCurrentView('archive'); setSidebarOpen(false); }}
           >
@@ -612,6 +621,10 @@ function App() {
 
         {currentView === 'cart' && (
           <CartOptimizer userLocation={userLocation} addToast={addToast} />
+        )}
+
+        {currentView === 'cab' && (
+          <CabCompare />
         )}
 
         {currentView === 'insights' && (

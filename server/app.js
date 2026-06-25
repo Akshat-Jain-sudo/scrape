@@ -15,7 +15,8 @@ import {
   getStoreLink,
   getStoreDeliveryTime,
   getEstimatedBasePrice,
-  doesStoreSellQuery
+  doesStoreSellQuery,
+  compareCabFares
 } from './scraper.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -910,6 +911,22 @@ Respond with ONLY a valid JSON object. Do not include markdown code block format
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to parse voice query' });
+  }
+});
+
+// ── POST /api/cab-compare — Compare cab fares across platforms ──
+app.post('/api/cab-compare', (req, res) => {
+  const { pickup, drop, city = 'Mumbai' } = req.body;
+  if (!pickup || !drop) {
+    return res.status(400).json({ error: 'Pickup and drop locations are required' });
+  }
+
+  try {
+    const comparison = compareCabFares(pickup.trim(), drop.trim(), city.trim());
+    res.json(comparison);
+  } catch (error) {
+    console.error('Cab comparison error:', error);
+    res.status(500).json({ error: error.message || 'Failed to compare cab fares' });
   }
 });
 

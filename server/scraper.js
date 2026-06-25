@@ -1513,3 +1513,391 @@ export function computeProductAnalytics(products) {
     storeDistribution
   };
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// ── CAB FARE COMPARISON MODULE ──
+// ══════════════════════════════════════════════════════════════
+
+export const CAB_PLATFORMS = {
+  uber: {
+    name: 'Uber',
+    color: '#000000',
+    rideTypes: [
+      { id: 'ubergo', name: 'UberGo', baseFare: 40, perKm: 11, perMin: 1.5, minFare: 60, category: 'sedan' },
+      { id: 'uberpremier', name: 'Uber Premier', baseFare: 70, perKm: 16, perMin: 2.0, minFare: 100, category: 'sedan' },
+      { id: 'uberxl', name: 'UberXL', baseFare: 90, perKm: 19, perMin: 2.5, minFare: 130, category: 'suv' },
+      { id: 'uberauto', name: 'Uber Auto', baseFare: 25, perKm: 8, perMin: 1.0, minFare: 30, category: 'auto' },
+      { id: 'ubermoto', name: 'Uber Moto', baseFare: 15, perKm: 5, perMin: 0.75, minFare: 25, category: 'bike' }
+    ],
+    deepLinkBase: 'https://m.uber.com/ul/'
+  },
+  ola: {
+    name: 'Ola',
+    color: '#1C8C3B',
+    rideTypes: [
+      { id: 'olamini', name: 'Ola Mini', baseFare: 50, perKm: 10, perMin: 1.25, minFare: 60, category: 'sedan' },
+      { id: 'olaprime', name: 'Ola Prime Sedan', baseFare: 80, perKm: 14, perMin: 1.75, minFare: 100, category: 'sedan' },
+      { id: 'olaprimesuv', name: 'Ola Prime SUV', baseFare: 100, perKm: 18, perMin: 2.5, minFare: 150, category: 'suv' },
+      { id: 'olaauto', name: 'Ola Auto', baseFare: 30, perKm: 9, perMin: 1.0, minFare: 30, category: 'auto' },
+      { id: 'olabike', name: 'Ola Bike', baseFare: 15, perKm: 5, perMin: 0.5, minFare: 20, category: 'bike' }
+    ],
+    deepLinkBase: 'https://book.olacabs.com/'
+  },
+  rapido: {
+    name: 'Rapido',
+    color: '#FECB2F',
+    rideTypes: [
+      { id: 'rapidobike', name: 'Rapido Bike', baseFare: 10, perKm: 4, perMin: 0.5, minFare: 15, category: 'bike' },
+      { id: 'rapidoauto', name: 'Rapido Auto', baseFare: 25, perKm: 7, perMin: 0.75, minFare: 25, category: 'auto' },
+      { id: 'rapidocab', name: 'Rapido Cab', baseFare: 45, perKm: 11, perMin: 1.25, minFare: 55, category: 'sedan' }
+    ],
+    deepLinkBase: 'https://www.rapido.bike/'
+  },
+  indrive: {
+    name: 'inDrive',
+    color: '#A8E847',
+    rideTypes: [
+      { id: 'indriveride', name: 'inDrive Ride', baseFare: 35, perKm: 9, perMin: 1.0, minFare: 50, category: 'sedan' },
+      { id: 'indrivecomfort', name: 'inDrive Comfort', baseFare: 60, perKm: 13, perMin: 1.5, minFare: 80, category: 'sedan' }
+    ],
+    deepLinkBase: 'https://indrive.com/'
+  },
+  blusmart: {
+    name: 'BluSmart',
+    color: '#0066FF',
+    rideTypes: [
+      { id: 'blusmarteco', name: 'BluSmart Eco', baseFare: 50, perKm: 12, perMin: 1.5, minFare: 70, category: 'sedan' },
+      { id: 'blusmartprime', name: 'BluSmart Prime', baseFare: 80, perKm: 16, perMin: 2.0, minFare: 110, category: 'sedan' }
+    ],
+    deepLinkBase: 'https://www.blu-smart.com/'
+  },
+  nammayatri: {
+    name: 'Namma Yatri',
+    color: '#00B562',
+    rideTypes: [
+      { id: 'nyauto', name: 'Namma Auto', baseFare: 30, perKm: 7, perMin: 0.5, minFare: 30, category: 'auto' },
+      { id: 'nycab', name: 'Namma Cab', baseFare: 40, perKm: 10, perMin: 1.0, minFare: 50, category: 'sedan' }
+    ],
+    deepLinkBase: 'https://nammayatri.in/'
+  },
+  meru: {
+    name: 'Meru Cabs',
+    color: '#FFFFFF',
+    rideTypes: [
+      { id: 'meruhatch', name: 'Meru Hatchback', baseFare: 45, perKm: 11, perMin: 1.25, minFare: 60, category: 'sedan' },
+      { id: 'merusedan', name: 'Meru Sedan', baseFare: 70, perKm: 15, perMin: 1.75, minFare: 90, category: 'sedan' }
+    ],
+    deepLinkBase: 'https://www.mfrucabs.com/'
+  }
+};
+
+// City-specific fare multipliers (relative to base pricing)
+const CITY_FARE_MULTIPLIERS = {
+  mumbai: 1.15,
+  delhi: 1.0,
+  bangalore: 1.1,
+  hyderabad: 0.95,
+  chennai: 0.95,
+  pune: 0.9,
+  kolkata: 0.85,
+  ahmedabad: 0.85,
+  jaipur: 0.8,
+  lucknow: 0.75,
+  chandigarh: 0.8,
+  goa: 1.05,
+  kochi: 0.85,
+  indore: 0.75,
+  nagpur: 0.75
+};
+
+// Predefined routes with realistic distances (in km) for known pickup-drop combos
+const KNOWN_ROUTES = {
+  mumbai: [
+    { keywords: ['airport', 'andheri'], distance: 6, duration: 20 },
+    { keywords: ['airport', 'bandra'], distance: 12, duration: 35 },
+    { keywords: ['airport', 'colaba'], distance: 30, duration: 65 },
+    { keywords: ['airport', 'worli'], distance: 18, duration: 45 },
+    { keywords: ['bandra', 'colaba'], distance: 22, duration: 50 },
+    { keywords: ['andheri', 'dadar'], distance: 15, duration: 35 },
+    { keywords: ['borivali', 'churchgate'], distance: 35, duration: 75 },
+    { keywords: ['thane', 'bkc'], distance: 20, duration: 50 }
+  ],
+  delhi: [
+    { keywords: ['airport', 'connaught'], distance: 16, duration: 40 },
+    { keywords: ['airport', 'gurgaon'], distance: 12, duration: 30 },
+    { keywords: ['airport', 'noida'], distance: 35, duration: 60 },
+    { keywords: ['noida', 'gurgaon'], distance: 40, duration: 70 },
+    { keywords: ['dwarka', 'karol bagh'], distance: 18, duration: 40 },
+    { keywords: ['saket', 'connaught'], distance: 14, duration: 35 },
+    { keywords: ['rohini', 'lajpat nagar'], distance: 22, duration: 50 }
+  ],
+  bangalore: [
+    { keywords: ['airport', 'koramangala'], distance: 38, duration: 70 },
+    { keywords: ['airport', 'whitefield'], distance: 40, duration: 65 },
+    { keywords: ['airport', 'indiranagar'], distance: 35, duration: 60 },
+    { keywords: ['koramangala', 'whitefield'], distance: 18, duration: 40 },
+    { keywords: ['electronic city', 'mg road'], distance: 20, duration: 45 },
+    { keywords: ['hsr layout', 'hebbal'], distance: 22, duration: 50 }
+  ],
+  hyderabad: [
+    { keywords: ['airport', 'hitech city'], distance: 30, duration: 50 },
+    { keywords: ['airport', 'secunderabad'], distance: 25, duration: 45 },
+    { keywords: ['banjara hills', 'gachibowli'], distance: 12, duration: 30 },
+    { keywords: ['hitech city', 'secunderabad'], distance: 18, duration: 40 }
+  ],
+  chennai: [
+    { keywords: ['airport', 'tidel park'], distance: 14, duration: 30 },
+    { keywords: ['airport', 'marina'], distance: 12, duration: 28 },
+    { keywords: ['anna nagar', 't nagar'], distance: 8, duration: 22 }
+  ],
+  pune: [
+    { keywords: ['airport', 'hinjewadi'], distance: 25, duration: 45 },
+    { keywords: ['airport', 'koregaon park'], distance: 12, duration: 25 },
+    { keywords: ['shivajinagar', 'hinjewadi'], distance: 20, duration: 40 }
+  ]
+};
+
+/**
+ * Estimate the distance and duration between two text locations in a city.
+ * Tries to match known routes first, then falls back to a heuristic estimate.
+ */
+function estimateRouteMetrics(pickup, drop, city) {
+  const p = pickup.toLowerCase();
+  const d = drop.toLowerCase();
+  const c = city.toLowerCase().replace(/\s+/g, '');
+
+  // Check known routes
+  const cityRoutes = KNOWN_ROUTES[c] || [];
+  for (const route of cityRoutes) {
+    const matchesForward = route.keywords.some(k => p.includes(k)) && route.keywords.some(k => d.includes(k));
+    const matchesReverse = route.keywords.some(k => d.includes(k)) && route.keywords.some(k => p.includes(k));
+    if (matchesForward || matchesReverse) {
+      // Add some randomness
+      const distJitter = (Math.random() - 0.5) * 4; // ±2km
+      const durJitter = (Math.random() - 0.5) * 10; // ±5min
+      return {
+        distance: Math.max(2, Math.round((route.distance + distJitter) * 10) / 10),
+        duration: Math.max(5, Math.round(route.duration + durJitter))
+      };
+    }
+  }
+
+  // Fallback: estimate based on string length heuristic + random
+  const combinedLen = pickup.length + drop.length;
+  const baseDistance = 5 + Math.floor(Math.random() * 25); // 5-30 km
+  const baseDuration = Math.round(baseDistance * 2.5 + Math.random() * 15); // ~2.5 min/km + jitter
+
+  return {
+    distance: Math.max(2, baseDistance),
+    duration: Math.max(5, baseDuration)
+  };
+}
+
+/**
+ * Check if a specific ride type is available at the given location.
+ * Simulates real-world constraints (e.g., no bikes on highways, no autos at airports in some cities).
+ */
+function isRideAvailableAtLocation(rideCategory, pickup, drop, city) {
+  const p = pickup.toLowerCase();
+  const d = drop.toLowerCase();
+  const c = city.toLowerCase();
+  
+  // Highway / expressway — no bikes or autos
+  const isHighway = /\b(highway|expressway|freeway|toll|nh-|nh \d|elevated)\b/.test(p) || /\b(highway|expressway|freeway|toll|nh-|nh \d|elevated)\b/.test(d);
+  if (isHighway && (rideCategory === 'bike' || rideCategory === 'auto')) {
+    return { available: false, reason: 'Not available on highways' };
+  }
+  
+  // Airport pickups — no autos in some cities (Mumbai, Delhi, Bangalore)
+  const isAirport = /\b(airport|terminal|t1|t2|t3|arrivals|departures)\b/.test(p);
+  if (isAirport && rideCategory === 'auto' && ['mumbai', 'delhi', 'bangalore'].includes(c)) {
+    return { available: false, reason: 'Auto not allowed at airport' };
+  }
+  
+  // Late night — fewer bikes available (simulate with probability)
+  const hour = new Date().getHours();
+  if (rideCategory === 'bike' && (hour >= 23 || hour <= 5)) {
+    if (Math.random() < 0.5) {
+      return { available: false, reason: 'Limited availability at night' };
+    }
+  }
+  
+  // SUVs not available in narrow/old city areas
+  const isNarrowArea = /\b(old city|walled city|chandni chowk|dharavi|lanes|bylanes|gali|chawl)\b/.test(p) || /\b(old city|walled city|chandni chowk|dharavi|lanes|bylanes|gali|chawl)\b/.test(d);
+  if (isNarrowArea && rideCategory === 'suv') {
+    return { available: false, reason: 'SUV not recommended for this area' };
+  }
+  
+  return { available: true, reason: null };
+}
+
+/**
+ * Generate location-aware deep links for each cab platform.
+ * Passes the pickup/drop location into the platform's booking URL.
+ */
+function getCabDeepLink(platformId, pickup, drop, city) {
+  const p = encodeURIComponent(pickup + ', ' + city);
+  const d = encodeURIComponent(drop + ', ' + city);
+  
+  switch (platformId) {
+    case 'uber':
+      // Uber deep link with pickup & drop
+      return `https://m.uber.com/ul/?action=setPickup&pickup[formatted_address]=${p}&dropoff[0][formatted_address]=${d}`;
+    case 'ola':
+      return `https://book.olacabs.com/?pickup=${p}&drop=${d}`;
+    case 'rapido':
+      return `https://www.rapido.bike/?pickup=${p}&drop=${d}`;
+    case 'indrive':
+      return `https://indrive.com/order/?from=${p}&to=${d}`;
+    case 'blusmart':
+      return `https://www.blu-smart.com/ride?pickup=${p}&drop=${d}`;
+    case 'nammayatri':
+      return `https://nammayatri.in/book/?from=${p}&to=${d}`;
+    case 'meru':
+      return `https://www.merucabs.com/booking?pickup=${p}&drop=${d}`;
+    default:
+      return `https://www.google.com/maps/dir/${p}/${d}`;
+  }
+}
+
+/**
+ * Simulate fare for a specific cab platform and ride type.
+ */
+function simulateSingleFare(rideType, distance, duration, cityMultiplier, surgeMultiplier) {
+  const rawFare = rideType.baseFare + (rideType.perKm * distance) + (rideType.perMin * duration);
+  const fare = Math.max(rideType.minFare, Math.round(rawFare * cityMultiplier * surgeMultiplier));
+  
+  // Add some randomness (±8%)
+  const jitter = 1 + (Math.random() - 0.5) * 0.16;
+  const finalFare = Math.round(fare * jitter);
+
+  return Math.max(rideType.minFare, finalFare);
+}
+
+/**
+ * Generate a realistic surge multiplier based on time-of-day patterns.
+ */
+function getSurgeMultiplier() {
+  const hour = new Date().getHours();
+  // Peak hours: 8-10 AM, 5-9 PM, late night 11 PM-1 AM
+  if ((hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 21)) {
+    return 1.0 + Math.random() * 0.8; // 1.0x - 1.8x during peak
+  }
+  if (hour >= 23 || hour <= 1) {
+    return 1.2 + Math.random() * 0.5; // 1.2x - 1.7x late night
+  }
+  return 1.0 + Math.random() * 0.2; // 1.0x - 1.2x off-peak
+}
+
+/**
+ * Compare fares across all cab platforms for a given route.
+ */
+export function compareCabFares(pickup, drop, city = 'Mumbai') {
+  const cityKey = city.toLowerCase().replace(/\s+/g, '');
+  const cityMultiplier = CITY_FARE_MULTIPLIERS[cityKey] || 1.0;
+  const route = estimateRouteMetrics(pickup, drop, city);
+  const surgeMultiplier = getSurgeMultiplier();
+
+  const results = [];
+
+  for (const [platformId, platform] of Object.entries(CAB_PLATFORMS)) {
+    // Some platforms are city-limited
+    if (platformId === 'nammayatri' && !['bangalore', 'delhi', 'hyderabad', 'chennai', 'kochi'].includes(cityKey)) {
+      continue;
+    }
+    if (platformId === 'blusmart' && !['delhi', 'bangalore', 'mumbai', 'pune', 'hyderabad'].includes(cityKey)) {
+      continue;
+    }
+
+    const platformSurge = platformId === 'blusmart' ? 1.0 : surgeMultiplier; // BluSmart has no surge pricing
+    const rides = [];
+    let availableCount = 0;
+
+    for (const rideType of platform.rideTypes) {
+      // Check location-based availability
+      const availability = isRideAvailableAtLocation(rideType.category, pickup, drop, city);
+      
+      const fare = simulateSingleFare(rideType, route.distance, route.duration, cityMultiplier, platformSurge);
+      const etaMinutes = 2 + Math.floor(Math.random() * 10); // 2-12 min ETA
+
+      if (availability.available) availableCount++;
+
+      rides.push({
+        id: rideType.id,
+        name: rideType.name,
+        category: rideType.category,
+        fare,
+        fareFormatted: `₹${fare}`,
+        eta: `${etaMinutes} min`,
+        etaMinutes,
+        surgeMultiplier: Math.round(platformSurge * 10) / 10,
+        isSurging: platformSurge > 1.2,
+        available: availability.available,
+        unavailableReason: availability.reason
+      });
+    }
+
+    // Sort rides: available first, then by fare
+    rides.sort((a, b) => {
+      if (a.available && !b.available) return -1;
+      if (!a.available && b.available) return 1;
+      return a.fare - b.fare;
+    });
+
+    const cheapestAvailable = rides.find(r => r.available) || rides[0];
+
+    // Generate location-aware deep link
+    const deepLink = getCabDeepLink(platformId, pickup, drop, city);
+
+    results.push({
+      platformId,
+      platformName: platform.name,
+      platformColor: platform.color,
+      deepLink,
+      cheapestFare: cheapestAvailable?.fare || 0,
+      cheapestFareFormatted: cheapestAvailable?.fareFormatted || 'N/A',
+      cheapestRideType: cheapestAvailable?.name || '',
+      fastestEta: rides.filter(r => r.available).reduce((min, r) => r.etaMinutes < min ? r.etaMinutes : min, 999),
+      availableRides: availableCount,
+      totalRides: platform.rideTypes.length,
+      rides
+    });
+  }
+
+  // Sort platforms by cheapest fare
+  results.sort((a, b) => a.cheapestFare - b.cheapestFare);
+
+  // Compute stats
+  const allFares = results.map(r => r.cheapestFare);
+  const cheapestPlatform = results[0];
+  const costliestPlatform = results[results.length - 1];
+  const avgFare = allFares.length > 0 ? Math.round(allFares.reduce((a, b) => a + b, 0) / allFares.length) : 0;
+  const potentialSavings = costliestPlatform && cheapestPlatform
+    ? costliestPlatform.cheapestFare - cheapestPlatform.cheapestFare
+    : 0;
+
+  return {
+    pickup,
+    drop,
+    city,
+    route: {
+      distanceKm: route.distance,
+      durationMin: route.duration,
+      distanceFormatted: `${route.distance} km`,
+      durationFormatted: `${route.duration} min`
+    },
+    surgeActive: surgeMultiplier > 1.2,
+    surgeMultiplier: Math.round(surgeMultiplier * 10) / 10,
+    platforms: results,
+    stats: {
+      cheapest: cheapestPlatform ? { platform: cheapestPlatform.platformName, fare: cheapestPlatform.cheapestFareFormatted, rideType: cheapestPlatform.cheapestRideType } : null,
+      costliest: costliestPlatform ? { platform: costliestPlatform.platformName, fare: costliestPlatform.cheapestFareFormatted } : null,
+      avgFare,
+      avgFareFormatted: `₹${avgFare}`,
+      potentialSavings,
+      potentialSavingsFormatted: `₹${potentialSavings}`,
+      totalPlatforms: results.length
+    }
+  };
+}
