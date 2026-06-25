@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { readDb, writeDb } from './db.js';
+import { getProducts, updateProductPrice } from './db.js';
 import { simulateStoreSearch } from './scraper.js';
 
 /**
@@ -27,19 +27,19 @@ export function startPriceHistoryScheduler() {
  */
 export async function updateSavedProductsPriceHistory() {
   console.log('🔍 [Price Cron Worker] Starting periodic price scan for saved products...');
-  const db = await readDb();
+  const products = getProducts();
 
-  if (!db.products || db.products.length === 0) {
+  if (!products || products.length === 0) {
     console.log('ℹ️ [Price Cron Worker] No saved products in database. Skipping price scan.');
     return;
   }
 
   let updatedCount = 0;
 
-  for (const product of db.products) {
+  for (const product of products) {
     try {
       // 1. Simulate or perform a fresh search for this query at the product's source store
-      const query = product.searchQuery || product.name;
+      const query = product.query || product.name;
       const store = product.source;
       const category = product.category || 'ecommerce';
       
@@ -56,28 +56,8 @@ export async function updateSavedProductsPriceHistory() {
         newPrice = Math.round(product.price * fluctuation);
       }
 
-      // 2. Append new price to history
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' ' + 
-                      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-      if (!product.priceHistory) {
-        product.priceHistory = [];
-      }
-
-      product.priceHistory.push({
-        price: newPrice,
-        date: dateStr
-      });
-
-      // Keep only last 10 entries
-      if (product.priceHistory.length > 10) {
-        product.priceHistory = product.priceHistory.slice(-10);
-      }
-
-      // Update current price
-      product.price = newPrice;
-      product.priceFormatted = `₹${newPrice.toLocaleString('en-IN')}`;
+      // Update the database
+      updateProductPrice(product.id, newPrice);
 
       // Check if price fell below target alert price
       if (product.targetPrice && newPrice <= product.targetPrice) {
@@ -92,8 +72,6 @@ export async function updateSavedProductsPriceHistory() {
   }
 
   if (updatedCount > 0) {
-    db.productsUpdatedLast = new Date().toISOString();
-    await writeDb(db);
     console.log(`💾 [Price Cron Worker] Saved updated price histories for ${updatedCount} products.`);
   }
 }

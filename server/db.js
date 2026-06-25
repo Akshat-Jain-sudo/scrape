@@ -147,6 +147,18 @@ export function updateTargetPrice(id, targetPrice) {
   stmt.run(targetPrice, id);
 }
 
+export function updateProductPrice(id, newPrice) {
+  const updateProd = db.prepare(`UPDATE products SET price = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`);
+  const insertHistory = db.prepare(`INSERT INTO price_history (product_id, price) VALUES (?, ?)`);
+  
+  const transaction = db.transaction(() => {
+    updateProd.run(newPrice, id);
+    insertHistory.run(id, newPrice);
+  });
+  
+  transaction();
+}
+
 // ── HISTORY CRUD ──
 
 export function getProductHistory(productId) {

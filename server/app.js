@@ -46,11 +46,12 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Initialize DB and Cron background scheduler
-initDb()
-  .then(() => {
-    startPriceHistoryScheduler();
-  })
-  .catch(err => console.error('Database initialization failed:', err));
+try {
+  initDb();
+  startPriceHistoryScheduler();
+} catch (err) {
+  console.error('Database initialization failed:', err);
+}
 
 // ── GET /api/trending — Get trending deals configuration ──
 app.get('/api/trending', (req, res) => {
