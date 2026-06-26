@@ -1163,7 +1163,7 @@ function CartOptimizer({ addToast }) {
                   <div style={{ background: '#fff', padding: '0.5rem', borderRadius: '8px' }}>
                     {/* Mock QR Code */}
                     <img 
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=upi://pay?pa=flipscrape@paytm" 
+                      src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=upi://pay?pa=symbiote@paytm" 
                       alt="UPI QR Code" 
                       style={{ display: 'block', width: '100px', height: '100px' }}
                     />

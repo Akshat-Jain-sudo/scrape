@@ -4,7 +4,7 @@ import { runAllHealthChecks } from './scraperHealth.js';
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 FlipScrape Server running on http://localhost:${PORT}`);
+  console.log(`\n🚀 Symbiote Server running on http://localhost:${PORT}`);
   console.log(`   API endpoints:`);
   console.log(`   POST /api/scrape          — Scrape Flipkart products`);
   console.log(`   GET  /api/products        — List saved products`);

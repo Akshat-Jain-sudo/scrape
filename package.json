@@ -1,5 +1,5 @@
 {
-  "name": "flipscrape-webscrapper",
+  "name": "symbiote-webscrapper",
   "version": "1.0.0",
   "description": "Full-stack Flipkart Product Scraper with a premium React client and Express scraper backend.",
   "main": "server/server.js",

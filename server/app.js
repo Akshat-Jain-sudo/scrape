@@ -649,11 +649,11 @@ app.get('/api/export/excel', async (req, res) => {
   try {
     const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.default.Workbook();
-    workbook.creator = 'FlipScrape';
+    workbook.creator = 'Symbiote';
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('Products', {
-      headerFooter: { firstHeader: 'FlipScrape - Flipkart Product Data' }
+      headerFooter: { firstHeader: 'Symbiote - Flipkart Product Data' }
     });
 
     // Define columns
@@ -781,7 +781,7 @@ app.post('/api/ai/analyze', async (req, res) => {
 
   if (apiKey) {
     try {
-      const prompt = `You are FlipScrape Value Analyst, an expert shopping assistant. Analyze this price comparison payload:
+      const prompt = `You are Symbiote Value Analyst, an expert shopping assistant. Analyze this price comparison payload:
 ${JSON.stringify(cartData, null, 2)}
 
 Provide a natural language recommendation (approx 3-5 sentences) on where the user should shop. Factor in total cost, delivery times, ratings, distance, and whether the split-cart option offers better value. Write in a premium, helpful, and concise tone. Reference specific store names and savings values (use ₹ symbol for currency).`;

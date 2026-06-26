@@ -60,7 +60,7 @@ export default function LocationBar() {
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-            { headers: { 'User-Agent': 'FlipScrape/1.0', 'Accept-Language': 'en' } }
+            { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
           );
           
           if (!res.ok) throw new Error('Geocoding failed');
@@ -109,7 +109,7 @@ export default function LocationBar() {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=in&format=json&addressdetails=1&limit=5`,
-          { headers: { 'User-Agent': 'FlipScrape/1.0', 'Accept-Language': 'en' } }
+          { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
         );
         
         if (!res.ok) throw new Error('Search failed');

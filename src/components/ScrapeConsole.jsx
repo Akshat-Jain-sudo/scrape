@@ -495,7 +495,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, onAddToCart })
     setResults(null);
     setProgress(0);
 
-    addLog(`INIT: FlipScrape scraper cluster starting...`, 'info');
+    addLog(`INIT: Symbiote scraper cluster starting...`, 'info');
     await new Promise(r => setTimeout(r, 200));
     addLog(`CONFIG: Category=${category.toUpperCase()} | Query="${query}" | Sources=${selectedSources.join(', ').toUpperCase()} | Pages=${pages}`, 'accent');
     await new Promise(r => setTimeout(r, 200));
@@ -606,7 +606,7 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, onAddToCart })
     )}`;
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', jsonString);
-    downloadAnchor.setAttribute('download', `flipscrape_${source}_${query.replace(/\s+/g, '_')}_${Date.now()}.json`);
+    downloadAnchor.setAttribute('download', `symbiote_${source}_${query.replace(/\s+/g, '_')}_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

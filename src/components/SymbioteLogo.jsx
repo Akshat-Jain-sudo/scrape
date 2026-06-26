@@ -1,10 +1,10 @@
 import React from 'react';
 
 /**
- * FlipScrape custom logo — a stylized lightning bolt + web scraping spider motif
+ * Symbiote custom logo — a stylized lightning bolt + web scraping spider motif
  * inside a rounded square. Features gradient fills for a premium look.
  */
-const FlipScrapeLogo = ({ size = 24, className = '' }) => {
+const SymbioteLogo = ({ size = 24, className = '' }) => {
   const id = React.useId?.() || 'fsl';
   return (
     <svg
@@ -14,7 +14,7 @@ const FlipScrapeLogo = ({ size = 24, className = '' }) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="FlipScrape Logo"
+      aria-label="Symbiote Logo"
     >
       <defs>
         {/* Main gradient — orange to blue (Flipkart vibes) */}
@@ -108,4 +108,4 @@ const FlipScrapeLogo = ({ size = 24, className = '' }) => {
   );
 };
 
-export default FlipScrapeLogo;
+export default SymbioteLogo;

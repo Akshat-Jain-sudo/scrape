@@ -12,7 +12,7 @@ import {
   Trash2,
   Car
 } from 'lucide-react';
-import FlipScrapeLogo from './components/FlipScrapeLogo';
+import SymbioteLogo from './components/SymbioteLogo';
 import Dashboard from './components/Dashboard';
 import ScrapeConsole from './components/ScrapeConsole';
 import InsightHub from './components/InsightHub';
@@ -296,8 +296,8 @@ function App() {
           </svg>
         </button>
         <div className="mobile-logo">
-          <FlipScrapeLogo size={28} />
-          <span className="logo-text" style={{ fontSize: '1.15rem' }}>FlipScrape</span>
+          <SymbioteLogo size={28} />
+          <span className="logo-text" style={{ fontSize: '1.15rem' }}>Symbiote</span>
         </div>
         <button className="theme-toggle-btn" onClick={toggleTheme} title="Switch Theme">
           <Palette size={16} />
@@ -327,8 +327,8 @@ function App() {
       {/* Sidebar Navigation */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="logo-section">
-          <FlipScrapeLogo size={38} />
-          <div className="logo-text">FlipScrape</div>
+          <SymbioteLogo size={38} />
+          <div className="logo-text">Symbiote</div>
         </div>
 
         <ul className="nav-links">
@@ -397,7 +397,7 @@ function App() {
               <Palette size={14} />
             </button>
           </div>
-          <p>© 2026 FlipScrape v1.0</p>
+          <p>© 2026 Symbiote v1.0</p>
           <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             {(() => {
               if (!scraperHealth) return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'grey' }}/> Checking health...</>;

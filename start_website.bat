@@ -1,5 +1,5 @@
 @echo off
-title FlipScrape Flipkart Product Scraper Dev Launcher
+title Symbiote Flipkart Product Scraper Dev Launcher
 echo ==========================================================
 echo       FLIPSCRAPE PRODUCT SCRAPER - DEVELOPMENT ENVIRONMENT
 echo ==========================================================

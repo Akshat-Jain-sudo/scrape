@@ -1,6 +1,6 @@
-# 🛍️ FlipScrape — Multi-Store Price Comparison Engine
+# 🛍️ Symbiote — Multi-Store Price Comparison Engine
 
-FlipScrape is a full-stack, real-time e-commerce price comparison engine built on **Express** and **React (Vite)**. It aggregates, scrapes, and compares product availability, pricing, shipping, and express delivery details across multiple retail categories (Electronics, Fashion, and Quick Commerce/Grocery) in real-time, helping users discover the best deals across platforms.
+Symbiote is a full-stack, real-time e-commerce price comparison engine built on **Express** and **React (Vite)**. It aggregates, scrapes, and compares product availability, pricing, shipping, and express delivery details across multiple retail categories (Electronics, Fashion, and Quick Commerce/Grocery) in real-time, helping users discover the best deals across platforms.
 
 The application features rotating user agents, header masking, and image proxies to bypass modern Web Application Firewall (WAF) blockers, alongside simulated mock-up fallback engines for robust client-side demonstration when strict limits are hit.
 
@@ -67,7 +67,7 @@ graph TD
 
 ## 🔒 WAF Bypass & Proxy Logic
 
-E-commerce scrapers are highly vulnerable to Web Application Firewall (WAF) blocks (e.g. `403 Forbidden` errors on Flipkart). FlipScrape uses several built-in bypass strategies:
+E-commerce scrapers are highly vulnerable to Web Application Firewall (WAF) blocks (e.g. `403 Forbidden` errors on Flipkart). Symbiote uses several built-in bypass strategies:
 
 1. **Header Isolation**: Specific headers like `Cache-Control` and `Upgrade-Insecure-Requests` are omitted from outbound requests to mimic authentic user sessions.
 2. **Rotated User-Agents**: Requests cycle randomly through a pre-defined list of modern browser agent strings (Chrome, Safari, Firefox, Edge).
@@ -149,7 +149,7 @@ E-commerce scrapers are highly vulnerable to Web Application Firewall (WAF) bloc
 - [Node.js](https://nodejs.org/) (v18 or higher) installed on your system.
 
 ### One-Click Setup (Windows)
-If you are on Windows, double-click **`FlipScrape.lnk`** in the project folder. This shortcut executes `start_website.bat`, which:
+If you are on Windows, double-click **`Symbiote.lnk`** in the project folder. This shortcut executes `start_website.bat`, which:
 1. Verifies local packages and runs `npm install` if `node_modules` is missing.
 2. Starts the backend Express server and Vite frontend concurrently.
 3. Automatically opens the client dashboard in your default browser at [http://localhost:5173](http://localhost:5173).
@@ -170,7 +170,7 @@ If you are on Windows, double-click **`FlipScrape.lnk`** in the project folder. 
 
 ## ☁️ Deployment Guide
 
-FlipScrape is configured to compile and serve compiled React files directly from the Express server in production. This enables hosting the entire project as a **single, unified serverless or containerized service** without requiring separate static servers.
+Symbiote is configured to compile and serve compiled React files directly from the Express server in production. This enables hosting the entire project as a **single, unified serverless or containerized service** without requiring separate static servers.
 
 ### Steps to Deploy (Render, Heroku, Railway, etc.):
 1. Link your deployment platform to the project's repository.

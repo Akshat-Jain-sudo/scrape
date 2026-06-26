@@ -13,7 +13,7 @@ export function useLocationContext() {
 export function LocationProvider({ children }) {
   // Initialize from localStorage or default
   const [location, setLocationState] = useState(() => {
-    const saved = localStorage.getItem('flipscrape_location');
+    const saved = localStorage.getItem('symbiote_location');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -36,7 +36,7 @@ export function LocationProvider({ children }) {
   // Sync to localStorage whenever location changes
   const setLocation = (newLocation) => {
     setLocationState(newLocation);
-    localStorage.setItem('flipscrape_location', JSON.stringify(newLocation));
+    localStorage.setItem('symbiote_location', JSON.stringify(newLocation));
   };
 
   return (
