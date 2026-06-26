@@ -754,6 +754,29 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                       <div>
                         <a 
                           href={details.productLink} 
+                          onClick={(e) => {
+                            if (store === 'zomato' || store === 'swiggy') {
+                              e.preventDefault();
+                              const isZomato = store === 'zomato';
+                              const appName = isZomato ? 'Zomato' : 'Swiggy';
+                              const userChoice = window.confirm(`Would you like to open this in the ${appName} app?\n\nSelect "OK" for the App, or "Cancel" to continue in your browser.`);
+                              
+                              if (userChoice) {
+                                // Try to launch native app
+                                const query = compData.productName || item.query;
+                                const appLink = isZomato ? `zomato://search?q=${encodeURIComponent(query)}` : `swiggy://explore`;
+                                window.location.href = appLink;
+                                
+                                // Fallback to web after delay if app not installed
+                                setTimeout(() => {
+                                  window.open(details.productLink, '_blank');
+                                }, 1500);
+                              } else {
+                                // Open web link
+                                window.open(details.productLink, '_blank');
+                              }
+                            }
+                          }}
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="btn-store-go"
