@@ -16,7 +16,9 @@ import {
   getStoreDeliveryTime,
   getEstimatedBasePrice,
   doesStoreSellQuery,
-  compareCabFares
+  compareCabFares,
+  getNearbyRestaurants,
+  getRestaurantMenu
 } from './scraper.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -312,6 +314,20 @@ try {
   console.error('Database initialization failed:', err);
 }
 
+// -- GET /api/food/restaurants --
+app.get('/api/food/restaurants', (req, res) => {
+  const { lat, lng, city, locality, query } = req.query;
+  const location = { lat: parseFloat(lat), lng: parseFloat(lng), city, locality };
+  const restaurants = getNearbyRestaurants(location, query);
+  res.json(restaurants);
+});
+
+// -- GET /api/food/menu --
+app.get('/api/food/menu', (req, res) => {
+  const { restaurantId, restaurantName } = req.query;
+  const menu = getRestaurantMenu(restaurantId, restaurantName);
+  res.json(menu);
+});
 
 // -- GET /api/location/pincode-check -- Check if a store delivers to a location --
 app.get('/api/location/pincode-check', (req, res) => {

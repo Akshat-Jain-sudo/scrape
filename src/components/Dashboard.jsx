@@ -19,6 +19,30 @@ import {
 } from 'lucide-react';
 import { useLocationContext } from '../context/LocationContext';
 import { useAuth } from '../context/AuthContext';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import FoodDeliveryDashboard from './FoodDeliveryDashboard';
+
+const zomatoIcon = new L.DivIcon({
+  html: `<div style="background-color: #cb202d; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">Z</div>`,
+  className: 'custom-leaflet-icon',
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
+
+const swiggyIcon = new L.DivIcon({
+  html: `<div style="background-color: #fc8019; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">S</div>`,
+  className: 'custom-leaflet-icon',
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
+
+const homeIcon = new L.DivIcon({
+  html: `<div style="background-color: #3b82f6; color: white; border-radius: 50%; width: 16px; height: 16px; border: 3px solid white; box-shadow: 0 0 10px rgba(59,130,246,0.6);"></div>`,
+  className: 'custom-leaflet-icon',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8]
+});
 
 const STORE_NAMES = {
   amazon: 'Amazon',
@@ -871,6 +895,41 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
               )}
             </div>
             
+            {/* Interactive Map for Food Delivery */}
+            {category === 'food' && location && location.lat && location.lng && (
+              <div className="glass-card stagger-in" style={{ padding: '0', overflow: 'hidden', margin: '0.75rem 0', borderRadius: '8px', border: '1px solid var(--border-color)', height: '250px' }}>
+                <MapContainer center={[location.lat, location.lng]} zoom={14} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='&copy; OpenStreetMap & CARTO' />
+                  <Marker position={[location.lat, location.lng]} icon={homeIcon}>
+                    <Popup>Your Location</Popup>
+                  </Marker>
+                  {Object.entries(compData.comparison).map(([store, storeData]) => {
+                    const items = Array.isArray(storeData) ? storeData : [storeData];
+                    return items.map((details, index) => {
+                      if (details.coordinates && details.coordinates.lat && details.coordinates.lng) {
+                        return (
+                          <Marker 
+                            key={`${store}-${index}`} 
+                            position={[details.coordinates.lat, details.coordinates.lng]} 
+                            icon={store === 'zomato' ? zomatoIcon : swiggyIcon}
+                          >
+                            <Popup>
+                              <div style={{ padding: '2px', textAlign: 'center' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{details.restaurantName}</div>
+                                <div style={{ fontSize: '0.85rem' }}>{details.priceFormatted}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'gray' }}>{details.distance}</div>
+                              </div>
+                            </Popup>
+                          </Marker>
+                        );
+                      }
+                      return null;
+                    });
+                  })}
+                </MapContainer>
+              </div>
+            )}
+            
             <SpeedCostMatrix comparisonData={compData} />
           </>
         )}
@@ -1231,6 +1290,10 @@ function Dashboard({
         </div>
       </div>
 
+      {activeCategory === 'food' ? (
+        <FoodDeliveryDashboard baseUrl="" />
+      ) : (
+        <>
       {/* Amazon Hero Banner */}
       <div className="amazon-hero-banner" style={{
         background: 'linear-gradient(to right, #131921, #232f3e)',
@@ -1551,6 +1614,8 @@ function Dashboard({
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

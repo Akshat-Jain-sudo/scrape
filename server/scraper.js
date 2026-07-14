@@ -1019,6 +1019,106 @@ function getFoodProductLink(store, location, restaurantName, query) {
   }
 }
 
+export function getNearbyRestaurants(location, query) {
+  const loc = normalizeLocation(location);
+  const q = (query || '').toLowerCase();
+  
+  // If query is likely a food outlet search (e.g. "Burger King")
+  let isOutletSearch = false;
+  const knownOutlets = ["dominos", "pizza hut", "burger king", "mcdonald's", "kfc", "haldiram's", "theobroma", "behrouz"];
+  if (q && knownOutlets.some(outlet => q.includes(outlet))) {
+    isOutletSearch = true;
+  }
+
+  const numRestaurants = isOutletSearch ? 2 : (q ? 5 : 8);
+  const restaurants = [];
+  
+  for (let i = 0; i < numRestaurants; i++) {
+    let name = getRestaurantName('zomato', location, q, i).replace('Zomato Special: ', '');
+    // Ensure variety if outlet search didn't fully hit
+    if (isOutletSearch && i === 0 && q) {
+      name = q.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' - ' + (loc.locality || 'Outlet');
+    }
+
+    const distNum = parseFloat((0.5 + Math.random() * 3.5).toFixed(1));
+    let coordinates = null;
+    if (loc.lat && loc.lng) {
+      const angle = Math.random() * Math.PI * 2;
+      coordinates = {
+        lat: loc.lat + (distNum * 0.009) * Math.cos(angle),
+        lng: loc.lng + (distNum * 0.009) * Math.sin(angle)
+      };
+    }
+
+    // Cuisine mock based on name
+    let cuisine = "North Indian, Fast Food";
+    if (name.toLowerCase().includes('pizza')) cuisine = "Pizza, Fast Food, Beverages";
+    else if (name.toLowerCase().includes('burger')) cuisine = "Burgers, American, Fast Food";
+    else if (name.toLowerCase().includes('biryani')) cuisine = "Biryani, Mughlai, North Indian";
+    else if (name.toLowerCase().includes('chinese')) cuisine = "Chinese, Asian, Tibetan";
+    else if (name.toLowerCase().includes('sweet') || name.toLowerCase().includes('ice cream')) cuisine = "Desserts, Ice Cream, Bakery";
+    else if (name.toLowerCase().includes('south') || name.toLowerCase().includes('bhavan')) cuisine = "South Indian, Beverages";
+
+    restaurants.push({
+      id: `rest-${Math.floor(Math.random() * 100000)}-${i}`,
+      name: name,
+      cuisine: cuisine,
+      rating: parseFloat((3.8 + Math.random() * 1.0).toFixed(1)),
+      reviews: 50 + Math.floor(Math.random() * 5000),
+      distance: `${distNum} km`,
+      deliveryTime: `${15 + Math.floor(Math.random() * 30)} mins`,
+      coordinates: coordinates,
+      imageUrl: `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80` // Generic restaurant img
+    });
+  }
+  return restaurants;
+}
+
+export function getRestaurantMenu(restaurantId, restaurantName) {
+  // Generate a mock menu based on the restaurant name / ID
+  const name = (restaurantName || '').toLowerCase();
+  let categories = [
+    { name: 'Recommended', dishes: [] },
+    { name: 'Mains', dishes: [] },
+    { name: 'Desserts & Beverages', dishes: [] }
+  ];
+
+  const generateDish = (dishName, basePrice, isVeg, desc) => ({
+    id: `dish-${Math.floor(Math.random() * 100000)}`,
+    name: dishName,
+    price: basePrice,
+    isVeg: isVeg,
+    description: desc,
+    imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80' // Generic food
+  });
+
+  if (name.includes('pizza')) {
+    categories[0].dishes.push(generateDish('Margherita Pizza', 199, true, 'Classic cheese and tomato pizza'));
+    categories[0].dishes.push(generateDish('Farmhouse Pizza', 249, true, 'Loaded with fresh vegetables'));
+    categories[1].dishes.push(generateDish('Peppy Paneer Pizza', 299, true, 'Paneer and capsicum'));
+    categories[1].dishes.push(generateDish('Chicken Dominator', 399, false, 'Loaded with chicken pieces'));
+    categories[2].dishes.push(generateDish('Choco Lava Cake', 99, true, 'Warm chocolate cake with gooey center'));
+  } else if (name.includes('burger')) {
+    categories[0].dishes.push(generateDish('Veggie Burger', 129, true, 'Classic mixed vegetable patty'));
+    categories[0].dishes.push(generateDish('Crispy Chicken Burger', 179, false, 'Fried chicken patty with mayo'));
+    categories[1].dishes.push(generateDish('Double Cheese Burger', 219, true, 'Two patties with extra cheese'));
+    categories[2].dishes.push(generateDish('French Fries', 89, true, 'Crispy golden fries'));
+  } else if (name.includes('biryani')) {
+    categories[0].dishes.push(generateDish('Chicken Dum Biryani', 299, false, 'Slow-cooked aromatic rice with chicken'));
+    categories[1].dishes.push(generateDish('Mutton Biryani', 399, false, 'Rich mutton biryani with spices'));
+    categories[1].dishes.push(generateDish('Paneer Biryani', 249, true, 'Vegetarian biryani with paneer chunks'));
+    categories[2].dishes.push(generateDish('Gulab Jamun', 60, true, 'Sweet milk solids in syrup'));
+  } else {
+    categories[0].dishes.push(generateDish('Special Thali', 250, true, 'Complete meal with dal, roti, sabzi, rice'));
+    categories[0].dishes.push(generateDish('Paneer Butter Masala', 220, true, 'Rich paneer gravy'));
+    categories[1].dishes.push(generateDish('Chicken Tikka Masala', 280, false, 'Spicy chicken gravy'));
+    categories[1].dishes.push(generateDish('Garlic Naan', 50, true, 'Indian bread with garlic and butter'));
+    categories[2].dishes.push(generateDish('Mango Lassi', 80, true, 'Sweet yogurt drink'));
+  }
+
+  return categories;
+}
+
 // ── Store Simulation / Fallback Generator ──
 export function generatePlatformComparison(query, baseProduct, targetStores, location = 'Mumbai') {
   const loc = normalizeLocation(location);
@@ -1053,7 +1153,26 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
     
     const deliveryFee = isFood(store) ? 30 + Math.floor(Math.random() * 20) : null;
     const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
-    const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
+    
+    let distance = null;
+    let coordinates = null;
+    if (isFood(store)) {
+      const distNum = parseFloat((0.5 + Math.random() * 2.5).toFixed(1));
+      distance = distNum + ' km';
+      
+      // If user location exists, generate realistic nearby coordinates
+      if (loc.lat && loc.lng) {
+        // 1 km is roughly 0.009 degrees latitude/longitude
+        const angle = Math.random() * Math.PI * 2;
+        const latOffset = (distNum * 0.009) * Math.cos(angle);
+        const lngOffset = (distNum * 0.009) * Math.sin(angle);
+        coordinates = {
+          lat: loc.lat + latOffset,
+          lng: loc.lng + lngOffset
+        };
+      }
+    }
+
     const restaurantName = isFood(store) ? getRestaurantName(store, location, query, idx) : null;
     const storeLink = isFood(store) 
       ? getFoodProductLink(store, location, restaurantName, query)
@@ -1073,6 +1192,7 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
       deliveryFee,
       packagingFee,
       distance,
+      coordinates,
       restaurantName
     };
   });
