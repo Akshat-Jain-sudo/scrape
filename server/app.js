@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
@@ -343,7 +343,7 @@ app.get('/api/location/pincode-check', (req, res) => {
     const qcStores = Object.keys(QC_CITIES);
     const isQC = qcStores.includes(store);
     const available = isQC ? (QC_CITIES[store] || []).some(sc => cityLower.includes(sc)) : true;
-    return res.json({ store, city, tier, available, reason: available ? null : ${store} does not deliver to  yet });
+    return res.json({ store, city, tier, available, reason: available ? null : `${store} does not deliver to ${city || 'this location'} yet` });
   }
 
   // Return availability for all quick-commerce stores
