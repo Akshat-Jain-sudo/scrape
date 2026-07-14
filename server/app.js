@@ -1363,7 +1363,7 @@ app.post('/api/order/credentials', (req, res) => {
   if (!platform || !username || !password) return res.status(400).json({ error: 'platform, username, and password are required' });
   try {
     saveCredentials(req.userId, platform, username, password);
-    res.json({ success: true, message: Credentials saved for  });
+    res.json({ success: true, message: `Credentials saved for ${platform}` });
   } catch (e) {
     res.status(500).json({ error: 'Failed to save credentials: ' + e.message });
   }
@@ -1390,7 +1390,7 @@ app.post('/api/order/initiate', async (req, res) => {
   const { store, productUrl, productName, deliveryAddress } = req.body;
   if (!store || !productUrl) return res.status(400).json({ error: 'store and productUrl are required' });
   const creds = getCredentials(req.userId, store);
-  if (!creds) return res.status(400).json({ error: No saved credentials for . Please add credentials first via POST /api/order/credentials });
+  if (!creds) return res.status(400).json({ error: `No saved credentials for ${store}. Please add credentials first via POST /api/order/credentials` });
   try {
     const result = await launchOrderSession({ store, credentials: creds, productUrl, productName, deliveryAddress, userId: req.userId });
     res.json(result);
@@ -1414,7 +1414,7 @@ app.post('/api/order/confirm/:sessionId', async (req, res) => {
   const session = getSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: 'Session not found or expired' });
   if (session.userId !== req.userId) return res.status(403).json({ error: 'Not authorized' });
-  if (session.status !== 'awaiting_payment') return res.status(400).json({ error: Session is in state '', not 'awaiting_payment' });
+  if (session.status !== 'awaiting_payment') return res.status(400).json({ error: `Session is in state '${session.status}', not 'awaiting_payment'` });
   try {
     const result = await confirmOrder(req.params.sessionId, session);
     res.json(result);
