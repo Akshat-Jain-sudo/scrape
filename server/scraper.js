@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 // ── User-Agent rotation pool ──
@@ -1964,6 +1964,7 @@ export async function compareCabFares(pickup, drop, city = 'Mumbai') {
   const surgeMultiplier = getSurgeMultiplier();
 
   const congestion = estimateCongestionLevel(route.distance, route.duration);
+  const results = [];
 
   for (const [platformId, platform] of Object.entries(CAB_PLATFORMS)) {
     // Note: Removed strict city limitations so that user can see availability/unavailability based on location rules.
