@@ -4,9 +4,9 @@
  */
 
 import { chromium } from 'playwright';
-import { createSession, updateSession, takeScreenshot, closeSession } from '../sessionManager.js';
-import { automateAmazon, confirmAmazonOrder } from './amazon.js';
-import { automateFlipkart, confirmFlipkartOrder } from './flipkart.js';
+import { createSession, updateSession, takeScreenshot, closeSession } from './sessionManager.js';
+import { automateAmazon, confirmAmazonOrder } from './platforms/amazon.js';
+import { automateFlipkart, confirmFlipkartOrder } from './platforms/flipkart.js';
 
 // Supported stores and their automators
 const SUPPORTED_STORES = {
