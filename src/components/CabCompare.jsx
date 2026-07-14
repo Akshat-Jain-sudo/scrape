@@ -1,4 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix leaflet default icon issue in React
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 import {
   Car,
   MapPin,
@@ -92,6 +104,16 @@ function detectCityFromCoords(lat, lon) {
   return bestMatch || 'Mumbai';
 }
 
+// Component to handle map clicks
+function MapClickHandler({ onLocationSelect }) {
+  useMapEvents({
+    click(e) {
+      onLocationSelect(e.latlng);
+    }
+  });
+  return null;
+}
+
 export default function CabCompare() {
   const [pickup, setPickup] = useState('');
   const [drop, setDrop] = useState('');
@@ -103,6 +125,17 @@ export default function CabCompare() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [detectedAddress, setDetectedAddress] = useState('');
+
+  // Map state
+  const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState([19.076, 72.877]); // Mumbai default
+  const [selectingFor, setSelectingFor] = useState(null); // 'pickup' or 'drop'
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [dropCoords, setDropCoords] = useState(null);
+
+  // Live Tracking state
+  const [liveTracking, setLiveTracking] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const handleCompare = useCallback(async (p, d, c) => {
     const pickupVal = p || pickup;
@@ -133,12 +166,48 @@ export default function CabCompare() {
       const data = await res.json();
       setResults(data);
       setExpandedPlatform(data.platforms[0]?.platformId || null);
+      setLastUpdated(new Date());
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   }, [pickup, drop, city]);
+
+  const handleMapClick = async (latlng) => {
+    if (!selectingFor) return;
+
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latlng.lat}&lon=${latlng.lng}&format=json`);
+      if (res.ok) {
+        const data = await res.json();
+        const address = data.display_name?.split(',').slice(0, 3).join(',') || 'Selected Location';
+        if (selectingFor === 'pickup') {
+          setPickup(address);
+          setPickupCoords([latlng.lat, latlng.lng]);
+        } else {
+          setDrop(address);
+          setDropCoords([latlng.lat, latlng.lng]);
+        }
+        
+        const detectedCity = detectCityFromCoords(latlng.lat, latlng.lng);
+        setCity(detectedCity);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setSelectingFor(null);
+  };
+
+  useEffect(() => {
+    let interval;
+    if (liveTracking && results) {
+      interval = setInterval(() => {
+        handleCompare(pickup, drop, city);
+      }, 30000);
+    }
+    return () => clearInterval(interval);
+  }, [liveTracking, results, pickup, drop, city, handleCompare]);
 
   const handleQuickRoute = (route) => {
     setPickup(route.pickup);
@@ -279,6 +348,15 @@ export default function CabCompare() {
                   <Crosshair size={14} />
                 )}
               </button>
+              {/* Map Button (Pickup) */}
+              <button
+                className="cab-gps-btn"
+                onClick={() => { setShowMap(true); setSelectingFor('pickup'); }}
+                title="Select Pickup on Map"
+                style={{ marginLeft: '4px', background: selectingFor === 'pickup' ? 'var(--accent-primary)' : '' }}
+              >
+                <MapPin size={14} color={selectingFor === 'pickup' ? '#fff' : 'currentColor'} />
+              </button>
             </div>
 
             {/* Swap Button */}
@@ -301,6 +379,15 @@ export default function CabCompare() {
                 onChange={(e) => setDrop(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCompare()}
               />
+              {/* Map Button (Drop) */}
+              <button
+                className="cab-gps-btn"
+                onClick={() => { setShowMap(true); setSelectingFor('drop'); }}
+                title="Select Drop on Map"
+                style={{ background: selectingFor === 'drop' ? 'var(--accent-primary)' : '' }}
+              >
+                <MapPin size={14} color={selectingFor === 'drop' ? '#fff' : 'currentColor'} />
+              </button>
             </div>
           </div>
 
@@ -326,6 +413,20 @@ export default function CabCompare() {
                 ))}
               </select>
             </div>
+            {/* Live Track Toggle */}
+            <div className="cab-live-track-toggle" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', marginRight: 'auto', marginLeft: '12px' }}>
+              <input 
+                type="checkbox" 
+                id="liveTrack" 
+                checked={liveTracking} 
+                onChange={(e) => setLiveTracking(e.target.checked)} 
+                style={{ cursor: 'pointer' }}
+              />
+              <label htmlFor="liveTrack" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Zap size={14} color={liveTracking ? 'var(--success)' : 'var(--text-muted)'} />
+                Live Tracking
+              </label>
+            </div>
 
             {/* Compare Button */}
             <button
@@ -346,6 +447,20 @@ export default function CabCompare() {
               )}
             </button>
           </div>
+          
+          {showMap && (
+            <div style={{ height: '300px', width: '100%', marginTop: '1rem', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <MapClickHandler onLocationSelect={handleMapClick} />
+                {pickupCoords && <Marker position={pickupCoords} />}
+                {dropCoords && <Marker position={dropCoords} />}
+              </MapContainer>
+            </div>
+          )}
         </div>
 
         {/* Quick Routes */}
