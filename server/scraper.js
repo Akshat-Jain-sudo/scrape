@@ -1640,11 +1640,11 @@ export const CAB_PLATFORMS = {
     name: 'Uber',
     color: '#000000',
     rideTypes: [
-      { id: 'ubergo', name: 'UberGo', baseFare: 40, perKm: 11, perMin: 1.5, minFare: 60, category: 'sedan' },
-      { id: 'uberpremier', name: 'Uber Premier', baseFare: 70, perKm: 16, perMin: 2.0, minFare: 100, category: 'sedan' },
-      { id: 'uberxl', name: 'UberXL', baseFare: 90, perKm: 19, perMin: 2.5, minFare: 130, category: 'suv' },
-      { id: 'uberauto', name: 'Uber Auto', baseFare: 25, perKm: 8, perMin: 1.0, minFare: 30, category: 'auto' },
-      { id: 'ubermoto', name: 'Uber Moto', baseFare: 15, perKm: 5, perMin: 0.75, minFare: 25, category: 'bike' }
+      { id: 'ubergo', name: 'UberGo', baseFare: 55, perKm: 14, perMin: 1.5, minFare: 80, category: 'sedan' },
+      { id: 'uberpremier', name: 'Uber Premier', baseFare: 85, perKm: 18, perMin: 2.0, minFare: 120, category: 'sedan' },
+      { id: 'uberxl', name: 'UberXL', baseFare: 120, perKm: 22, perMin: 2.5, minFare: 160, category: 'suv' },
+      { id: 'uberauto', name: 'Uber Auto', baseFare: 35, perKm: 10, perMin: 1.0, minFare: 45, category: 'auto' },
+      { id: 'ubermoto', name: 'Uber Moto', baseFare: 25, perKm: 6, perMin: 0.75, minFare: 35, category: 'bike' }
     ],
     deepLinkBase: 'https://m.uber.com/ul/'
   },
@@ -1652,11 +1652,11 @@ export const CAB_PLATFORMS = {
     name: 'Ola',
     color: '#1C8C3B',
     rideTypes: [
-      { id: 'olamini', name: 'Ola Mini', baseFare: 50, perKm: 10, perMin: 1.25, minFare: 60, category: 'sedan' },
-      { id: 'olaprime', name: 'Ola Prime Sedan', baseFare: 80, perKm: 14, perMin: 1.75, minFare: 100, category: 'sedan' },
-      { id: 'olaprimesuv', name: 'Ola Prime SUV', baseFare: 100, perKm: 18, perMin: 2.5, minFare: 150, category: 'suv' },
-      { id: 'olaauto', name: 'Ola Auto', baseFare: 30, perKm: 9, perMin: 1.0, minFare: 30, category: 'auto' },
-      { id: 'olabike', name: 'Ola Bike', baseFare: 15, perKm: 5, perMin: 0.5, minFare: 20, category: 'bike' }
+      { id: 'olamini', name: 'Ola Mini', baseFare: 60, perKm: 13, perMin: 1.5, minFare: 80, category: 'sedan' },
+      { id: 'olaprime', name: 'Ola Prime Sedan', baseFare: 90, perKm: 16, perMin: 1.8, minFare: 110, category: 'sedan' },
+      { id: 'olaprimesuv', name: 'Ola Prime SUV', baseFare: 130, perKm: 20, perMin: 2.5, minFare: 160, category: 'suv' },
+      { id: 'olaauto', name: 'Ola Auto', baseFare: 40, perKm: 11, perMin: 1.0, minFare: 45, category: 'auto' },
+      { id: 'olabike', name: 'Ola Bike', baseFare: 25, perKm: 5.5, perMin: 0.75, minFare: 30, category: 'bike' }
     ],
     deepLinkBase: 'https://book.olacabs.com/'
   },
@@ -1664,9 +1664,9 @@ export const CAB_PLATFORMS = {
     name: 'Rapido',
     color: '#FECB2F',
     rideTypes: [
-      { id: 'rapidobike', name: 'Rapido Bike', baseFare: 10, perKm: 4, perMin: 0.5, minFare: 15, category: 'bike' },
-      { id: 'rapidoauto', name: 'Rapido Auto', baseFare: 25, perKm: 7, perMin: 0.75, minFare: 25, category: 'auto' },
-      { id: 'rapidocab', name: 'Rapido Cab', baseFare: 45, perKm: 11, perMin: 1.25, minFare: 55, category: 'sedan' }
+      { id: 'rapidobike', name: 'Rapido Bike', baseFare: 20, perKm: 5, perMin: 0.5, minFare: 25, category: 'bike' },
+      { id: 'rapidoauto', name: 'Rapido Auto', baseFare: 35, perKm: 9, perMin: 0.75, minFare: 40, category: 'auto' },
+      { id: 'rapidocab', name: 'Rapido Cab', baseFare: 55, perKm: 12, perMin: 1.25, minFare: 70, category: 'sedan' }
     ],
     deepLinkBase: 'https://www.rapido.bike/'
   },
@@ -1674,8 +1674,8 @@ export const CAB_PLATFORMS = {
     name: 'inDrive',
     color: '#A8E847',
     rideTypes: [
-      { id: 'indriveride', name: 'inDrive Ride', baseFare: 35, perKm: 9, perMin: 1.0, minFare: 50, category: 'sedan' },
-      { id: 'indrivecomfort', name: 'inDrive Comfort', baseFare: 60, perKm: 13, perMin: 1.5, minFare: 80, category: 'sedan' }
+      { id: 'indriveride', name: 'inDrive Ride', baseFare: 50, perKm: 11, perMin: 1.0, minFare: 70, category: 'sedan' },
+      { id: 'indrivecomfort', name: 'inDrive Comfort', baseFare: 75, perKm: 14, perMin: 1.5, minFare: 100, category: 'sedan' }
     ],
     deepLinkBase: 'https://indrive.com/'
   },
@@ -1683,8 +1683,8 @@ export const CAB_PLATFORMS = {
     name: 'BluSmart',
     color: '#0066FF',
     rideTypes: [
-      { id: 'blusmarteco', name: 'BluSmart Eco', baseFare: 50, perKm: 12, perMin: 1.5, minFare: 70, category: 'sedan' },
-      { id: 'blusmartprime', name: 'BluSmart Prime', baseFare: 80, perKm: 16, perMin: 2.0, minFare: 110, category: 'sedan' }
+      { id: 'blusmarteco', name: 'BluSmart Eco', baseFare: 70, perKm: 14, perMin: 1.5, minFare: 100, category: 'sedan' },
+      { id: 'blusmartprime', name: 'BluSmart Prime', baseFare: 100, perKm: 18, perMin: 2.0, minFare: 140, category: 'sedan' }
     ],
     deepLinkBase: 'https://www.blu-smart.com/'
   },
@@ -1692,8 +1692,8 @@ export const CAB_PLATFORMS = {
     name: 'Namma Yatri',
     color: '#00B562',
     rideTypes: [
-      { id: 'nyauto', name: 'Namma Auto', baseFare: 30, perKm: 7, perMin: 0.5, minFare: 30, category: 'auto' },
-      { id: 'nycab', name: 'Namma Cab', baseFare: 40, perKm: 10, perMin: 1.0, minFare: 50, category: 'sedan' }
+      { id: 'nyauto', name: 'Namma Auto', baseFare: 35, perKm: 10, perMin: 0.5, minFare: 40, category: 'auto' },
+      { id: 'nycab', name: 'Namma Cab', baseFare: 50, perKm: 12, perMin: 1.0, minFare: 70, category: 'sedan' }
     ],
     deepLinkBase: 'https://nammayatri.in/'
   },
@@ -1701,10 +1701,10 @@ export const CAB_PLATFORMS = {
     name: 'Meru Cabs',
     color: '#FFFFFF',
     rideTypes: [
-      { id: 'meruhatch', name: 'Meru Hatchback', baseFare: 45, perKm: 11, perMin: 1.25, minFare: 60, category: 'sedan' },
-      { id: 'merusedan', name: 'Meru Sedan', baseFare: 70, perKm: 15, perMin: 1.75, minFare: 90, category: 'sedan' }
+      { id: 'meruhatch', name: 'Meru Hatchback', baseFare: 65, perKm: 13, perMin: 1.25, minFare: 80, category: 'sedan' },
+      { id: 'merusedan', name: 'Meru Sedan', baseFare: 95, perKm: 17, perMin: 1.75, minFare: 120, category: 'sedan' }
     ],
-    deepLinkBase: 'https://www.mfrucabs.com/'
+    deepLinkBase: 'https://www.merucabs.com/'
   }
 };
 

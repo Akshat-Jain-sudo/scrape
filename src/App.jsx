@@ -422,6 +422,18 @@ function App() {
                   </svg>
                   <span style={{ marginTop: '8px' }}>Cart</span>
                 </div>
+
+                {/* Theme Toggle Button */}
+                <div className="amazon-cart-box" onClick={toggleTheme} style={{ minWidth: 'auto', padding: '0 12px' }} title="Toggle Theme">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {theme === 'amoled-black' || theme === 'cyberpunk' ? (
+                      <path d="M12 3a6.364 6.364 0 0 0 9 9 9 9 0 1 1-9-9z"/>
+                    ) : (
+                      <g><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></g>
+                    )}
+                  </svg>
+                  <span style={{ marginTop: '8px' }}>Theme</span>
+                </div>
               </div>
 
               {/* Row 2: Navigation Links Bar */}
