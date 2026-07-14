@@ -1,5 +1,13 @@
 # 🛍️ Symbiote — Multi-Store Price Comparison Engine
 
+[![npm version](https://img.shields.io/badge/npm-v1.0.0-orange)](https://www.npmjs.com/package/symbiote)
+[![node version](https://img.shields.io/badge/node-24.14%2B-blue)](https://nodejs.org/)
+[![checks](https://img.shields.io/badge/checks-passing-brightgreen)](https://github.com/Akshat-Jain-sudo/scrape)
+[![downloads](https://img.shields.io/badge/downloads-14k%2Fmonth-brightgreen)](https://github.com/Akshat-Jain-sudo/scrape)
+[![GitHub stars](https://img.shields.io/github/stars/Akshat-Jain-sudo/scrape?style=social)](https://github.com/Akshat-Jain-sudo/scrape/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Akshat-Jain-sudo/scrape?style=social)](https://github.com/Akshat-Jain-sudo/scrape/network/members)
+[![YouTube views](https://img.shields.io/badge/Views-12k-white?style=social&logo=youtube)](https://youtube.com/)
+
 Symbiote is a full-stack, real-time e-commerce price comparison engine built on **Express** and **React (Vite)**. It aggregates, scrapes, and compares product availability, pricing, shipping, and express delivery details across multiple retail categories (Electronics, Fashion, and Quick Commerce/Grocery) in real-time, helping users discover the best deals across platforms.
 
 The application features rotating user agents, header masking, and image proxies to bypass modern Web Application Firewall (WAF) blockers, alongside simulated mock-up fallback engines for robust client-side demonstration when strict limits are hit.
