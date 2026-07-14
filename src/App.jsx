@@ -7,6 +7,7 @@ import {
   Sparkles,
   Palette,
   ShoppingBag,
+  ShoppingCart,
   Bell,
   LineChart,
   Trash2,
@@ -18,8 +19,12 @@ import ScrapeConsole from './components/ScrapeConsole';
 import InsightHub from './components/InsightHub';
 import CartOptimizer from './components/CartOptimizer';
 import CabCompare from './components/CabCompare';
-import { LocationProvider } from './context/LocationContext';
+import OrderRelay from './components/OrderRelay';
+import { LocationProvider, LocationContext } from './context/LocationContext';
 import LocationBar from './components/LocationBar';
+import AIChatbot from './components/AIChatbot';
+import { useAuth } from './context/AuthContext';
+import AuthModal from './components/AuthModal';
 
 function ProductHistoryChart({ productId, currentPrice }) {
   const [history, setHistory] = useState([]);
@@ -119,6 +124,8 @@ function ProductHistoryChart({ productId, currentPrice }) {
 }
 
 function App() {
+  const { session, user, signOut, profile, preferences } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [savedProducts, setSavedProducts] = useState([]);
   const [showCharts, setShowCharts] = useState({});
@@ -128,6 +135,31 @@ function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'cyberpunk');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scraperHealth, setScraperHealth] = useState(null);
+  const [headerSearchVal, setHeaderSearchVal] = useState('');
+
+  // Apply user saved theme if available
+  useEffect(() => {
+    if (preferences?.theme) {
+      setTheme(preferences.theme);
+    }
+  }, [preferences]);
+
+  // Toast notification system
+  const addToast = useCallback((message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  }, []);
+
+  const getAuthHeaders = useCallback((customHeaders = {}) => {
+    const headers = { ...customHeaders };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  }, [session]);
 
   // Apply theme class to document body
   useEffect(() => {
@@ -149,15 +181,20 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Toast notification system
-  const addToast = useCallback((message, type = 'info') => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
-  }, []);
+  // Listen for login/auth triggers from Dashboard and Extension redirects
+  useEffect(() => {
+    const handleTriggerLogin = () => setAuthModalOpen(true);
+    window.addEventListener('trigger-login-modal', handleTriggerLogin);
 
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('triggerAuth') === 'true') {
+      setAuthModalOpen(true);
+      // Clean query params from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    return () => window.removeEventListener('trigger-login-modal', handleTriggerLogin);
+  }, []);
   // Add item to Cart Optimizer list in localStorage
   const handleAddToCart = useCallback((itemName) => {
     try {
@@ -183,7 +220,9 @@ function App() {
   const fetchSavedProducts = async () => {
     setLoadingProducts(true);
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/products', {
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         const data = await response.json();
         setSavedProducts(data);
@@ -199,6 +238,10 @@ function App() {
 
   useEffect(() => {
     fetchSavedProducts();
+  }, [session]); // Refetch when auth session changes
+
+  useEffect(() => {
+    // Scraper Health check
     
     // Scraper Health check
     const fetchHealth = async () => {
@@ -215,24 +258,30 @@ function App() {
   }, []);
 
   // Save scraped products to backend db (batch)
-  const handleSaveProducts = async (products) => {
+  const handleSaveProducts = async (products, silent = false) => {
     try {
       const response = await fetch('/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ products })
       });
       if (response.ok) {
         const result = await response.json();
-        addToast(`Saved ${result.savedCount} products ✓`, 'success');
+        if (!silent) {
+          addToast(`Saved ${result.savedCount} products ✓`, 'success');
+        }
         fetchSavedProducts(); // Refresh list
         return result;
       }
-      addToast('Failed to save products', 'error');
+      if (!silent) {
+        addToast('Failed to save products', 'error');
+      }
       return null;
     } catch (error) {
       console.error('Error saving products:', error);
-      addToast('Error saving products', 'error');
+      if (!silent) {
+        addToast('Error saving products', 'error');
+      }
       return null;
     }
   };
@@ -240,7 +289,10 @@ function App() {
   // Delete saved product from backend db
   const handleDeleteProduct = async (id) => {
     try {
-      const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/products/${id}`, { 
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         setSavedProducts(prev => prev.filter(p => p.id !== id));
         addToast('Product removed from library', 'info');
@@ -258,7 +310,10 @@ function App() {
   // Clear all products
   const handleClearAll = async () => {
     try {
-      const response = await fetch('/api/products', { method: 'DELETE' });
+      const response = await fetch('/api/products', { 
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
       if (response.ok) {
         setSavedProducts([]);
         addToast('All products cleared', 'info');
@@ -281,138 +336,174 @@ function App() {
 
   return (
     <LocationProvider>
-    <div className="app-container">
-      {/* Mobile Top Header */}
-      <header className="mobile-header">
-        <button 
-          className="menu-toggle-btn" 
-          onClick={() => setSidebarOpen(true)} 
-          aria-label="Toggle Sidebar"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="12" x2="20" y2="12"></line>
-            <line x1="4" y1="6" x2="20" y2="6"></line>
-            <line x1="4" y1="18" x2="20" y2="18"></line>
-          </svg>
-        </button>
-        <div className="mobile-logo">
-          <SymbioteLogo size={28} />
-          <span className="logo-text" style={{ fontSize: '1.15rem' }}>Symbiote</span>
-        </div>
-        <button className="theme-toggle-btn" onClick={toggleTheme} title="Switch Theme">
-          <Palette size={16} />
-        </button>
-      </header>
+      <LocationContext.Consumer>
+        {({ location }) => (
+          <div className="app-container">
+            {/* Amazon Double-Decker Header */}
+            <header className="amazon-header">
+              {/* Row 1: Upper Header */}
+              <div className="amazon-header-top">
+                {/* Logo */}
+                <div className="amazon-logo-wrap" onClick={() => setCurrentView('dashboard')}>
+                  <SymbioteLogo size={24} style={{ marginRight: '6px' }} />
+                  <span className="amazon-logo-text">symbiote</span>
+                </div>
 
-      {/* Sidebar Backdrop Overlay */}
-      {sidebarOpen && (
-        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>
-      )}
+                {/* Delivery Location Indicator */}
+                <div className="amazon-location-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.7rem' }}>Delivering to</span>
+                    <strong style={{ fontSize: '0.8rem' }}>{location?.displayLabel || 'India'}</strong>
+                  </div>
+                </div>
 
-      {/* Toast Notifications */}
-      <div className="toast-container">
-        {toasts.map(toast => (
-          <div key={toast.id} className={`toast toast-${toast.type}`}>
-            <span className="toast-icon">
-              {toast.type === 'success' && '✓'}
-              {toast.type === 'error' && '✕'}
-              {toast.type === 'warning' && '⚠'}
-              {toast.type === 'info' && 'ℹ'}
-            </span>
-            <span className="toast-message">{toast.message}</span>
-          </div>
-        ))}
-      </div>
+                {/* Amazon-style Central Search Input */}
+                <div className="amazon-search-bar-wrap">
+                  <input 
+                    type="text" 
+                    className="amazon-search-input" 
+                    placeholder="Search Symbiote prices, deals, models..." 
+                    value={headerSearchVal}
+                    onChange={(e) => setHeaderSearchVal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setCurrentView('dashboard');
+                        window.dispatchEvent(new CustomEvent('header-search', { detail: headerSearchVal }));
+                      }
+                    }}
+                  />
+                  <button 
+                    className="amazon-search-btn"
+                    onClick={() => {
+                      setCurrentView('dashboard');
+                      window.dispatchEvent(new CustomEvent('header-search', { detail: headerSearchVal }));
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </button>
+                </div>
 
-      {/* Sidebar Navigation */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="logo-section">
-          <SymbioteLogo size={38} />
-          <div className="logo-text">Symbiote</div>
-        </div>
+                {/* Account Details Box */}
+                <div className="amazon-account-box" onClick={() => user ? null : setAuthModalOpen(true)}>
+                  <span style={{ color: '#ccc' }}>Hello, {user ? (profile?.full_name || user.email.split('@')[0]) : 'Sign In'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <strong>Account & Lists</strong>
+                    {user && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          signOut();
+                          addToast('Logged out successfully', 'info');
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#ff9900', fontSize: '0.72rem', cursor: 'pointer', marginLeft: '6px', fontWeight: 'bold', padding: 0 }}
+                      >
+                        (Sign Out)
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-        <ul className="nav-links">
-          <li 
-            className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => { setCurrentView('dashboard'); setSidebarOpen(false); }}
-          >
-            <LayoutDashboard />
-            <span>Dashboard</span>
-          </li>
-          <li 
-            className={`nav-item ${currentView === 'scraper' ? 'active' : ''}`}
-            onClick={() => { setCurrentView('scraper'); setSidebarOpen(false); }}
-          >
-            <Terminal />
-            <span>Scrape Console</span>
-          </li>
-          <li 
-            className={`nav-item ${currentView === 'cart' ? 'active' : ''}`}
-            onClick={() => { setCurrentView('cart'); setSidebarOpen(false); }}
-          >
-            <ShoppingBag />
-            <span>Cart Optimizer</span>
-          </li>
-          <li 
-            className={`nav-item ${currentView === 'cab' ? 'active' : ''}`}
-            onClick={() => { setCurrentView('cab'); setSidebarOpen(false); }}
-          >
-            <Car />
-            <span>Cab Compare</span>
-          </li>
-          <li 
-            className={`nav-item ${currentView === 'archive' ? 'active' : ''}`}
-            onClick={() => { setCurrentView('archive'); setSidebarOpen(false); }}
-          >
-            <Archive />
-            <span>Saved Products</span>
-            {savedProducts.length > 0 && (
-              <span className="nav-badge" style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
-                {savedProducts.length}
-                {metAlertsCount > 0 && (
-                  <span style={{ width: '6px', height: '6px', background: 'var(--danger)', borderRadius: '50%', display: 'inline-block', animation: 'pulseMet 1s infinite alternate' }} title={`${metAlertsCount} price alert(s) met!`}></span>
-                )}
-              </span>
-            )}
-          </li>
-          <li 
-            className={`nav-item ${currentView === 'insights' ? 'active' : ''}`}
-            onClick={() => { setCurrentView('insights'); setSidebarOpen(false); }}
-          >
-            <BarChart3 />
-            <span>Analytics</span>
-          </li>
-        </ul>
+                {/* Cart Box */}
+                <div className="amazon-cart-box" onClick={() => setCurrentView('cart')}>
+                  <span className="amazon-cart-count">
+                    {savedProducts.length}
+                  </span>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', marginLeft: '6px' }}>
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                  <span style={{ marginTop: '8px' }}>Cart</span>
+                </div>
+              </div>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-clock" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent-primary)' }}>
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span className="clock-time">{formattedTime}</span>
+              {/* Row 2: Navigation Links Bar */}
+              <div className="amazon-header-bottom">
+                <div 
+                  className={`amazon-nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('dashboard')}
+                >
+                  Today's Deals
+                </div>
+                <div 
+                  className={`amazon-nav-item ${currentView === 'scraper' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('scraper')}
+                >
+                  Console Scraper
+                </div>
+                <div 
+                  className={`amazon-nav-item ${currentView === 'cart' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('cart')}
+                >
+                  Cart Optimizer
+                </div>
+                <div 
+                  className={`amazon-nav-item ${currentView === 'cab' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('cab')}
+                >
+                  Cab Compare
+                </div>
+                <div 
+                  className={`amazon-nav-item ${currentView === 'archive' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('archive')}
+                >
+                  Saved Products
+                  {metAlertsCount > 0 && (
+                    <span style={{ width: '6px', height: '6px', background: 'red', borderRadius: '50%', display: 'inline-block', marginLeft: '6px', boxShadow: '0 0 5px red' }} />
+                  )}
+                </div>
+                <div 
+                  className={`amazon-nav-item ${currentView === 'insights' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('insights')}
+                >
+                  Analytics
+                </div>
+                <div 
+                  className={`amazon-nav-item ${currentView === 'orderrelay' ? 'active' : ''}`}
+                  onClick={() => setCurrentView('orderrelay')}
+                >
+                  🤖 Order Relay
+                </div>
+
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#ccc' }}>
+                  <span>Live clock: <strong>{formattedTime}</strong></span>
+                  <span>|</span>
+                  {(() => {
+                    if (!scraperHealth) return <span style={{ color: 'grey' }}>● Checking...</span>;
+                    const stores = Object.values(scraperHealth);
+                    if (stores.length === 0 || stores.every(s => s.status === 'dead')) {
+                      return <span style={{ color: '#ef4444' }}>● Demo mode</span>;
+                    }
+                    if (stores.some(s => s.status === 'degraded' || s.status === 'dead')) {
+                      return <span style={{ color: '#f59e0b' }}>● Degraded Data</span>;
+                    }
+                    return <span style={{ color: '#10b981' }}>● Live Scrapers</span>;
+                  })()}
+                </div>
+              </div>
+            </header>
+
+            {/* Toast Notifications */}
+            <div className="toast-container">
+              {toasts.map(toast => (
+                <div key={toast.id} className={`toast toast-${toast.type}`}>
+                  <span className="toast-icon" aria-hidden="true">
+                    {toast.type === 'success' && '✓'}
+                    {toast.type === 'error' && '✕'}
+                    {toast.type === 'warning' && '⚠'}
+                    {toast.type === 'info' && 'ℹ'}
+                  </span>
+                  <span className="toast-message">{toast.message}</span>
+                </div>
+              ))}
             </div>
-            <button className="theme-toggle-btn" onClick={toggleTheme} title="Switch Theme (Cyberpunk / Light / AMOLED)">
-              <Palette size={14} />
-            </button>
-          </div>
-          <p>© 2026 Symbiote v1.0</p>
-          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            {(() => {
-              if (!scraperHealth) return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'grey' }}/> Checking health...</>;
-              const stores = Object.values(scraperHealth);
-              if (stores.length === 0 || stores.every(s => s.status === 'dead')) {
-                return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 5px var(--danger)' }}/> Demo mode</>;
-              }
-              if (stores.some(s => s.status === 'degraded' || s.status === 'dead')) {
-                return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)', boxShadow: '0 0 5px var(--warning)' }}/> Partial live data</>;
-              }
-              return <><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 5px var(--success)' }}/> Live data</>;
-            })()}
-          </div>
-        </div>
-      </aside>
 
       {/* Main Panel Content */}
       <main className="main-content">
@@ -545,7 +636,7 @@ function App() {
                               try {
                                 const response = await fetch(`/api/products/${product.id}/alert`, {
                                   method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
+                                  headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                                   body: JSON.stringify({ targetPrice: val })
                                 });
                                 if (response.ok) {
@@ -635,12 +726,26 @@ function App() {
         {currentView === 'cab' && (
           <CabCompare />
         )}
+        {currentView === 'orderrelay' && (
+          <OrderRelay
+            authToken={session?.access_token}
+            addToast={addToast}
+          />
+        )}
 
         {currentView === 'insights' && (
           <InsightHub savedProducts={savedProducts} />
         )}
       </main>
+
+      {/* AI Chatbot Widget */}
+      <AIChatbot currentView={currentView} addToast={addToast} />
+
+      {/* Auth Signup/Login Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} addToast={addToast} />
     </div>
+        )}
+      </LocationContext.Consumer>
     </LocationProvider>
   );
 }

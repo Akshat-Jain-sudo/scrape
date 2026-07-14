@@ -18,6 +18,7 @@ import {
   Brain
 } from 'lucide-react';
 import { useLocationContext } from '../context/LocationContext';
+import { useAuth } from '../context/AuthContext';
 
 const STORE_NAMES = {
   amazon: 'Amazon',
@@ -493,6 +494,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
   const { location } = useLocationContext();
   const [aiRecommendation, setAiRecommendation] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [autoTracking, setAutoTracking] = useState(false);
 
   const fetchAIRecommendation = async (data) => {
     setAiLoading(true);
@@ -517,31 +519,76 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
     }
   };
 
-  const fetchComparison = async (force = false) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/compare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: item.query, category, location })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setCompData(data);
-        fetchAIRecommendation(data);
-      } else {
-        throw new Error('Comparison failed');
-      }
-    } catch (err) {
-      setError('Failed to fetch comparison');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let active = true;
+    let timer;
+
+    const fetchComparison = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch('/api/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: item.query, category, location })
+        });
+        if (response.ok && active) {
+          const data = await response.json();
+          setCompData(data);
+          fetchAIRecommendation(data);
+
+          // Setup automated background chasing timer (1.5 seconds)
+          timer = setTimeout(() => {
+            if (active) {
+              const productsToSave = [];
+              Object.entries(data.comparison).forEach(([store, storeData]) => {
+                const items = Array.isArray(storeData) ? storeData : [storeData];
+                items.forEach((details, index) => {
+                  productsToSave.push({
+                    id: `${data.id}-${store}-${index}`,
+                    name: details.name || data.productName,
+                    price: details.price,
+                    priceFormatted: details.priceFormatted,
+                    originalPrice: details.originalPrice,
+                    originalPriceFormatted: details.originalPriceFormatted,
+                    discount: details.discount,
+                    discountFormatted: details.discountFormatted,
+                    rating: details.rating,
+                    ratingsCount: details.ratingsCount,
+                    productLink: details.productLink,
+                    imageUrl: details.imageUrl || data.imageUrl || item.image,
+                    searchQuery: item.query,
+                    source: store,
+                    deliveryTime: details.deliveryTime,
+                    deliveryFee: details.deliveryFee,
+                    packagingFee: details.packagingFee,
+                    distance: details.distance,
+                    restaurantName: details.restaurantName,
+                    scrapedAt: details.scrapedAt || data.scrapedAt,
+                    sourceMode: details.sourceMode
+                  });
+                });
+              });
+              onSaveComparison(productsToSave, true); // Auto-save silently in background
+              setAutoTracking(true);
+            }
+          }, 1500);
+        } else {
+          throw new Error('Comparison failed');
+        }
+      } catch (err) {
+        if (active) setError('Failed to fetch comparison');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
     fetchComparison();
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [item.id, category, location]);
 
   const handleSave = () => {
@@ -619,7 +666,22 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
               {compData?.productName || item.name}
             </h3>
             {!loading && !error && (
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {autoTracking && (
+                  <span style={{ 
+                    fontSize: '0.7rem', 
+                    fontWeight: 600, 
+                    color: 'var(--success)', 
+                    background: 'var(--success-glow)', 
+                    padding: '2px 8px', 
+                    borderRadius: '10px', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '4px' 
+                  }}>
+                    <span className="sync-pulse" style={{ width: '5px', height: '5px', background: 'var(--success)', borderRadius: '50%' }}></span> Auto-Tracking Active
+                  </span>
+                )}
                 {onAddToCart && (
                   <button 
                     className="btn-icon" 
@@ -636,7 +698,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                   title="Save comparison to library"
                   style={{ color: 'var(--accent-primary)', padding: '0.25rem' }}
                 >
-                  <Bookmark size={18} />
+                  <Bookmark size={18} fill={autoTracking ? 'var(--accent-primary)' : 'none'} />
                 </button>
               </div>
             )}
@@ -833,7 +895,20 @@ function Dashboard({
   addToast, 
   onAddToCart
 }) {
+  const { user } = useAuth();
   const { location } = useLocationContext();
+  const [extInstalled, setExtInstalled] = useState(false);
+
+  useEffect(() => {
+    const checkExt = () => {
+      const isInstalled = document.documentElement.getAttribute('data-symbiote-extension') === 'installed';
+      setExtInstalled(isInstalled);
+    };
+    checkExt();
+    const interval = setInterval(checkExt, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const [activeCategory, setActiveCategory] = useState('ecommerce');
   const [trendingDeals, setTrendingDeals] = useState(null);
   const [loadingTrending, setLoadingTrending] = useState(true);
@@ -852,6 +927,41 @@ function Dashboard({
     setSelectedSources(DEFAULT_SOURCES[activeCategory] || []);
     setStoreSearch('');
   }, [activeCategory]);
+
+  // Listen for search submissions from the Amazon header search bar
+  useEffect(() => {
+    const handleHeaderSearchEvent = async (event) => {
+      const query = event.detail;
+      setSearchQuery(query);
+      if (!query.trim()) return;
+      
+      setSearching(true);
+      setCustomComp(null);
+
+      try {
+        const response = await fetch('/api/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query.trim(), category: activeCategory, location })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCustomComp(data);
+          addToast(`Found comparisons for "${query}"`, 'success');
+        } else {
+          throw new Error('Comparison request failed');
+        }
+      } catch (err) {
+        addToast(err.message, 'error');
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    window.addEventListener('header-search', handleHeaderSearchEvent);
+    return () => window.removeEventListener('header-search', handleHeaderSearchEvent);
+  }, [activeCategory, location]);
 
   const toggleSource = (storeKey) => {
     setSelectedSources(prev => {
@@ -1044,14 +1154,165 @@ function Dashboard({
         </button>
       </div>
 
+      {/* Interactive Onboarding Card */}
+      <div className="onboarding-card">
+        <div className="onboarding-info">
+          <h3>
+            <span>🧬</span> Symbiote Co-pilot Guide
+          </h3>
+          <p>
+            Connect your account and browser extension to bypass retail firewalls (WAF) and compare prices automatically in real-time as you browse.
+          </p>
+        </div>
+
+        <div className="onboarding-steps">
+          {/* Step 1 */}
+          <div className={`onboarding-step ${user ? 'completed' : 'active'}`}>
+            <div className="onboarding-step-num">{user ? '✓' : '1'}</div>
+            <div className="onboarding-step-text">
+              <span className="onboarding-step-title">Account Auth</span>
+              <span className="onboarding-step-desc">
+                {user ? (
+                  <span style={{ color: 'var(--success)' }}>✓ Signed In</span>
+                ) : (
+                  <button 
+                    style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: 'var(--accent-primary)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', font: 'inherit' }}
+                    onClick={() => window.dispatchEvent(new CustomEvent('trigger-login-modal'))}
+                  >
+                    Click to Sign In
+                  </button>
+                )}
+              </span>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className={`onboarding-step ${extInstalled ? 'completed' : (user ? 'active' : '')}`}>
+            <div className="onboarding-step-num">{extInstalled ? '✓' : '2'}</div>
+            <div className="onboarding-step-text">
+              <span className="onboarding-step-title">Load Extension</span>
+              <span className="onboarding-step-desc">
+                {extInstalled ? (
+                  <span style={{ color: 'var(--success)' }}>✓ Installed</span>
+                ) : (
+                  <button 
+                    style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: user ? 'var(--accent-primary)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', font: 'inherit' }}
+                    onClick={() => alert('Instructions:\n1. Open chrome://extensions/ in Chrome.\n2. Enable "Developer mode" (top-right).\n3. Click "Load unpacked" (top-left).\n4. Select the "extension" folder inside this project directory.')}
+                  >
+                    How to Setup
+                  </button>
+                )}
+              </span>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className={`onboarding-step ${extInstalled && user ? 'completed' : ''}`}>
+            <div className="onboarding-step-num">{extInstalled && user ? '✓' : '3'}</div>
+            <div className="onboarding-step-text">
+              <span className="onboarding-step-title">Connection</span>
+              <span className="onboarding-step-desc">
+                {extInstalled && user ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--success)', fontWeight: 600 }}>
+                    <span className="glow-dot glow-dot-success"></span> Linked & Syncing
+                  </span>
+                ) : extInstalled ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--warning)' }}>
+                    <span className="glow-dot glow-dot-warning"></span> Login required
+                  </span>
+                ) : (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
+                    <span className="glow-dot glow-dot-danger"></span> Awaiting link
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Amazon Hero Banner */}
+      <div className="amazon-hero-banner" style={{
+        background: 'linear-gradient(to right, #131921, #232f3e)',
+        borderRadius: '8px',
+        padding: '2.5rem 3rem',
+        marginBottom: '2rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        color: '#ffffff',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ maxWidth: '60%', zIndex: 2 }}>
+          <span style={{ 
+            background: '#ff9900', 
+            color: '#111', 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            padding: '4px 10px', 
+            borderRadius: '20px', 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.05em',
+            display: 'inline-block',
+            marginBottom: '0.75rem'
+          }}>
+            Symbiote Deals
+          </span>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff', letterSpacing: '-0.02em' }}>
+            Starting ₹199 | Deals on Electronics & Beauty
+          </h1>
+          <p style={{ fontSize: '1rem', color: '#ccc', marginBottom: '1.5rem' }}>
+            Track price trends and auto-optimize shopping carts across Flipkart, Amazon & 140+ retail channels.
+          </p>
+          <button 
+            className="btn btn-primary" 
+            style={{ padding: '8px 24px', fontSize: '0.85rem' }}
+            onClick={() => {
+              const inputEl = document.querySelector('.amazon-search-input');
+              if (inputEl) {
+                inputEl.focus();
+                inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }}
+          >
+            Explore Deals Now
+          </button>
+        </div>
+        <div style={{ zIndex: 1, opacity: 0.85, width: '35%', display: 'flex', justifyContent: 'center' }}>
+          <div style={{
+            fontSize: '7rem',
+            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))',
+            animation: 'float 3s ease-in-out infinite alternate'
+          }}>
+            📦
+          </div>
+        </div>
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '40px',
+          background: 'linear-gradient(to top, #eaeded, transparent)',
+          zIndex: 1
+        }}></div>
+      </div>
+
       {/* Custom Search Box */}
       <div className="glass-card search-hero" style={{ marginBottom: '2rem' }}>
-        <h2>🔍 Search & Compare Any Product</h2>
+        <h2>
+          <span className="hero-search">🔍 Search</span>{' '}
+          <span className="hero-compare">& Compare</span>{' '}
+          <span className="hero-any">Any</span>{' '}
+          <span className="hero-product">Product</span>
+        </h2>
         <p>
-          Compare price indicators in real-time on: 
-          {activeCategory === 'ecommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Amazon, Flipkart, Meesho, Snapdeal, JioMart, Tata CLiQ, Myntra, AJIO, Nykaa, Nykaa Fashion, FirstCry, Pepperfry, H&M, Zara, Uniqlo, Levi's, Bata, Nike, Samsung, Sony, Apple, Croma, Tanishq, Titan, Lenskart, Decathlon, and 140+ more brands</strong>}
-          {activeCategory === 'quickcommerce' && <strong style={{ color: 'var(--accent-primary)' }}> Blinkit, Zepto, Swiggy Instamart, BigBasket Now, Flipkart Minutes, Amazon Fresh, JioMart Express, BB Daily, Dunzo, Country Delight</strong>}
-          {activeCategory === 'food' && <strong style={{ color: 'var(--accent-primary)' }}> Zomato, Swiggy</strong>}
+          Compare price indicators in real-time on:{' '}
+          {activeCategory === 'ecommerce' && <strong>Amazon, Flipkart, Meesho, Snapdeal, JioMart, Tata CLiQ, Myntra, AJIO, Nykaa, Nykaa Fashion, FirstCry, Pepperfry, H&M, Zara, Uniqlo, Levi's, Bata, Nike, Samsung, Sony, Apple, Croma, Tanishq, Titan, Lenskart, Decathlon, and 140+ more brands</strong>}
+          {activeCategory === 'quickcommerce' && <strong>Blinkit, Zepto, Swiggy Instamart, BigBasket Now, Flipkart Minutes, Amazon Fresh, JioMart Express, BB Daily, Dunzo, Country Delight</strong>}
+          {activeCategory === 'food' && <strong>Zomato, Swiggy</strong>}
         </p>
         
         <div className="search-box">

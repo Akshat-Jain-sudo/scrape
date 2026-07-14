@@ -14,7 +14,10 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/analytics       — Product analytics`);
   console.log(`   GET  /api/export/csv      — Export CSV`);
   console.log(`   GET  /api/export/excel    — Export Excel`);
-  console.log(`   GET  /api/history         — Scrape history\n`);
+  console.log(`   GET  /api/history         — Scrape history`);
+  console.log(`   POST /api/chat            — AI Chatbot`);
+  console.log(`   POST /api/feedback        — Submit feedback`);
+  console.log(`   GET  /api/feedback        — View feedback\n`);
   
   // Scraper Health Checks
   runAllHealthChecks();

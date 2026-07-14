@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 // ── User-Agent rotation pool ──
@@ -894,16 +894,81 @@ export function getStoreDeliveryTime(store) {
   }
 }
 
-// ── Helper to normalize complex location objects from the frontend ──
+// -- Helper to normalize complex location objects from the frontend --
 function normalizeLocation(location) {
   if (typeof location === 'object' && location !== null) {
     return {
       city: location.city || 'Mumbai',
       locality: location.locality || '',
-      full: location.displayLabel || location.city || 'Mumbai'
+      full: location.displayLabel || location.city || 'Mumbai',
+      pincode: location.pincode || '',
+      lat: location.lat || null,
+      lng: location.lng || null,
+      state: location.state || ''
     };
   }
-  return { city: location || 'Mumbai', locality: '', full: location || 'Mumbai' };
+  return { city: location || 'Mumbai', locality: '', full: location || 'Mumbai', pincode: '', lat: null, lng: null, state: '' };
+}
+
+// -- City Tier Classification: metro / tier2 / tier3 / rural --
+function getLocationTier(loc) {
+  const city = (loc.city || '').toLowerCase();
+  const metroCities = ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','surat','jaipur','lucknow','noida','gurgaon','gurugram','navi mumbai','thane','ncr'];
+  const tier2Cities = ['indore','bhopal','patna','vadodara','ludhiana','agra','nagpur','visakhapatnam','coimbatore','kochi','chandigarh','bhubaneswar','dehradun','mysuru','mysore','raipur','jabalpur','gwalior','vijayawada','madurai','varanasi','rajkot','nashik','aurangabad','amritsar','faridabad','meerut','allahabad','prayagraj','kanpur','ranchi','jodhpur','guwahati','tiruchirapalli','thiruvananthapuram','hubli','dharwad','jalandhar','srinagar','jammu','udaipur','cuttack','siliguri','mangalore','mangaluru','puducherry','kolhapur','solapur','durgapur','salem'];
+  if (metroCities.some(m => city.includes(m))) return 'metro';
+  if (tier2Cities.some(t => city.includes(t))) return 'tier2';
+  if (loc.pincode && loc.pincode.length === 6) return 'tier3';
+  return 'rural';
+}
+
+// -- Quick-commerce city serviceability --
+const QUICK_COMMERCE_CITIES = {
+  blinkit: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','lucknow','noida','gurgaon','gurugram','thane','indore','chandigarh','coimbatore','kochi','vadodara','surat','nagpur','agra','patna','bhopal','mysuru','mysore','visakhapatnam'],
+  zepto: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','vadodara','chandigarh','coimbatore','kochi','nagpur','lucknow','indore','bhopal'],
+  instamart: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','chandigarh','coimbatore','kochi','nagpur','lucknow','indore','visakhapatnam','bhopal','mysuru','mysore'],
+  bbnow: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','chandigarh','coimbatore','kochi','nagpur','lucknow'],
+  fkminutes: ['bengaluru','bangalore','delhi','mumbai','hyderabad','pune','chennai','noida','gurgaon','gurugram'],
+  amazonfresh: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane'],
+  jiomartexpress: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','nagpur'],
+  dunzo: ['bengaluru','bangalore','delhi','mumbai','hyderabad','pune','chennai','gurgaon','gurugram','noida'],
+  bbdaily: ['bengaluru','bangalore','mumbai','pune','hyderabad','delhi','noida','gurgaon','gurugram','chennai'],
+  countrydelight: ['bengaluru','bangalore','mumbai','pune','hyderabad','delhi','noida','gurgaon','gurugram','chennai','ahmedabad','jaipur']
+};
+
+function isQuickCommerceAvailable(store, loc) {
+  const city = (loc.city || '').toLowerCase();
+  return (QUICK_COMMERCE_CITIES[store] || []).some(sc => city.includes(sc));
+}
+
+// -- Location-aware delivery profile --
+function getDeliveryProfile(store, loc) {
+  const tier = getLocationTier(loc);
+  const isQC = isQuickCommerce(store);
+  const isFoodStore = isFood(store);
+  if (isQC) {
+    if (!isQuickCommerceAvailable(store, loc)) {
+      return { available: false, deliveryTime: 'Not available in your area', deliveryFee: null };
+    }
+    const extraMins = { metro: 0, tier2: 5, tier3: 15, rural: 30 }[tier] || 0;
+    const baseTime = getStoreDeliveryTime(store);
+    const adjustedTime = baseTime ? baseTime.replace(/(\d+)/, m => String(parseInt(m) + extraMins)) : baseTime;
+    const deliveryFee = tier === 'metro' ? (Math.random() > 0.5 ? 0 : 9) : tier === 'tier2' ? 20 : 35;
+    return { available: true, deliveryTime: adjustedTime, deliveryFee };
+  }
+  if (isFoodStore) {
+    const extraMins = { metro: 0, tier2: 10, tier3: 20, rural: 40 }[tier] || 0;
+    const baseTime = getStoreDeliveryTime(store);
+    const adjustedTime = baseTime ? baseTime.replace(/(\d+)/, m => String(parseInt(m) + extraMins)) : baseTime;
+    const deliveryFee = 20 + Math.floor(Math.random() * 30);
+    return { available: tier !== 'rural', deliveryTime: adjustedTime, deliveryFee };
+  }
+  const days = { metro: '2-3 days', tier2: '3-5 days', tier3: '5-7 days', rural: '7-10 days' }[tier];
+  const deliveryFee = tier === 'metro' ? 0 : tier === 'tier2' ? 40 : tier === 'tier3' ? 60 : 80;
+  const limitedShipStores = ['ikea','pepperfry','urbanladder','woodenstreet','ethoswatches','helioswatches','forestessentials','kamaayurveda','caratlane','bluestone'];
+  if (limitedShipStores.includes(store) && (tier === 'tier3' || tier === 'rural')) {
+    return { available: false, deliveryTime: 'Not deliverable to your area', deliveryFee: null };
+  }
+  return { available: true, deliveryTime: days, deliveryFee };
 }
 
 function getRestaurantName(store, location, query, index) {
@@ -1181,47 +1246,66 @@ export function doesStoreSellQuery(store, query) {
 }
 
 // ── Store Search Simulator for Scrape Console ──
+// -- Store Search Simulator for Scrape Console --
 export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai') {
   const loc = normalizeLocation(location);
   if (!doesStoreSellQuery(store, query)) {
     return []; // Return empty result set if store does not sell this query category
   }
+  // Get location-aware delivery profile (availability, time, fee)
+  const deliveryProfile = getDeliveryProfile(store, loc);
+  if (!deliveryProfile.available) {
+    // Return a single placeholder showing store is unavailable in this area
+    return [{
+      id: ${store.substring(0, 2)}-unavail-,
+      name: ${STORE_NAMES[store] || store} — Not available in ,
+      price: null,
+      priceFormatted: 'N/A',
+      source: store,
+      sourceMode: 'simulated',
+      deliverable: false,
+      deliveryTime: deliveryProfile.deliveryTime,
+      deliveryFee: null,
+      locationTier: getLocationTier(loc),
+      scrapedAt: new Date().toISOString()
+    }];
+  }
+
   const products = [];
   const itemCount = 5 + Math.floor(Math.random() * 8); // 5 to 12 items
-  
+
   let storeCategory = 'ecommerce';
   if (isQuickCommerce(store)) storeCategory = 'quickcommerce';
   else if (isFood(store)) storeCategory = 'food';
 
   const basePrice = getEstimatedBasePrice(query, storeCategory);
   const storeLink = getStoreLink(store, query);
-
+  const locationTier = getLocationTier(loc);
 
   // Predefined image placeholders
   let defaultImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
   if (isFood(store)) {
     const q = query.toLowerCase();
     if (q.includes('chicken') || q.includes('butter')) {
-      defaultImg = 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200'; // Butter chicken
+      defaultImg = 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200';
     } else if (q.includes('pizza')) {
-      defaultImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200'; // Pizza
+      defaultImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200';
     } else if (q.includes('burger')) {
-      defaultImg = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200'; // Burger
+      defaultImg = 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200';
     } else if (q.includes('tikka') || q.includes('paneer')) {
-      defaultImg = 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200'; // Paneer tikka
+      defaultImg = 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=200';
     } else if (q.includes('biryani')) {
-      defaultImg = 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200'; // Biryani
+      defaultImg = 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200';
     } else {
-      defaultImg = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200'; // general food
+      defaultImg = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200';
     }
   } else if (isQuickCommerce(store)) {
-    defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200'; // grocery style
+    defaultImg = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200';
   } else if (['shoe', 'sneaker', 'shirt', 'jeans', 'hoodie', 'tshirt', 'dress', 'clothing'].some(k => query.toLowerCase().includes(k))) {
-    defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200'; // fashion style
+    defaultImg = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200';
   }
 
   for (let i = 0; i < itemCount; i++) {
-    // Generate slight price variance
     const priceMultiplier = 0.85 + (i * 0.05) + Math.random() * 0.05;
     const price = Math.round(basePrice * priceMultiplier);
     const originalPrice = Math.round(price * (1.1 + Math.random() * 0.2));
@@ -1232,39 +1316,41 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     let productName = '';
     const restaurantName = isFood(store) ? getRestaurantName(store, loc, query, i) : null;
     if (isFood(store)) {
-      productName = `${restaurantName} - ${query.charAt(0).toUpperCase() + query.slice(1)}`;
+      productName = ${restaurantName} - ;
     } else {
       const storeDisplayName = STORE_NAMES[store] || (store.charAt(0).toUpperCase() + store.slice(1));
-      productName = `${storeDisplayName} ${query.charAt(0).toUpperCase() + query.slice(1)} - Option ${i + 1}`;
+      productName = ${storeDisplayName}  - Option ;
     }
 
-    const deliveryFee = isFood(store) ? 30 + Math.floor(Math.random() * 20) : null;
+    const deliveryFee = deliveryProfile.deliveryFee;
     const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
     const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
-    const itemLink = isFood(store) 
+    const itemLink = isFood(store)
       ? getFoodProductLink(store, loc, restaurantName, query)
       : storeLink;
 
     products.push({
-      id: `${store.substring(0, 2)}-${i}-${Date.now().toString(36)}`,
+      id: ${store.substring(0, 2)}--,
       name: productName,
       price,
-      priceFormatted: `₹${price.toLocaleString('en-IN')}`,
+      priceFormatted: \u20b9,
       originalPrice,
-      originalPriceFormatted: `₹${originalPrice.toLocaleString('en-IN')}`,
+      originalPriceFormatted: \u20b9,
       discount,
-      discountFormatted: `${discount}% off`,
+      discountFormatted: ${discount}% off,
       rating,
       ratingsCount,
       reviewsCount: Math.round(ratingsCount * 0.15),
       productLink: itemLink,
       imageUrl: defaultImg,
       source: store,
-      deliveryTime: isQuickCommerce(store) || isFood(store) ? getStoreDeliveryTime(store) : null,
+      deliverable: true,
+      deliveryTime: deliveryProfile.deliveryTime,
       deliveryFee,
       packagingFee,
       distance,
       restaurantName,
+      locationTier,
       sourceMode: 'simulated',
       scrapedAt: new Date().toISOString()
     });
@@ -1690,9 +1776,31 @@ const KNOWN_ROUTES = {
 
 /**
  * Estimate the distance and duration between two text locations in a city.
- * Tries to match known routes first, then falls back to a heuristic estimate.
+ * Queries Google Distance Matrix API if configured, otherwise falls back to heuristics.
  */
-function estimateRouteMetrics(pickup, drop, city) {
+async function estimateRouteMetrics(pickup, drop, city) {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (apiKey) {
+    try {
+      const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(pickup)}&destinations=${encodeURIComponent(drop)}&key=${apiKey}`
+      );
+      if (response.status === 200 && response.data.status === 'OK') {
+        const element = response.data.rows?.[0]?.elements?.[0];
+        if (element && element.status === 'OK') {
+          const distanceKm = element.distance.value / 1000;
+          const durationMins = element.duration.value / 60;
+          return {
+            distance: Math.max(2, Math.round(distanceKm * 10) / 10),
+            duration: Math.max(5, Math.round(durationMins))
+          };
+        }
+      }
+    } catch (e) {
+      console.error('Google Distance Matrix failed, falling back to local heuristics:', e.message);
+    }
+  }
+
   const p = pickup.toLowerCase();
   const d = drop.toLowerCase();
   const c = city.toLowerCase().replace(/\s+/g, '');
@@ -1714,7 +1822,6 @@ function estimateRouteMetrics(pickup, drop, city) {
   }
 
   // Fallback: estimate based on string length heuristic + random
-  const combinedLen = pickup.length + drop.length;
   const baseDistance = 5 + Math.floor(Math.random() * 25); // 5-30 km
   const baseDuration = Math.round(baseDistance * 2.5 + Math.random() * 15); // ~2.5 min/km + jitter
 
@@ -1792,17 +1899,42 @@ function getCabDeepLink(platformId, pickup, drop, city) {
 }
 
 /**
- * Simulate fare for a specific cab platform and ride type.
+ * Estimate traffic congestion levels based on real-time routing metrics.
  */
-function simulateSingleFare(rideType, distance, duration, cityMultiplier, surgeMultiplier) {
-  const rawFare = rideType.baseFare + (rideType.perKm * distance) + (rideType.perMin * duration);
-  const fare = Math.max(rideType.minFare, Math.round(rawFare * cityMultiplier * surgeMultiplier));
-  
-  // Add some randomness (±8%)
-  const jitter = 1 + (Math.random() - 0.5) * 0.16;
-  const finalFare = Math.round(fare * jitter);
+function estimateCongestionLevel(distance, duration) {
+  const normalDuration = distance * 1.8; // Assume 33 km/h baseline
+  const ratio = duration / Math.max(1, normalDuration);
+  if (ratio > 1.45) return { label: 'Heavy Traffic', multiplier: 1.25 };
+  if (ratio > 1.18) return { label: 'Moderate Traffic', multiplier: 1.12 };
+  return { label: 'Free Flow', multiplier: 1.0 };
+}
 
-  return Math.max(rideType.minFare, finalFare);
+/**
+ * Simulate fare for a specific cab platform and ride type with detailed breakdown.
+ */
+function simulateSingleFare(rideType, distance, duration, cityMultiplier, surgeMultiplier, congestionMultiplier) {
+  const base = Math.max(10, rideType.baseFare * cityMultiplier);
+  const distCost = rideType.perKm * distance * cityMultiplier;
+  const timeCost = rideType.perMin * duration;
+  
+  const subtotal = base + distCost + timeCost;
+  const surgePremium = subtotal * (surgeMultiplier - 1);
+  const congestionPremium = subtotal * (congestionMultiplier - 1);
+  
+  const rawFare = subtotal + surgePremium + congestionPremium;
+  const jitter = 0.96 + Math.random() * 0.08; // ±4% realistic jitter
+  const finalFare = Math.round(rawFare * jitter);
+  
+  return {
+    fare: Math.max(rideType.minFare, finalFare),
+    breakdown: {
+      base: Math.round(base),
+      distance: Math.round(distCost),
+      time: Math.round(timeCost),
+      surge: Math.round(surgePremium),
+      congestion: Math.round(congestionPremium)
+    }
+  };
 }
 
 /**
@@ -1823,28 +1955,27 @@ function getSurgeMultiplier() {
 /**
  * Compare fares across all cab platforms for a given route.
  */
-export function compareCabFares(pickup, drop, city = 'Mumbai') {
+export async function compareCabFares(pickup, drop, city = 'Mumbai') {
   const loc = normalizeLocation(city);
   const cityStr = loc.city;
   const cityKey = cityStr.toLowerCase().replace(/\s+/g, '');
   const cityMultiplier = CITY_FARE_MULTIPLIERS[cityKey] || 1.0;
-  const route = estimateRouteMetrics(pickup, drop, cityStr);
+  const route = await estimateRouteMetrics(pickup, drop, cityStr);
   const surgeMultiplier = getSurgeMultiplier();
 
-  const results = [];
+  const congestion = estimateCongestionLevel(route.distance, route.duration);
 
   for (const [platformId, platform] of Object.entries(CAB_PLATFORMS)) {
     // Note: Removed strict city limitations so that user can see availability/unavailability based on location rules.
-    
     const platformSurge = platformId === 'blusmart' ? 1.0 : surgeMultiplier; // BluSmart has no surge pricing
+    const platformCongestion = platformId === 'blusmart' || platformId === 'nammayatri' ? 1.0 : congestion.multiplier;
     const rides = [];
     let availableCount = 0;
 
     for (const rideType of platform.rideTypes) {
       // Check location-based availability
       const availability = isRideAvailableAtLocation(rideType.category, pickup, drop, city);
-      
-      const fare = simulateSingleFare(rideType, route.distance, route.duration, cityMultiplier, platformSurge);
+      const fareResult = simulateSingleFare(rideType, route.distance, route.duration, cityMultiplier, platformSurge, platformCongestion);
       const etaMinutes = 2 + Math.floor(Math.random() * 10); // 2-12 min ETA
 
       if (availability.available) availableCount++;
@@ -1853,8 +1984,10 @@ export function compareCabFares(pickup, drop, city = 'Mumbai') {
         id: rideType.id,
         name: rideType.name,
         category: rideType.category,
-        fare,
-        fareFormatted: `₹${fare}`,
+        fare: fareResult.fare,
+        fareFormatted: `₹${fareResult.fare}`,
+        breakdown: fareResult.breakdown,
+        congestionLevel: congestion.label,
         eta: `${etaMinutes} min`,
         etaMinutes,
         surgeMultiplier: Math.round(platformSurge * 10) / 10,

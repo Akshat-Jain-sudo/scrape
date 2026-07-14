@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const LocationContext = createContext();
+export const LocationContext = createContext();
 
 export function useLocationContext() {
   const context = useContext(LocationContext);

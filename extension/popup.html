@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080c14;
+      --bg-secondary: #0d1321;
+      --accent-primary: #f57224;
+      --accent-blue: #2874f0;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.15);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --font-sans: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 320px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    .container {
+      padding: 16px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    .logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(245,114,36,0.3);
+    }
+
+    .title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff, var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      margin-left: auto;
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.connected {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .status-badge.disconnected {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* ── Content States ── */
+    .state-panel {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .state-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Disconnected State UI ── */
+    .disconnected-ui {
+      text-align: center;
+      padding: 16px 8px;
+    }
+
+    .lock-icon {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: float 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes float {
+      from { transform: translateY(0); }
+      to { transform: translateY(-5px); }
+    }
+
+    .disconnected-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .disconnected-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 18px;
+    }
+
+    .btn-connect {
+      display: inline-block;
+      width: 100%;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary, #e05e15));
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(245, 114, 36, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-connect:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(245, 114, 36, 0.45);
+    }
+
+    .btn-connect:active {
+      transform: translateY(0);
+    }
+
+    /* ── Connected State UI ── */
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .user-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .user-email {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .section-title {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sync-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulseGlow 1.5s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 2px var(--success); }
+      to { box-shadow: 0 0 10px var(--success); }
+    }
+
+    .product-list {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .product-list::-webkit-scrollbar {
+      width: 3px;
+    }
+    .product-list::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
+    .product-item {
+      display: flex;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .product-item:hover {
+      border-color: rgba(245, 114, 36, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .product-img {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #fff;
+    }
+
+    .product-info-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .product-name {
+      font-size: 0.74rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #e5e7eb;
+      margin-bottom: 2px;
+    }
+
+    .product-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .product-price {
+      font-size: 0.72rem;
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .product-store {
+      font-size: 0.64rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 16px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+    }
+
+    .footer a {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">🧬</div>
+      <span class="title">Symbiote Co-pilot</span>
+      <div id="connection-status" class="status-badge disconnected">
+        <span class="status-dot"></span>
+        <span id="status-text">Offline</span>
+      </div>
+    </div>
+
+    <!-- Disconnected Panel -->
+    <div id="panel-disconnected" class="state-panel active">
+      <div class="disconnected-ui">
+        <span class="lock-icon">🔒</span>
+        <h4 class="disconnected-title">Awaiting Dashboard Link</h4>
+        <p class="disconnected-desc">Please sign in to your Symbiote website dashboard to link this extension and sync price history.</p>
+        <button id="btn-login-redirect" class="btn-connect">Connect Account</button>
+      </div>
+    </div>
+
+    <!-- Connected Panel -->
+    <div id="panel-connected" class="state-panel">
+      <!-- Profile Card -->
+      <div class="user-profile">
+        <div class="user-avatar">🤖</div>
+        <div class="user-details">
+          <span class="user-label">Connected Account</span>
+          <span id="user-email-text" class="user-email">guest@symbiote.local</span>
+        </div>
+      </div>
+
+      <!-- Sync Header -->
+      <div class="section-title">
+        <span>Active Sync History</span>
+        <span class="sync-pulse"></span>
+      </div>
+
+      <!-- Tracked List -->
+      <div id="tracked-list" class="product-list">
+        <div style="font-size: 0.72rem; color: var(--text-muted); text-align: center; padding: 16px;">
+          Browsed items will auto-sync here.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Symbiote Companion v1.0 | <a href="http://localhost:5173" id="link-dashboard" target="_blank">Open Portal</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

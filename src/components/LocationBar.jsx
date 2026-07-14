@@ -58,21 +58,11 @@ export default function LocationBar() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-            { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
-          );
-          
+          const res = await fetch(`/api/location/reverse?lat=${latitude}&lng=${longitude}`);
           if (!res.ok) throw new Error('Geocoding failed');
           
           const data = await res.json();
-          const parsedAddress = formatNominatimAddress(data.address || {});
-          
-          setLocation({
-            lat: latitude,
-            lng: longitude,
-            ...parsedAddress
-          });
+          setLocation(data);
           setSearchQuery('');
         } catch (err) {
           console.error(err);
@@ -107,25 +97,11 @@ export default function LocationBar() {
 
     const debounceTimer = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=in&format=json&addressdetails=1&limit=5`,
-          { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
-        );
-        
+        const res = await fetch(`/api/location/autocomplete?input=${encodeURIComponent(query)}`);
         if (!res.ok) throw new Error('Search failed');
         
         const data = await res.json();
-        const formattedSuggestions = data.map(item => {
-          const parsed = formatNominatimAddress(item.address || {});
-          return {
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon),
-            ...parsed,
-            rawName: item.display_name
-          };
-        });
-        
-        setSuggestions(formattedSuggestions);
+        setSuggestions(data);
         setShowDropdown(true);
       } catch (err) {
         console.error(err);
@@ -138,8 +114,23 @@ export default function LocationBar() {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
-  const handleSelectLocation = (sug) => {
-    setLocation(sug);
+  const handleSelectLocation = async (sug) => {
+    if (sug.source === 'google') {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/location/details?placeId=${sug.placeId}`);
+        if (res.ok) {
+          const coords = await res.json();
+          setLocation(coords);
+        }
+      } catch (e) {
+        console.error('Failed to resolve coordinates:', e);
+      } finally {
+        setIsSearching(false);
+      }
+    } else {
+      setLocation(sug);
+    }
     setSearchQuery('');
     setShowDropdown(false);
   };

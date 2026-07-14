@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
@@ -30,20 +30,279 @@ import {
   getProductHistory,
   saveScrapeHistory,
   getScrapeHistory,
-  getAllScraperHealth
+  getAllScraperHealth,
+  saveFeedback,
+  getFeedback,
+  saveChatMessage,
+  getChatHistory
 } from './db.js';
+import { generateResponse } from './chatbot.js';
 import { startPriceHistoryScheduler } from './cron.js';
+import { createClient } from '@supabase/supabase-js';
 
+import { saveCredentials, listCredentials, getCredentials, deleteCredentials } from './automator/credentialStore.js';
+import { launchOrderSession, confirmOrder, getSupportedStores } from './automator/index.js';
+import { getSession, takeScreenshot, listSessions } from './automator/sessionManager.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
+
+// Initialize Supabase Server Client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+let supabaseServer = null;
+
+if (supabaseUrl && supabaseAnonKey) {
+  try {
+    supabaseServer = createClient(supabaseUrl, supabaseAnonKey);
+  } catch (err) {
+    console.error('Failed to initialize Supabase server client:', err);
+  }
+}
+
+// User Verification Middleware
+async function verifyUser(req, res, next) {
+  const authHeader = req.headers.authorization;
+  req.userId = 'anonymous'; // default fallback
+
+  if (authHeader && authHeader.startsWith('Bearer ') && supabaseServer) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const { data: { user }, error } = await supabaseServer.auth.getUser(token);
+      if (!error && user) {
+        req.userId = user.id;
+      }
+    } catch (e) {
+      console.error('Error verifying Supabase user token:', e);
+    }
+  }
+  next();
+}
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use(verifyUser);
+
+// ── GET /api/config/supabase — Public Supabase Config for client ──
+app.get('/api/config/supabase', (req, res) => {
+  res.json({
+    url: process.env.SUPABASE_URL || '',
+    anonKey: process.env.SUPABASE_ANON_KEY || ''
+  });
+});
+
+// ── GET /api/location/autocomplete — Search address suggestions via Google Places or OSM ──
+app.get('/api/location/autocomplete', async (req, res) => {
+  const { input } = req.query;
+  if (!input) {
+    return res.json([]);
+  }
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (apiKey) {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&components=country:in&key=${apiKey}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const suggestions = (data.predictions || []).map(pred => ({
+          placeId: pred.place_id,
+          displayLabel: pred.structured_formatting?.main_text || pred.description,
+          rawName: pred.description,
+          source: 'google'
+        }));
+        return res.json(suggestions);
+      }
+    } catch (e) {
+      console.error('Google Autocomplete Proxy failed, falling back to OSM:', e);
+    }
+  }
+
+  // Fallback to OSM Nominatim
+  try {
+    const resOsm = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&countrycodes=in&format=json&addressdetails=1&limit=5`,
+      { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
+    );
+    if (resOsm.ok) {
+      const data = await resOsm.json();
+      const suggestions = data.map(item => {
+        const addr = item.address || {};
+        const locality = addr.neighbourhood || addr.suburb || addr.village || addr.city_district || '';
+        const city = addr.city || addr.town || addr.county || '';
+        const parts = [];
+        if (locality) parts.push(locality);
+        if (city && city !== locality) parts.push(city);
+        return {
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          locality: locality || city || 'Unknown',
+          city: city || addr.state || 'Unknown',
+          state: addr.state || '',
+          pincode: addr.postcode || '',
+          displayLabel: parts.length > 0 ? parts.join(', ') : 'Unknown Location',
+          rawName: item.display_name,
+          source: 'osm'
+        };
+      });
+      return res.json(suggestions);
+    }
+  } catch (e) {
+    console.error('OSM Autocomplete failed:', e);
+  }
+
+  res.json([]);
+});
+
+// ── GET /api/location/details — Resolve Place ID to lat/lng coordinates (for Google Places) ──
+app.get('/api/location/details', async (req, res) => {
+  const { placeId } = req.query;
+  if (!placeId) {
+    return res.status(400).json({ error: 'placeId is required' });
+  }
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return res.status(400).json({ error: 'Google API key is not configured' });
+  }
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,address_components&key=${apiKey}`
+    );
+    if (response.ok) {
+      const data = await response.json();
+      const result = data.result || {};
+      const lat = result.geometry?.location?.lat;
+      const lng = result.geometry?.location?.lng;
+
+      let locality = '';
+      let city = '';
+      let state = '';
+      let pincode = '';
+
+      (result.address_components || []).forEach(comp => {
+        if (comp.types.includes('sublocality') || comp.types.includes('neighborhood')) {
+          locality = comp.long_name;
+        } else if (comp.types.includes('locality')) {
+          city = comp.long_name;
+        } else if (comp.types.includes('administrative_area_level_1')) {
+          state = comp.long_name;
+        } else if (comp.types.includes('postal_code')) {
+          pincode = comp.long_name;
+        }
+      });
+
+      const parts = [];
+      if (locality) parts.push(locality);
+      if (city && city !== locality) parts.push(city);
+
+      return res.json({
+        lat,
+        lng,
+        locality: locality || city || 'Unknown',
+        city: city || state || 'Unknown',
+        state,
+        pincode,
+        displayLabel: parts.length > 0 ? parts.join(', ') : 'Unknown Location'
+      });
+    }
+  } catch (e) {
+    console.error('Google Place details resolution failed:', e);
+  }
+  res.status(500).json({ error: 'Failed to resolve location details' });
+});
+
+// ── GET /api/location/reverse — Reverse Geocode lat/lng to Address ──
+app.get('/api/location/reverse', async (req, res) => {
+  const { lat, lng } = req.query;
+  if (!lat || !lng) {
+    return res.status(400).json({ error: 'lat and lng are required' });
+  }
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (apiKey) {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const first = data.results?.[0] || {};
+        let locality = '';
+        let city = '';
+        let state = '';
+        let pincode = '';
+
+        (first.address_components || []).forEach(comp => {
+          if (comp.types.includes('sublocality') || comp.types.includes('neighborhood')) {
+            locality = comp.long_name;
+          } else if (comp.types.includes('locality')) {
+            city = comp.long_name;
+          } else if (comp.types.includes('administrative_area_level_1')) {
+            state = comp.long_name;
+          } else if (comp.types.includes('postal_code')) {
+            pincode = comp.long_name;
+          }
+        });
+
+        const parts = [];
+        if (locality) parts.push(locality);
+        if (city && city !== locality) parts.push(city);
+
+        return res.json({
+          lat: parseFloat(lat),
+          lng: parseFloat(lng),
+          locality: locality || city || 'Unknown',
+          city: city || state || 'Unknown',
+          state,
+          pincode,
+          displayLabel: parts.length > 0 ? parts.join(', ') : 'Unknown Location',
+          rawName: first.formatted_address || 'Google Location'
+        });
+      }
+    } catch (e) {
+      console.error('Google Reverse Geocoding failed, falling back to OSM:', e);
+    }
+  }
+
+  // Fallback to OSM Nominatim reverse geocode
+  try {
+    const resOsm = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+      { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
+    );
+    if (resOsm.ok) {
+      const data = await resOsm.json();
+      const addr = data.address || {};
+      const locality = addr.neighbourhood || addr.suburb || addr.village || addr.city_district || '';
+      const city = addr.city || addr.town || addr.county || '';
+      const parts = [];
+      if (locality) parts.push(locality);
+      if (city && city !== locality) parts.push(city);
+
+      return res.json({
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        locality: locality || city || 'Unknown',
+        city: city || addr.state || 'Unknown',
+        state: addr.state || '',
+        pincode: addr.postcode || '',
+        displayLabel: parts.length > 0 ? parts.join(', ') : 'Unknown Location',
+        rawName: data.display_name
+      });
+    }
+  } catch (e) {
+    console.error('OSM Reverse Geocode failed:', e);
+  }
+
+  res.status(500).json({ error: 'Failed to reverse geocode coordinates' });
+});
 
 // Initialize DB and Cron background scheduler
 try {
@@ -52,6 +311,48 @@ try {
 } catch (err) {
   console.error('Database initialization failed:', err);
 }
+
+
+// -- GET /api/location/pincode-check -- Check if a store delivers to a location --
+app.get('/api/location/pincode-check', (req, res) => {
+  const { store, city, pincode, lat, lng } = req.query;
+  const loc = { city: city || '', pincode: pincode || '', lat: parseFloat(lat) || null, lng: parseFloat(lng) || null, state: '', locality: '', full: city || '' };
+  // Import-free inline tier logic (mirrors scraper.js getLocationTier)
+  const metroCities = ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','surat','jaipur','lucknow','noida','gurgaon','gurugram','thane','navi mumbai','ncr'];
+  const tier2Cities = ['indore','bhopal','patna','vadodara','ludhiana','agra','nagpur','visakhapatnam','coimbatore','kochi','chandigarh','bhubaneswar','dehradun','mysuru','mysore','raipur','vijayawada','madurai','varanasi','rajkot','nashik','amritsar','faridabad','meerut','kanpur','ranchi','jodhpur','guwahati','thiruvananthapuram','hubli','jalandhar','udaipur','siliguri','mangalore','puducherry','kolhapur','solapur','salem'];
+  const cityLower = (city || '').toLowerCase();
+  let tier = 'rural';
+  if (metroCities.some(m => cityLower.includes(m))) tier = 'metro';
+  else if (tier2Cities.some(t => cityLower.includes(t))) tier = 'tier2';
+  else if (pincode && pincode.length === 6) tier = 'tier3';
+
+  const QC_CITIES = {
+    blinkit: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','lucknow','noida','gurgaon','gurugram','thane','indore','chandigarh','coimbatore','kochi','vadodara','surat','nagpur','agra','patna','bhopal','mysuru','mysore','visakhapatnam'],
+    zepto: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','vadodara','chandigarh','coimbatore','kochi','nagpur','lucknow','indore','bhopal'],
+    instamart: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','chandigarh','coimbatore','kochi','nagpur','lucknow','indore','visakhapatnam','bhopal','mysuru','mysore'],
+    bbnow: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','chandigarh','coimbatore','kochi','nagpur','lucknow'],
+    fkminutes: ['bengaluru','bangalore','delhi','mumbai','hyderabad','pune','chennai','noida','gurgaon','gurugram'],
+    amazonfresh: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane'],
+    jiomartexpress: ['mumbai','delhi','bengaluru','bangalore','hyderabad','chennai','kolkata','pune','ahmedabad','jaipur','noida','gurgaon','gurugram','thane','surat','nagpur'],
+    dunzo: ['bengaluru','bangalore','delhi','mumbai','hyderabad','pune','chennai','gurgaon','gurugram','noida'],
+    bbdaily: ['bengaluru','bangalore','mumbai','pune','hyderabad','delhi','noida','gurgaon','gurugram','chennai'],
+    countrydelight: ['bengaluru','bangalore','mumbai','pune','hyderabad','delhi','noida','gurgaon','gurugram','chennai','ahmedabad','jaipur']
+  };
+
+  if (store) {
+    const qcStores = Object.keys(QC_CITIES);
+    const isQC = qcStores.includes(store);
+    const available = isQC ? (QC_CITIES[store] || []).some(sc => cityLower.includes(sc)) : true;
+    return res.json({ store, city, tier, available, reason: available ? null : ${store} does not deliver to  yet });
+  }
+
+  // Return availability for all quick-commerce stores
+  const result = {};
+  Object.keys(QC_CITIES).forEach(s => {
+    result[s] = (QC_CITIES[s] || []).some(sc => cityLower.includes(sc));
+  });
+  res.json({ city, tier, pincode, quickCommerceAvailability: result });
+});
 
 // ── GET /api/trending — Get trending deals configuration ──
 app.get('/api/trending', (req, res) => {
@@ -522,7 +823,7 @@ app.post('/api/scrape', async (req, res) => {
 // ── GET /api/products — Get all saved products ──
 app.get('/api/products', async (req, res) => {
   try {
-    const products = getProducts();
+    const products = getProducts(req.userId);
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -544,7 +845,7 @@ app.post('/api/products', async (req, res) => {
       id: p.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }));
 
-    saveProducts(preparedProducts);
+    saveProducts(preparedProducts, req.userId);
     
     res.status(201).json({ 
       message: `Saved ${preparedProducts.length} products to database`,
@@ -553,6 +854,38 @@ app.post('/api/products', async (req, res) => {
   } catch (error) {
     console.error('Error saving products:', error);
     res.status(500).json({ error: 'Failed to save products' });
+  }
+});
+
+// ── POST /api/extension/sync — Sync product from Chrome Extension ──
+app.post('/api/extension/sync', async (req, res) => {
+  const { product } = req.body;
+  if (!product || !product.productLink || !product.price) {
+    return res.status(400).json({ error: 'Valid product object is required' });
+  }
+
+  try {
+    // Generate a stable ID based on clean URL to prevent duplicates
+    const cleanUrl = product.productLink.split('?')[0];
+    const productId = `ext-${Buffer.from(cleanUrl).toString('base64').replace(/=/g, '').substring(0, 24)}`;
+    
+    const preparedProduct = {
+      ...product,
+      id: productId,
+      query: product.searchQuery || product.name.substring(0, 30),
+      category: 'extension',
+    };
+
+    saveProducts([preparedProduct], req.userId);
+
+    res.json({
+      success: true,
+      message: 'Product synced successfully',
+      productId
+    });
+  } catch (error) {
+    console.error('Extension sync error:', error);
+    res.status(500).json({ error: 'Failed to sync extension product' });
   }
 });
 
@@ -574,7 +907,7 @@ app.put('/api/products/:id/alert', async (req, res) => {
   const { targetPrice } = req.body;
 
   try {
-    updateTargetPrice(id, targetPrice ? parseFloat(targetPrice) : null);
+    updateTargetPrice(id, targetPrice ? parseFloat(targetPrice) : null, req.userId);
     res.json({ message: 'Target price updated successfully', targetPrice });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update alert' });
@@ -585,7 +918,7 @@ app.put('/api/products/:id/alert', async (req, res) => {
 app.delete('/api/products/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    deleteProduct(id);
+    deleteProduct(id, req.userId);
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete product' });
@@ -595,7 +928,7 @@ app.delete('/api/products/:id', async (req, res) => {
 // ── DELETE /api/products — Clear all saved products ──
 app.delete('/api/products', async (req, res) => {
   try {
-    clearAllProducts();
+    clearAllProducts(req.userId);
     res.json({ message: 'All products cleared successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to clear products' });
@@ -611,7 +944,7 @@ app.get('/api/analytics', async (req, res) => {
 
 // ── GET /api/export/csv — Export saved products as CSV ──
 app.get('/api/export/csv', async (req, res) => {
-  const products = getProducts();
+  const products = getProducts(req.userId);
   
   if (products.length === 0) {
     return res.status(404).json({ error: 'No products to export' });
@@ -917,18 +1250,89 @@ Respond with ONLY a valid JSON object. Do not include markdown code block format
 });
 
 // ── POST /api/cab-compare — Compare cab fares across platforms ──
-app.post('/api/cab-compare', (req, res) => {
+app.post('/api/cab-compare', async (req, res) => {
   const { pickup, drop, city = 'Mumbai' } = req.body;
   if (!pickup || !drop) {
     return res.status(400).json({ error: 'Pickup and drop locations are required' });
   }
 
   try {
-    const comparison = compareCabFares(pickup.trim(), drop.trim(), city.trim());
+    const comparison = await compareCabFares(pickup.trim(), drop.trim(), city.trim());
     res.json(comparison);
   } catch (error) {
     console.error('Cab comparison error:', error);
     res.status(500).json({ error: error.message || 'Failed to compare cab fares' });
+  }
+});
+
+// ── POST /api/chat — AI Chatbot message endpoint ──
+app.post('/api/chat', (req, res) => {
+  const { message, sessionId, currentPage } = req.body;
+  if (!message || !sessionId) {
+    return res.status(400).json({ error: 'Message and sessionId are required' });
+  }
+
+  try {
+    // Save user message
+    saveChatMessage({ sessionId, role: 'user', content: message, userId: req.userId });
+
+    // Generate AI response
+    const result = generateResponse(message, sessionId, currentPage);
+
+    // Save assistant response
+    saveChatMessage({ sessionId, role: 'assistant', content: result.reply, userId: req.userId });
+
+    // If feedback was collected, save it
+    if (result.feedbackSaved) {
+      saveFeedback({ ...result.feedbackSaved, userId: req.userId });
+    }
+
+    res.json({
+      reply: result.reply,
+      intent: result.intent,
+      feedbackSaved: !!result.feedbackSaved,
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process chat message' });
+  }
+});
+
+// ── POST /api/feedback — Submit structured feedback ──
+app.post('/api/feedback', (req, res) => {
+  const { category, message, rating, page } = req.body;
+  if (!message) {
+    return res.status(400).json({ error: 'Feedback message is required' });
+  }
+
+  try {
+    saveFeedback({ category, message, rating, page, userId: req.userId });
+    res.json({ success: true, message: 'Feedback saved successfully' });
+  } catch (error) {
+    console.error('Feedback error:', error);
+    res.status(500).json({ error: 'Failed to save feedback' });
+  }
+});
+
+// ── GET /api/feedback — Retrieve all feedback ──
+app.get('/api/feedback', (req, res) => {
+  try {
+    const feedback = getFeedback(req.userId);
+    res.json(feedback);
+  } catch (error) {
+    console.error('Feedback fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch feedback' });
+  }
+});
+
+// ── GET /api/chat/history/:sessionId — Retrieve chat history ──
+app.get('/api/chat/history/:sessionId', (req, res) => {
+  try {
+    const history = getChatHistory(req.params.sessionId, req.userId);
+    res.json(history);
+  } catch (error) {
+    console.error('Chat history error:', error);
+    res.status(500).json({ error: 'Failed to fetch chat history' });
   }
 });
 
@@ -944,5 +1348,84 @@ if (fs.existsSync(clientBuildPath)) {
   });
   console.log(`Serving static client files from: ${clientBuildPath}`);
 }
+
+
+// -- Order Relay Routes --
+
+// GET /api/order/stores -- List supported stores for automated ordering
+app.get('/api/order/stores', (req, res) => {
+  res.json(getSupportedStores());
+});
+
+// POST /api/order/credentials -- Save encrypted platform credentials
+app.post('/api/order/credentials', (req, res) => {
+  const { platform, username, password } = req.body;
+  if (!platform || !username || !password) return res.status(400).json({ error: 'platform, username, and password are required' });
+  try {
+    saveCredentials(req.userId, platform, username, password);
+    res.json({ success: true, message: Credentials saved for  });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save credentials: ' + e.message });
+  }
+});
+
+// GET /api/order/credentials -- List saved platforms (no passwords returned)
+app.get('/api/order/credentials', (req, res) => {
+  try {
+    const creds = listCredentials(req.userId);
+    res.json(creds);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/order/credentials/:platform -- Remove credentials
+app.delete('/api/order/credentials/:platform', (req, res) => {
+  const deleted = deleteCredentials(req.userId, req.params.platform);
+  res.json({ success: deleted });
+});
+
+// POST /api/order/initiate -- Start order automation session
+app.post('/api/order/initiate', async (req, res) => {
+  const { store, productUrl, productName, deliveryAddress } = req.body;
+  if (!store || !productUrl) return res.status(400).json({ error: 'store and productUrl are required' });
+  const creds = getCredentials(req.userId, store);
+  if (!creds) return res.status(400).json({ error: No saved credentials for . Please add credentials first via POST /api/order/credentials });
+  try {
+    const result = await launchOrderSession({ store, credentials: creds, productUrl, productName, deliveryAddress, userId: req.userId });
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to launch session: ' + e.message });
+  }
+});
+
+// GET /api/order/screenshot/:sessionId -- Get latest browser screenshot
+app.get('/api/order/screenshot/:sessionId', async (req, res) => {
+  const session = getSession(req.params.sessionId);
+  if (!session) return res.status(404).json({ error: 'Session not found or expired' });
+  if (session.userId !== req.userId) return res.status(403).json({ error: 'Not authorized' });
+  const b64 = await takeScreenshot(req.params.sessionId);
+  if (!b64) return res.status(500).json({ error: 'Screenshot not available' });
+  res.json({ screenshotBase64: b64, status: session.status, history: session.history });
+});
+
+// POST /api/order/confirm/:sessionId -- User confirms -> system places order
+app.post('/api/order/confirm/:sessionId', async (req, res) => {
+  const session = getSession(req.params.sessionId);
+  if (!session) return res.status(404).json({ error: 'Session not found or expired' });
+  if (session.userId !== req.userId) return res.status(403).json({ error: 'Not authorized' });
+  if (session.status !== 'awaiting_payment') return res.status(400).json({ error: Session is in state '', not 'awaiting_payment' });
+  try {
+    const result = await confirmOrder(req.params.sessionId, session);
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to confirm order: ' + e.message });
+  }
+});
+
+// GET /api/order/sessions -- List all active sessions for user
+app.get('/api/order/sessions', (req, res) => {
+  res.json(listSessions(req.userId));
+});
 
 export default app;
