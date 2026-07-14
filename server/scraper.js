@@ -1257,8 +1257,8 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
   if (!deliveryProfile.available) {
     // Return a single placeholder showing store is unavailable in this area
     return [{
-      id: ${store.substring(0, 2)}-unavail-,
-      name: ${STORE_NAMES[store] || store} — Not available in ,
+      id: `${store.substring(0, 2)}-unavail-${Date.now()}`,
+      name: `${STORE_NAMES[store] || store} — Not available in ${loc.displayLabel}`,
       price: null,
       priceFormatted: 'N/A',
       source: store,
@@ -1316,10 +1316,10 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     let productName = '';
     const restaurantName = isFood(store) ? getRestaurantName(store, loc, query, i) : null;
     if (isFood(store)) {
-      productName = ${restaurantName} - ;
+      productName = `${restaurantName} - ${query} Special`;
     } else {
       const storeDisplayName = STORE_NAMES[store] || (store.charAt(0).toUpperCase() + store.slice(1));
-      productName = ${storeDisplayName}  - Option ;
+      productName = `${storeDisplayName} ${query} - Option ${i+1}`;
     }
 
     const deliveryFee = deliveryProfile.deliveryFee;
@@ -1330,14 +1330,14 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
       : storeLink;
 
     products.push({
-      id: ${store.substring(0, 2)}--,
+      id: `${store.substring(0, 2)}-${Date.now()}-${i}`,
       name: productName,
       price,
-      priceFormatted: \u20b9,
+      priceFormatted: `\u20B9${price}`,
       originalPrice,
-      originalPriceFormatted: \u20b9,
+      originalPriceFormatted: `\u20B9${originalPrice}`,
       discount,
-      discountFormatted: ${discount}% off,
+      discountFormatted: `${discount}% off`,
       rating,
       ratingsCount,
       reviewsCount: Math.round(ratingsCount * 0.15),
