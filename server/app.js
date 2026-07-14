@@ -937,8 +937,8 @@ app.delete('/api/products', async (req, res) => {
 
 // ── GET /api/analytics — Product analytics ──
 app.get('/api/analytics', async (req, res) => {
-  const db = await readDb();
-  const analytics = computeProductAnalytics(db.products);
+  const products = getProducts(req.userId);
+  const analytics = computeProductAnalytics(products);
   res.json(analytics);
 });
 
