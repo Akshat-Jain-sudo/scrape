@@ -1776,29 +1776,34 @@ const KNOWN_ROUTES = {
 
 /**
  * Estimate the distance and duration between two text locations in a city.
- * Queries Google Distance Matrix API if configured, otherwise falls back to heuristics.
+ * Uses Nominatim (OSM) for geocoding and OSRM for real routing metrics.
  */
 async function estimateRouteMetrics(pickup, drop, city) {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  if (apiKey) {
-    try {
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(pickup)}&destinations=${encodeURIComponent(drop)}&key=${apiKey}`
-      );
-      if (response.status === 200 && response.data.status === 'OK') {
-        const element = response.data.rows?.[0]?.elements?.[0];
-        if (element && element.status === 'OK') {
-          const distanceKm = element.distance.value / 1000;
-          const durationMins = element.duration.value / 60;
-          return {
-            distance: Math.max(2, Math.round(distanceKm * 10) / 10),
-            duration: Math.max(5, Math.round(durationMins))
-          };
-        }
+  try {
+    // 1. Geocode Pickup Location
+    const pickupRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(pickup + ', ' + city)}&format=json&limit=1`, { headers: { 'User-Agent': 'SymbioteWebScrapper/1.0' }});
+    // 2. Geocode Drop Location
+    const dropRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(drop + ', ' + city)}&format=json&limit=1`, { headers: { 'User-Agent': 'SymbioteWebScrapper/1.0' }});
+    
+    if (pickupRes.data.length > 0 && dropRes.data.length > 0) {
+      const p1 = pickupRes.data[0];
+      const p2 = dropRes.data[0];
+      
+      // 3. Get Route via OSRM
+      const osrmRes = await axios.get(`https://router.project-osrm.org/route/v1/driving/${p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=false`);
+      
+      if (osrmRes.data && osrmRes.data.routes && osrmRes.data.routes.length > 0) {
+        const distanceKm = osrmRes.data.routes[0].distance / 1000;
+        const durationMins = osrmRes.data.routes[0].duration / 60;
+        
+        return {
+          distance: Math.max(2, Math.round(distanceKm * 10) / 10),
+          duration: Math.max(5, Math.round(durationMins))
+        };
       }
-    } catch (e) {
-      console.error('Google Distance Matrix failed, falling back to local heuristics:', e.message);
     }
+  } catch (e) {
+    console.error('OSRM/Nominatim routing failed, falling back to local heuristics:', e.message);
   }
 
   const p = pickup.toLowerCase();
