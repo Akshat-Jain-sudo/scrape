@@ -4215,3 +4215,72 @@ body::before, body::after {
     padding: 1rem;
   }
 }
+
+/* --- Amazon Header Mobile Responsiveness --- */
+@media screen and (max-width: 768px) {
+  .amazon-header-top {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 0.5rem;
+  }
+  
+  .amazon-logo-text {
+    font-size: 1.2rem !important;
+  }
+  
+  /* Hide location to save space on mobile */
+  .amazon-location-box {
+    display: none;
+  }
+  
+  /* Force search bar to full width on a new line */
+  .amazon-search-bar-wrap {
+    order: 3;
+    flex-basis: 100%;
+    width: 100%;
+    margin-top: 5px;
+  }
+  
+  .amazon-account-box {
+    margin-left: auto; /* push to right */
+    padding: 4px;
+  }
+  
+  .amazon-account-box span:first-child {
+    display: none; /* Hide 'Hello' text */
+  }
+  
+  .amazon-cart-box {
+    padding: 4px;
+  }
+  
+  .amazon-cart-box span:last-child {
+    display: none; /* Hide 'Cart' text */
+  }
+  
+  .amazon-header-bottom {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 5px 10px;
+    height: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    justify-content: flex-start;
+  }
+  
+  /* Hide scrollbar for header bottom */
+  .amazon-header-bottom::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .amazon-nav-item {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  
+  /* Hide the live clock and scraper status text on very small screens */
+  .amazon-header-bottom > div:last-child {
+    display: none; 
+  }
+}
