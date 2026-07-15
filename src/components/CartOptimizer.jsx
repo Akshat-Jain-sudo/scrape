@@ -306,6 +306,7 @@ function CartOptimizer({ addToast }) {
   // Persist items in localStorage
   useEffect(() => {
     localStorage.setItem('optimize_cart_items', JSON.stringify(items));
+    window.dispatchEvent(new Event('cart-updated'));
   }, [items]);
 
   // Scroll to bottom of checkout simulation log terminal

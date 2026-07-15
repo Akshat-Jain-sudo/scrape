@@ -136,6 +136,26 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scraperHealth, setScraperHealth] = useState(null);
   const [headerSearchVal, setHeaderSearchVal] = useState('');
+  const [cartCount, setCartCount] = useState(0);
+
+  // Sync Cart count from localStorage
+  useEffect(() => {
+    const updateCartCount = () => {
+      const saved = localStorage.getItem('optimize_cart_items');
+      if (saved) {
+        try { setCartCount(JSON.parse(saved).length); } catch(e) { setCartCount(0); }
+      } else {
+        setCartCount(0);
+      }
+    };
+    updateCartCount();
+    window.addEventListener('storage', updateCartCount);
+    window.addEventListener('cart-updated', updateCartCount);
+    return () => {
+      window.removeEventListener('storage', updateCartCount);
+      window.removeEventListener('cart-updated', updateCartCount);
+    };
+  }, []);
 
   // Apply user saved theme if available
   useEffect(() => {
@@ -202,6 +222,7 @@ function App() {
       if (!currentItems.includes(cleaned)) {
         currentItems.push(cleaned);
         localStorage.setItem('optimize_cart_items', JSON.stringify(currentItems));
+        window.dispatchEvent(new Event('cart-updated'));
         addToast(`"${cleaned}" added to Cart Optimizer ✓`, 'success');
       } else {
         addToast(`"${cleaned}" is already in Cart Optimizer`, 'info');
@@ -409,7 +430,7 @@ function App() {
                 {/* Cart Box */}
                 <div className="amazon-cart-box" onClick={() => setCurrentView('cart')}>
                   <span className="amazon-cart-count">
-                    {savedProducts.length}
+                    {cartCount}
                   </span>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', marginLeft: '6px' }}>
                     <circle cx="9" cy="21" r="1"/>
