@@ -6,7 +6,9 @@ import {
   Tag, 
   TrendingUp,
   Percent,
-  TrendingDown
+  TrendingDown,
+  Search,
+  Filter
 } from 'lucide-react';
 
 function InsightHub({ savedProducts }) {
@@ -23,11 +25,17 @@ function InsightHub({ savedProducts }) {
     storeDistribution: {}
   });
   const [loading, setLoading] = useState(true);
+  const [filterProduct, setFilterProduct] = useState('');
+  const [filterPlatform, setFilterPlatform] = useState('all');
 
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/analytics');
+      const queryParams = new URLSearchParams();
+      if (filterProduct) queryParams.append('product', filterProduct);
+      if (filterPlatform && filterPlatform !== 'all') queryParams.append('platform', filterPlatform);
+      
+      const response = await fetch(`/api/analytics?${queryParams.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -40,8 +48,12 @@ function InsightHub({ savedProducts }) {
   };
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [savedProducts]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchAnalytics();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [savedProducts, filterProduct, filterPlatform]);
 
   if (loading) {
     return (
@@ -82,6 +94,55 @@ function InsightHub({ savedProducts }) {
         <div className="view-title">
           <h1>Insight Hub</h1>
           <p>Analytics, store distribution margins, and price comparison statistics of your saved library</p>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="glass-card" style={{ marginBottom: '2rem', padding: '1.25rem 1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1', minWidth: '250px' }}>
+          <Search size={18} style={{ color: 'var(--text-muted)' }} />
+          <input 
+            type="text" 
+            placeholder="Filter by product name (e.g., iPhone 15)" 
+            value={filterProduct}
+            onChange={(e) => setFilterProduct(e.target.value)}
+            style={{ 
+              flex: 1, 
+              background: 'var(--bg-secondary)', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '8px', 
+              padding: '0.5rem 1rem', 
+              color: 'var(--text-primary)',
+              outline: 'none'
+            }} 
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px' }}>
+          <Filter size={18} style={{ color: 'var(--text-muted)' }} />
+          <select 
+            value={filterPlatform}
+            onChange={(e) => setFilterPlatform(e.target.value)}
+            style={{ 
+              flex: 1, 
+              background: 'var(--bg-secondary)', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '8px', 
+              padding: '0.5rem 1rem', 
+              color: 'var(--text-primary)',
+              outline: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="all">All Platforms</option>
+            <option value="amazon">Amazon</option>
+            <option value="flipkart">Flipkart</option>
+            <option value="blinkit">Blinkit</option>
+            <option value="zepto">Zepto</option>
+            <option value="instamart">Swiggy Instamart</option>
+            <option value="croma">Croma</option>
+            <option value="reliance">Reliance Digital</option>
+            <option value="snapdeal">Snapdeal</option>
+          </select>
         </div>
       </div>
 

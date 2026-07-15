@@ -953,7 +953,19 @@ app.delete('/api/products', async (req, res) => {
 
 // ── GET /api/analytics — Product analytics ──
 app.get('/api/analytics', async (req, res) => {
-  const products = getProducts(req.userId);
+  let products = getProducts(req.userId);
+  const { product, platform } = req.query;
+
+  if (product && product.trim() !== '') {
+    const searchLower = product.trim().toLowerCase();
+    products = products.filter(p => p.name?.toLowerCase().includes(searchLower));
+  }
+
+  if (platform && platform.trim() !== '' && platform.toLowerCase() !== 'all') {
+    const platformLower = platform.trim().toLowerCase();
+    products = products.filter(p => p.store?.toLowerCase() === platformLower);
+  }
+
   const analytics = computeProductAnalytics(products);
   res.json(analytics);
 });
