@@ -3454,8 +3454,8 @@ body::before, body::after {
 .amazon-header {
   display: flex;
   flex-direction: column;
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important; /* Premium deep slate gradient */
+  color: #ffffff;
   z-index: 999;
   font-family: var(--font-sans);
   border-bottom: 2px solid var(--accent-primary) !important;
