@@ -1382,6 +1382,31 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border: 1px solid rgba(15, 23, 42, 0.15) !important;
 }
 
+.theme-dark {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-card: #181818;
+  --border-color: #2d2d2d;
+  --border-focus: #f57224;
+  --accent-primary: #f57224;
+  --accent-secondary: #e05e15;
+  --accent-glow: rgba(245, 114, 36, 0.15);
+  --accent-blue: #3b82f6;
+  --accent-blue-glow: rgba(59, 130, 246, 0.15);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --glass-bg: #1e1e1e;
+  --glass-border: 1px solid #333333;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+.theme-dark input, 
+.theme-dark select {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
 .theme-amoled-black {
   --bg-primary: #000000;
   --bg-secondary: #0a0a0a;

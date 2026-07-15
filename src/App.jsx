@@ -170,7 +170,8 @@ function App() {
   const toggleTheme = () => {
     setTheme(prev => {
       if (prev === 'cyberpunk') return 'glass-light';
-      if (prev === 'glass-light') return 'amoled-black';
+      if (prev === 'glass-light') return 'dark';
+      if (prev === 'dark') return 'amoled-black';
       return 'cyberpunk';
     });
   };
