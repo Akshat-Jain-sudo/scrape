@@ -92,6 +92,7 @@ function FoodDeliveryDashboard({ baseUrl }) {
 
   const handleRestaurantClick = async (rest) => {
     if (searchMode === 'food') return;
+    if (!rest.isOpen) return; // Prevent clicking on closed outlets
     setSelectedRestaurant(rest);
     setLoadingMenu(true);
     setComparingDish(null);
@@ -296,9 +297,16 @@ function FoodDeliveryDashboard({ baseUrl }) {
           ) : restaurants.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {restaurants.map((rest, idx) => (
-                <div key={rest.id} className="glass-card stagger-in" style={{ padding: '1.5rem', animationDelay: `${idx * 0.05}s`, cursor: searchMode === 'outlet' ? 'pointer' : 'default', transition: 'transform 0.2s', ':hover': { transform: searchMode === 'outlet' ? 'translateY(-2px)' : 'none' } }} onClick={() => handleRestaurantClick(rest)}>
+                <div key={rest.id} className="glass-card stagger-in" style={{ padding: '1.5rem', animationDelay: `${idx * 0.05}s`, cursor: searchMode === 'outlet' && rest.isOpen ? 'pointer' : (searchMode === 'outlet' && !rest.isOpen ? 'not-allowed' : 'default'), transition: 'transform 0.2s', opacity: rest.isOpen ? 1 : 0.6, filter: rest.isOpen ? 'none' : 'grayscale(100%)', ':hover': { transform: searchMode === 'outlet' && rest.isOpen ? 'translateY(-2px)' : 'none' } }} onClick={() => handleRestaurantClick(rest)}>
                   <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                    <img src={rest.imageUrl} alt={rest.name} style={{ width: '130px', height: '130px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <div style={{ position: 'relative' }}>
+                      <img src={rest.imageUrl} alt={rest.name} style={{ width: '130px', height: '130px', objectFit: 'cover', borderRadius: '8px' }} />
+                      {!rest.isOpen && (
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                          CLOSED
+                        </div>
+                      )}
+                    </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>

@@ -1050,7 +1050,6 @@ export function getNearbyRestaurants(location, query) {
       };
     }
 
-    // Cuisine mock based on name
     let cuisine = "North Indian, Fast Food";
     if (name.toLowerCase().includes('pizza')) cuisine = "Pizza, Fast Food, Beverages";
     else if (name.toLowerCase().includes('burger')) cuisine = "Burgers, American, Fast Food";
@@ -1058,6 +1057,16 @@ export function getNearbyRestaurants(location, query) {
     else if (name.toLowerCase().includes('chinese')) cuisine = "Chinese, Asian, Tibetan";
     else if (name.toLowerCase().includes('sweet') || name.toLowerCase().includes('ice cream')) cuisine = "Desserts, Ice Cream, Bakery";
     else if (name.toLowerCase().includes('south') || name.toLowerCase().includes('bhavan')) cuisine = "South Indian, Beverages";
+
+    // Randomize open/close hours
+    const openHour = 8 + Math.floor(Math.random() * 4); // 8 AM to 11 AM
+    const closeHour = 21 + Math.floor(Math.random() * 3); // 9 PM to 11 PM
+    const currentHour = new Date().getHours();
+    
+    // To make sure user sees both open and closed, let's force some to be closed randomly if time doesn't naturally do it
+    let isOpen = currentHour >= openHour && currentHour < closeHour;
+    if (Math.random() < 0.2) isOpen = false; // randomly close 20% of stores for demonstration
+    if (Math.random() < 0.2) isOpen = true;  // randomly open 20% of stores for demonstration
 
     restaurants.push({
       id: `rest-${Math.floor(Math.random() * 100000)}-${i}`,
@@ -1068,7 +1077,10 @@ export function getNearbyRestaurants(location, query) {
       distance: `${distNum} km`,
       deliveryTime: `${15 + Math.floor(Math.random() * 30)} mins`,
       coordinates: coordinates,
-      imageUrl: `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80` // Generic restaurant img
+      imageUrl: `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80`, // Generic restaurant img
+      isOpen: isOpen,
+      openHour: openHour,
+      closeHour: closeHour
     });
   }
   return restaurants;
