@@ -1349,66 +1349,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* ── Theme Switcher ── */
-.theme-glass-light {
-  --bg-primary: #f1f5f9;
-  --bg-secondary: #e2e8f0;
-  --bg-card: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(15, 23, 42, 0.08);
-  --border-focus: rgba(245, 114, 36, 0.5);
-  --accent-primary: #f57224;
-  --accent-secondary: #e05e15;
-  --accent-glow: rgba(245, 114, 36, 0.08);
-  --accent-blue: #1d4ed8;
-  --accent-blue-glow: rgba(29, 78, 216, 0.08);
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-border: 1px solid rgba(15, 23, 42, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.1);
-}
-.theme-glass-light body::before {
-  background: rgba(245, 114, 36, 0.04);
-}
-.theme-glass-light body::after {
-  background: rgba(29, 78, 216, 0.03);
-}
-.theme-glass-light .glass-card {
-  box-shadow: 0 4px 20px 0 rgba(148, 163, 184, 0.08);
-}
-.theme-glass-light input, 
-.theme-glass-light select {
-  background: rgba(255, 255, 255, 0.8) !important;
-  color: #0f172a !important;
-  border: 1px solid rgba(15, 23, 42, 0.15) !important;
-}
-
 .theme-dark {
-  --bg-primary: #121212;
-  --bg-secondary: #1e1e1e;
-  --bg-card: #181818;
-  --border-color: #2d2d2d;
-  --border-focus: #f57224;
-  --accent-primary: #f57224;
-  --accent-secondary: #e05e15;
-  --accent-glow: rgba(245, 114, 36, 0.15);
-  --accent-blue: #3b82f6;
-  --accent-blue-glow: rgba(59, 130, 246, 0.15);
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --glass-bg: #1e1e1e;
-  --glass-border: 1px solid #333333;
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
-.theme-dark input, 
-.theme-dark select {
-  background: rgba(0, 0, 0, 0.5) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.theme-amoled-black {
   --bg-primary: #000000;
   --bg-secondary: #0a0a0a;
   --bg-card: #050505;
@@ -1426,9 +1367,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   --glass-border: 1px solid #141414;
   --glass-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0);
 }
-.theme-amoled-black body::before,
-.theme-amoled-black body::after {
+.theme-dark body::before,
+.theme-dark body::after {
   display: none;
+}
+.theme-dark input, 
+.theme-dark select {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Theme Toggle Button Style in Sidebar Clock Row */
@@ -3090,51 +3037,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* ═══ CHATBOT THEME OVERRIDES ═══ */
 
-/* Glass Light Theme */
-.theme-glass-light .chatbot-window {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.12),
-    0 0 1px rgba(0, 0, 0, 0.1) inset;
-}
-
-.theme-glass-light .chatbot-header {
-  background: linear-gradient(135deg,
-    rgba(245, 114, 36, 0.08),
-    rgba(40, 116, 240, 0.04));
-}
-
-.theme-glass-light .chat-bubble-assistant .chat-bubble-content {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.theme-glass-light .chatbot-input-area {
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.theme-glass-light .chatbot-input {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-.theme-glass-light .chatbot-quick-btn {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: var(--text-secondary);
-}
-
-.theme-glass-light .chat-typing-indicator {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.theme-glass-light .chatbot-close-btn {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-/* AMOLED Black Theme */
-.theme-amoled-black .chatbot-window {
+/* Dark Theme Chatbot Styles */
+.theme-dark .chatbot-window {
   background: rgba(0, 0, 0, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -3142,23 +3046,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
-.theme-amoled-black .chatbot-header {
+.theme-dark .chatbot-header {
   background: linear-gradient(135deg,
     rgba(245, 114, 36, 0.08),
     rgba(40, 116, 240, 0.04));
   border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
-.theme-amoled-black .chat-bubble-assistant .chat-bubble-content {
+.theme-dark .chat-bubble-assistant .chat-bubble-content {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-.theme-amoled-black .chatbot-input-area {
+.theme-dark .chatbot-input-area {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.theme-amoled-black .chatbot-input {
+.theme-dark .chatbot-input {
   background: rgba(255, 255, 255, 0.04);
 }
 
