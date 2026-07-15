@@ -846,6 +846,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Category Tabs */
 .category-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 2rem;
   border-bottom: 1px solid var(--border-color);
@@ -3529,7 +3530,7 @@ body::before, body::after {
 /* ── App Layout Overhaul ── */
 .app-container {
   flex-direction: column !important;
-  background: #f1f5f9 !important;
+  background: var(--bg-primary) !important;
 }
 
 .app-container::after {
@@ -3731,6 +3732,11 @@ body::before, body::after {
   font-size: 0.85rem;
   gap: 12px;
   border-top: 1px solid rgba(255,255,255,0.05);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.amazon-header-bottom::-webkit-scrollbar {
+  display: none;
 }
 
 .amazon-nav-item {
