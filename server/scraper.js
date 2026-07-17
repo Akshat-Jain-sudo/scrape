@@ -1237,29 +1237,29 @@ export function doesStoreSellQuery(store, query) {
   }
 
   // Define keyword sets
-  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loafers|crocs)\b/.test(q);
+  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loafers|crocs|chappal|slides|flip flops|cleats|wedges)\b/.test(q);
   
-  const isApparel = /\b(clothing|shirt|shirts|t-shirt|tshirts|tshirt|jeans|jean|jacket|jackets|hoodie|hoodies|dress|dresses|saree|sarees|kurta|kurtas|top|tops|trousers|suit|suits|coat|coats|scarf|innerwear|socks|activewear|wear|blazer|gown|lehenga)\b/.test(q);
+  const isApparel = /\b(clothing|shirt|shirts|t-shirt|tshirts|tshirt|jeans|jean|jacket|jackets|hoodie|hoodies|dress|dresses|saree|sarees|kurta|kurtas|top|tops|trousers|suit|suits|coat|coats|scarf|innerwear|socks|activewear|wear|blazer|gown|lehenga|pant|pants|shorts|skirt|skirts|sweater|sweaters|sweatshirt|underwear|bra|panties|kurti|sherwani|dhoti|trackpants|leggings|jumpsuit)\b/.test(q);
   
-  const isElectronics = /\b(laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|ipad|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds)\b/.test(q);
+  const isElectronics = /\b(macbook|mac book|apple|iphone|ipad|mac|airpods|laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds|pc|computer|desktop|trimmer|dryer|shaver|playstation|xbox|nintendo|console|usb|cable|projector)\b/.test(q);
   
-  const isJewelry = /\b(jewelry|jewellery|ring|rings|necklace|necklaces|earring|earrings|pendant|pendants|bracelet|bracelets|gold|diamond|diamonds|silver|platinum|bangles|ornaments|gemstone)\b/.test(q);
+  const isJewelry = /\b(jewelry|jewellery|ring|rings|necklace|necklaces|earring|earrings|pendant|pendants|bracelet|bracelets|gold|diamond|diamonds|silver|platinum|bangles|ornaments|gemstone|chain|mangalsutra|anklet|nose ring|choker)\b/.test(q);
   
   const isWatches = /\b(watch|watches|smartwatch|smart watch|smartwatches|clock|clocks)\b/.test(q);
   
-  const isEyewear = /\b(glasses|sunglasses|lens|lenses|frame|frames|spectacles|goggles|eyeplus|contact lens)\b/.test(q);
+  const isEyewear = /\b(glasses|sunglasses|lens|lenses|frame|frames|spectacles|goggles|eyeplus|contact lens|shades)\b/.test(q);
   
-  const isBeauty = /\b(makeup|lipstick|lipsticks|cream|creams|lotion|lotions|shampoo|conditioner|face wash|perfume|perfumes|scent|skincare|cosmetics|eyeliner|eyeshadow|nail polish|serum|serums|moisturizer|sunscreen|haircare|body wash)\b/.test(q);
+  const isBeauty = /\b(makeup|lipstick|lipsticks|cream|creams|lotion|lotions|shampoo|conditioner|face wash|perfume|perfumes|scent|skincare|cosmetics|eyeliner|eyeshadow|nail polish|serum|serums|moisturizer|sunscreen|haircare|body wash|soap|deo|deodorant|fragrance|kajal|foundation|concealer|blush|mascara|primer|toner|cleanser|lip balm)\b/.test(q);
   
-  const isHome = /\b(furniture|bed|sofa|sofas|chair|chairs|table|tables|mattress|mattresses|pillow|pillows|sheet|sheets|curtain|curtains|decor|kitchen|cooker|cookers|pan|pans|pot|pots|plate|plates|borosil|induction|stove|kettle|wardrobe|cushion)\b/.test(q);
+  const isHome = /\b(furniture|bed|sofa|sofas|chair|chairs|table|tables|mattress|mattresses|pillow|pillows|sheet|sheets|curtain|curtains|decor|kitchen|cooker|cookers|pan|pans|pot|pots|plate|plates|borosil|induction|stove|kettle|wardrobe|cushion|blanket|towel|rug|carpet|lamp|desk|shelf|glass|mug|cup|bottle|flask|utensils|cutlery|vase|clock|fan|cooler)\b/.test(q);
   
-  const isKids = /\b(toy|toys|diaper|diapers|baby|baby care|stroller|strollers|cradle|kids clothing|romper|maternity)\b/.test(q);
+  const isKids = /\b(toy|toys|diaper|diapers|baby|baby care|stroller|strollers|cradle|kids clothing|romper|maternity|doll|lego|puzzle|board game|action figure|teddy|rattle|bib)\b/.test(q);
   
-  const isSports = /\b(sports|bat|bats|ball|balls|racket|rackets|shuttlecock|shuttles|gym|fitness|dumbbell|dumbbells|cycle|bicycle|jersey|yoga mat|treadmill)\b/.test(q);
+  const isSports = /\b(sports|bat|bats|ball|balls|racket|rackets|shuttlecock|shuttles|gym|fitness|dumbbell|dumbbells|cycle|bicycle|jersey|yoga mat|treadmill|cricket|football|basketball|tennis|badminton|helmet|gloves|skates|skateboard|weights|protein)\b/.test(q);
   
-  const isBooks = /\b(book|books|novel|novels|comic|comics|dictionary|literature|paperback|hardcover)\b/.test(q);
+  const isBooks = /\b(book|books|novel|novels|comic|comics|dictionary|literature|paperback|hardcover|magazine|biography|fiction|nonfiction)\b/.test(q) && !/\b(macbook|mac book|chromebook|surface book)\b/.test(q);
   
-  const isGrocery = /\b(milk|bread|cheese|butter|vegetable|vegetables|fruit|fruits|onion|onions|tomato|tomatoes|potato|potatoes|grocery|groceries|snack|snacks|coke|beverage|drink|drinks|juice|tea|coffee|atta|rice|dal|oil|salt|sugar|wheat|paneer|masala|egg|eggs)\b/.test(q);
+  const isGrocery = /\b(milk|bread|cheese|butter|vegetable|vegetables|fruit|fruits|onion|onions|tomato|tomatoes|potato|potatoes|grocery|groceries|snack|snacks|coke|beverage|drink|drinks|juice|tea|coffee|atta|rice|dal|oil|salt|sugar|wheat|paneer|masala|egg|eggs|meat|chicken|fish|water|chocolate|chips|biscuit|cookies|maggi|noodles|pasta|flour|spices|ghee|curd|yogurt|ice cream|pulses|sauce|ketchup|jam|honey)\b/.test(q);
 
   // Group 1: Footwear only stores
   const footwearOnlyStores = [
