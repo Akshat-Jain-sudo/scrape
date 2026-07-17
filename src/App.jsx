@@ -123,6 +123,16 @@ function ProductHistoryChart({ productId, currentPrice }) {
   );
 }
 
+// Isolated clock component — only this re-renders every second, not the entire App tree
+const LiveClock = React.memo(function LiveClock() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <strong>{time.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</strong>;
+});
+
 function App() {
   const { session, user, signOut, profile, preferences } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -131,7 +141,6 @@ function App() {
   const [showCharts, setShowCharts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scraperHealth, setScraperHealth] = useState(null);
@@ -191,11 +200,6 @@ function App() {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  // Live clock – update every second
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Listen for login/auth triggers from Dashboard and Extension redirects
   useEffect(() => {
@@ -219,7 +223,9 @@ function App() {
       const cleaned = itemName.trim();
       if (!cleaned) return;
       
-      if (!currentItems.includes(cleaned)) {
+      const isDuplicate = currentItems.some(i => i.toLowerCase() === cleaned.toLowerCase());
+      
+      if (!isDuplicate) {
         currentItems.push(cleaned);
         localStorage.setItem('optimize_cart_items', JSON.stringify(currentItems));
         window.dispatchEvent(new Event('cart-updated'));
@@ -286,8 +292,8 @@ function App() {
         const result = await response.json();
         if (!silent) {
           addToast(`Saved ${result.savedCount} products ✓`, 'success');
+          fetchSavedProducts(); // Refresh list only on explicit saves
         }
-        fetchSavedProducts(); // Refresh list
         return result;
       }
       if (!silent) {
@@ -343,7 +349,6 @@ function App() {
     }
   };
 
-  const formattedTime = currentTime.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const metAlertsCount = savedProducts.reduce((count, p) => {
     if (p.targetPrice && p.price <= p.targetPrice) {
       return count + 1;
@@ -502,7 +507,7 @@ function App() {
                 </div>
 
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#ccc' }}>
-                  <span>Live clock: <strong>{formattedTime}</strong></span>
+                  <span>Live clock: <LiveClock /></span>
                   <span>|</span>
                   {(() => {
                     if (!scraperHealth) return <span style={{ color: 'grey' }}>● Checking...</span>;
@@ -670,7 +675,9 @@ function App() {
                                 });
                                 if (response.ok) {
                                   addToast('Target price updated', 'success');
-                                  fetchSavedProducts();
+                                  setSavedProducts(prev => prev.map(pp => 
+                                    pp.id === product.id ? { ...pp, targetPrice: val } : pp
+                                  ));
                                 }
                               } catch (err) {
                                 console.error(err);
@@ -714,7 +721,7 @@ function App() {
                           <button 
                             className="btn-icon" 
                             style={{ color: 'var(--accent-blue)' }}
-                            onClick={() => handleAddToCart(product.name)}
+                            onClick={() => handleAddToCart(product.searchQuery || product.query || product.name)}
                             title="Add to Cart Optimizer"
                           >
                             <ShoppingCart size={18} />

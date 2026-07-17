@@ -105,18 +105,18 @@ export function initDb() {
 
 // ── PRODUCTS CRUD ──
 
-export function getProducts(userId = 'anonymous') {
-  const stmt = db.prepare(`SELECT * FROM products WHERE user_id = ? ORDER BY created_at DESC`);
-  const rows = stmt.all(userId || 'anonymous');
-  // Map SQLite row shape back to what frontend expects
-  return rows.map(row => ({
+function mapProductRow(row) {
+  return {
     id: row.id,
     query: row.query,
+    searchQuery: row.query,
     category: row.category,
     source: row.store,
     name: row.title,
     price: row.price,
+    priceFormatted: row.price ? `₹${row.price.toLocaleString('en-IN')}` : 'N/A',
     originalPrice: row.original_price,
+    originalPriceFormatted: row.original_price ? `₹${row.original_price.toLocaleString('en-IN')}` : null,
     discountFormatted: row.discount,
     rating: row.rating ? parseFloat(row.rating) : null,
     imageUrl: row.image,
@@ -126,7 +126,19 @@ export function getProducts(userId = 'anonymous') {
     targetPrice: row.target_price,
     userId: row.user_id,
     dateAdded: row.created_at
-  }));
+  };
+}
+
+export function getProducts(userId = 'anonymous') {
+  const stmt = db.prepare(`SELECT * FROM products WHERE user_id = ? ORDER BY created_at DESC`);
+  const rows = stmt.all(userId || 'anonymous');
+  return rows.map(mapProductRow);
+}
+
+export function getAllProducts() {
+  const stmt = db.prepare(`SELECT * FROM products ORDER BY created_at DESC`);
+  const rows = stmt.all();
+  return rows.map(mapProductRow);
 }
 
 export function saveProducts(products, userId = 'anonymous') {
@@ -158,7 +170,7 @@ export function saveProducts(products, userId = 'anonymous') {
 
       insertProduct.run({
         id: p.id,
-        query: p.query || '',
+        query: p.query || p.searchQuery || '',
         category: p.category || 'ecommerce',
         store: p.source || '',
         title: p.name || '',
@@ -236,7 +248,7 @@ export function updateProductPrice(id, newPrice) {
 
 export function getProductHistory(productId) {
   const stmt = db.prepare(`SELECT price, recorded_at FROM price_history WHERE product_id = ? ORDER BY recorded_at ASC`);
-  const rows = stmt.all();
+  const rows = stmt.all(productId);
   return rows.map(r => ({
     price: r.price,
     date: new Date(r.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),

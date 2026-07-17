@@ -320,7 +320,8 @@ function CartOptimizer({ addToast }) {
     if (e) e.preventDefault();
     const trimmed = newItem.trim();
     if (!trimmed) return;
-    if (items.includes(trimmed)) {
+    const isDuplicate = items.some(i => i.toLowerCase() === trimmed.toLowerCase());
+    if (isDuplicate) {
       addToast('Item already in list', 'info');
       return;
     }
@@ -446,7 +447,9 @@ function CartOptimizer({ addToast }) {
       setOcrModalOpen(false);
       return;
     }
-    const merged = Array.from(new Set([...items, ...selected]));
+    const existingLower = items.map(i => i.toLowerCase());
+    const uniqueNew = selected.filter(s => !existingLower.includes(s.toLowerCase()));
+    const merged = [...items, ...uniqueNew];
     setItems(merged);
     addToast(`Added ${selected.length} items to your shopping list!`, 'success');
     setOcrModalOpen(false);

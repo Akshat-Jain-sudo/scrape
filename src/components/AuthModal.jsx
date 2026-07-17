@@ -1,37 +1,47 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Mail, Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { X, Mail, Lock, AlertCircle } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, addToast }) {
-  const { signIn, signUp } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const { sendOtp, verifyOtp } = useAuth();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        await signUp(email, password, fullName);
-        addToast('Verification link sent to your email! Please check your inbox.', 'success');
-        setIsSignUp(false);
-      } else {
-        await signIn(email, password);
-        addToast('Logged in successfully! Welcome back.', 'success');
-        onClose();
-      }
+      await sendOtp(email);
+      setOtpSent(true);
+      addToast('OTP sent to your email!', 'success');
     } catch (err) {
       console.error(err);
-      setError(err.message || 'An error occurred during authentication.');
+      setError(err.message || 'An error occurred while sending OTP.');
+      addToast(err.message || 'Failed to send OTP', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await verifyOtp(email, otp);
+      addToast('Logged in successfully!', 'success');
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Invalid OTP.');
       addToast(err.message || 'Authentication failed', 'error');
     } finally {
       setLoading(false);
@@ -48,8 +58,8 @@ export default function AuthModal({ isOpen, onClose, addToast }) {
         </button>
 
         <div className="auth-modal-header">
-          <h2>{isSignUp ? '🧬 Create Account' : '🚀 Welcome Back'}</h2>
-          <p>{isSignUp ? 'Sign up to track price history, sync shopping lists, and compare cabs.' : 'Sign in to access your saved alerts and preferences.'}</p>
+          <h2>{otpSent ? '🔑 Enter OTP' : '🚀 Sign In / Sign Up'}</h2>
+          <p>{otpSent ? 'Please enter the one-time password sent to your email.' : 'Enter your email to receive a one-time password.'}</p>
         </div>
 
         {error && (
@@ -59,88 +69,73 @@ export default function AuthModal({ isOpen, onClose, addToast }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          {isSignUp && (
+        {!otpSent ? (
+          <form onSubmit={handleSendOtp} className="auth-form">
             <div className="auth-input-group">
-              <label htmlFor="fullName">Full Name</label>
+              <label htmlFor="email">Email Address</label>
               <div className="auth-input-wrapper">
-                <User size={16} className="auth-input-icon" />
+                <Mail size={16} className="auth-input-icon" />
                 <input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
             </div>
-          )}
 
-          <div className="auth-input-group">
-            <label htmlFor="email">Email Address</label>
-            <div className="auth-input-wrapper">
-              <Mail size={16} className="auth-input-icon" />
-              <input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+            <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  <span className="pulse-spinner" style={{ width: '14px', height: '14px' }}></span>
+                  Processing...
+                </div>
+              ) : 'Send OTP'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="auth-form">
+            <div className="auth-input-group">
+              <label htmlFor="otp">One-Time Password</label>
+              <div className="auth-input-wrapper">
+                <Lock size={16} className="auth-input-icon" />
+                <input
+                  id="otp"
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="auth-input-group">
-            <label htmlFor="password">Password</label>
-            <div className="auth-input-wrapper">
-              <Lock size={16} className="auth-input-icon" />
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
+            <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  <span className="pulse-spinner" style={{ width: '14px', height: '14px' }}></span>
+                  Verifying...
+                </div>
+              ) : 'Verify & Login'}
+            </button>
+            <div className="auth-modal-footer">
+              <span>Didn't receive the email?</span>
+              <button 
+                type="button" 
+                className="auth-switch-btn"
+                onClick={() => {
+                  setOtpSent(false);
+                  setOtp('');
+                  setError('');
+                }}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                Try again
               </button>
             </div>
-          </div>
-
-          <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
-            {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                <span className="pulse-spinner" style={{ width: '14px', height: '14px' }}></span>
-                Processing...
-              </div>
-            ) : (
-              isSignUp ? 'Sign Up' : 'Sign In'
-            )}
-          </button>
-        </form>
-
-        <div className="auth-modal-footer">
-          <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
-          <button
-            type="button"
-            className="auth-switch-btn"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError('');
-            }}
-          >
-            {isSignUp ? 'Sign In' : 'Sign Up'}
-          </button>
-        </div>
+          </form>
+        )}
       </div>
     </div>
   );

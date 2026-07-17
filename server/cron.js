@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { getProducts, updateProductPrice } from './db.js';
+import { getAllProducts, updateProductPrice } from './db.js';
 import { simulateStoreSearch } from './scraper.js';
 
 /**
@@ -27,7 +27,7 @@ export function startPriceHistoryScheduler() {
  */
 export async function updateSavedProductsPriceHistory() {
   console.log('🔍 [Price Cron Worker] Starting periodic price scan for saved products...');
-  const products = getProducts();
+  const products = getAllProducts();
 
   if (!products || products.length === 0) {
     console.log('ℹ️ [Price Cron Worker] No saved products in database. Skipping price scan.');

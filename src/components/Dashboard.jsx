@@ -709,7 +709,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                 {onAddToCart && (
                   <button 
                     className="btn-icon" 
-                    onClick={() => onAddToCart(compData?.productName || item.name)} 
+                    onClick={() => onAddToCart(item.query || item.name)} 
                     title="Add to Cart Optimizer"
                     style={{ color: 'var(--accent-blue)', padding: '0.25rem' }}
                   >

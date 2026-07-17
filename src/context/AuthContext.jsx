@@ -7,8 +7,8 @@ const AuthContext = createContext({
   loading: true,
   profile: null,
   preferences: null,
-  signIn: async () => {},
-  signUp: async () => {},
+  sendOtp: async () => {},
+  verifyOtp: async () => {},
   signOut: async () => {},
   updateProfile: async () => {},
   updatePreferences: async () => {},
@@ -93,23 +93,22 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signIn = async (email, password) => {
+  const sendOtp = async (email) => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithOtp({ 
+      email,
+      options: { shouldCreateUser: true }
+    });
     if (error) throw error;
     return data;
   };
 
-  const signUp = async (email, password, fullName) => {
+  const verifyOtp = async (email, token) => {
     if (!supabase) throw new Error('Supabase client not initialized');
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.verifyOtp({
       email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        }
-      }
+      token,
+      type: 'email'
     });
     if (error) throw error;
     return data;
@@ -163,8 +162,8 @@ export function AuthProvider({ children }) {
       loading,
       profile,
       preferences,
-      signIn,
-      signUp,
+      sendOtp,
+      verifyOtp,
       signOut,
       updateProfile,
       updatePreferences

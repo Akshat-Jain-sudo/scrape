@@ -1271,7 +1271,7 @@ export function doesStoreSellQuery(store, query) {
   }
 
   // Group 2: Sports & Fitness (who also sell sportswear and sports shoes)
-  const sportsStores = ['decathlon', 'cultstore', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports'];
+  const sportsStores = ['decathlon', 'cultstore', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports', 'adidas', 'puma', 'nike', 'reebok'];
   if (sportsStores.includes(s)) {
     return isSports || isFootwear || isApparel;
   }
@@ -1287,7 +1287,8 @@ export function doesStoreSellQuery(store, query) {
     'uniqlo', 'marksandspencer', 'levis', 'benetton', 'tommyhilfiger', 'calvinklein', 
     'uspoloassn', 'forever21', 'jackjones', 'only', 'veromoda', 'superdry', 'gasjeans', 
     'fabindia', 'manyavar', 'mohey', 'wforwoman', 'aurelia', 'biba', 'globaldesi', 
-    'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion'
+    'houseofindya', 'libas', 'soch', 'meenabazaar', 'nallisilks', 'karagiri', 'suta', 'kalkifashion',
+    'zara'
   ];
   if (fashionStores.includes(s)) {
     return isApparel || isFootwear || isEyewear || isWatches || isJewelry || isBeauty;
@@ -1492,7 +1493,19 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
 }
 
 // ── Multi-Store Compare Engine ──
+const priceCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function compareProductPrices(query, category = 'ecommerce', location = 'Mumbai') {
+  const cacheKey = `${query}-${category}-${location}`;
+  if (priceCache.has(cacheKey)) {
+    const cached = priceCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`Returning cached results for: ${query}`);
+      return cached.data;
+    }
+  }
+
   const loc = normalizeLocation(location);
   console.log(`Comparing "${query}" under category "${category}" in "${loc.full}" in real-time...`);
   
@@ -1559,6 +1572,15 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
           'shopsy', 'paytmmall', 'dealshare', 'citymall', 'udaan', 'ondc'
         ];
       }
+    }
+
+    // Limit the number of target stores to speed up generation and response size
+    if (targetStores.length > 15) {
+      const alwaysInclude = ['amazon', 'flipkart', 'snapdeal', 'myntra', 'zomato', 'swiggy', 'blinkit', 'zepto', 'croma', 'reliance', 'nykaa', 'tanishq'];
+      const topStores = targetStores.filter(s => alwaysInclude.includes(s));
+      const restStores = targetStores.filter(s => !alwaysInclude.includes(s));
+      restStores.sort(() => 0.5 - Math.random()); // Shuffle remaining
+      targetStores = [...topStores, ...restStores.slice(0, 10)];
     }
 
     // Call actual scrapers if their stores are in the target list
@@ -1665,7 +1687,7 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     }
   });
 
-  return {
+  const finalResult = {
     id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     productName: comparisonData.name,
     imageUrl: comparisonData.imageUrl,
@@ -1676,6 +1698,9 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     bestPriceStore: cheapestStore,
     scrapedAt: new Date().toISOString()
   };
+
+  priceCache.set(cacheKey, { timestamp: Date.now(), data: finalResult });
+  return finalResult;
 }
 
 // ── Legacy News Analytics function repurposed for Products ──

@@ -137,7 +137,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .logo-text {
   font-size: 1.3rem; font-weight: 700;
-  background: linear-gradient(135deg, #ffffff 0%, #f5a574 50%, #2874f0 100%);
+  background: linear-gradient(135deg, #ff7b00 0%, #f5a574 50%, #2874f0 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   letter-spacing: -0.03em;
 }
@@ -2349,8 +2349,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #000;
+  background: linear-gradient(135deg, #ff8c00, #ff4500);
+  color: #fff;
   font-size: 0.62rem;
   padding: 0.15rem 0.45rem;
   border-radius: 6px;
