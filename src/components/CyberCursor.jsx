@@ -1,22 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * CyberCursor Component
- * Renders a precision glowing neon dot cursor in dark mode.
- * Hides default browser cursor in dark mode for a seamless cyberpunk aesthetic.
+ * CyberCursor Component (Ultra-Performance Optimized)
+ * Uses direct DOM ref transforms (zero React re-renders on mousemove)
+ * GPU-accelerated translate3d for silky smooth 120+ FPS cursor tracking
  */
 export default function CyberCursor() {
-  const [pos, setPos] = useState({ x: -100, y: -100 });
-  const [followerPos, setFollowerPos] = useState({ x: -100, y: -100 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isClicked, setIsClicked] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const dotRef = useRef(null);
+  const haloRef = useRef(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    let animFrame;
-
-    // Check dark mode state from document body class or observer
+    // Check dark mode state from document body class
     const checkTheme = () => {
       const isDark = document.body.classList.contains('theme-dark') || 
                      document.body.className.includes('dark');
@@ -31,15 +26,32 @@ export default function CyberCursor() {
 
     checkTheme();
 
-    // Observe body class changes (when user toggles light/dark mode)
     const observer = new MutationObserver(checkTheme);
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-    const onMouseMove = (e) => {
-      setPos({ x: e.clientX, y: e.clientY });
-      setIsVisible(true);
+    let animFrame;
+    let targetX = -100;
+    let targetY = -100;
+    let followerX = -100;
+    let followerY = -100;
+    let isVisible = false;
 
-      // Detect interactive target elements
+    const onMouseMove = (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+
+      if (!isVisible) {
+        isVisible = true;
+        if (dotRef.current) dotRef.current.style.opacity = '1';
+        if (haloRef.current) haloRef.current.style.opacity = '1';
+      }
+
+      // Fast direct DOM update for core dot (Zero React re-render)
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate3d(${targetX}px, ${targetY}px, 0)`;
+      }
+
+      // Check if mouse is hovering interactive element
       const target = e.target;
       const isInteractive = target && (
         target.tagName === 'BUTTON' ||
@@ -51,31 +63,55 @@ export default function CyberCursor() {
         target.getAttribute('role') === 'button' ||
         target.classList.contains('interactive')
       );
-      setIsHovered(!!isInteractive);
+
+      if (dotRef.current && haloRef.current) {
+        if (isInteractive) {
+          dotRef.current.classList.add('hovered');
+          haloRef.current.classList.add('hovered');
+        } else {
+          dotRef.current.classList.remove('hovered');
+          haloRef.current.classList.remove('hovered');
+        }
+      }
     };
 
-    const onMouseDown = () => setIsClicked(true);
-    const onMouseUp = () => setIsClicked(false);
-    const onMouseLeave = () => setIsVisible(false);
-    const onMouseEnter = () => setIsVisible(true);
+    const onMouseDown = () => {
+      if (dotRef.current) dotRef.current.classList.add('clicked');
+      if (haloRef.current) haloRef.current.classList.add('clicked');
+    };
 
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
+    const onMouseUp = () => {
+      if (dotRef.current) dotRef.current.classList.remove('clicked');
+      if (haloRef.current) haloRef.current.classList.remove('clicked');
+    };
+
+    const onMouseLeave = () => {
+      isVisible = false;
+      if (dotRef.current) dotRef.current.style.opacity = '0';
+      if (haloRef.current) haloRef.current.style.opacity = '0';
+    };
+
+    const onMouseEnter = () => {
+      isVisible = true;
+      if (dotRef.current) dotRef.current.style.opacity = '1';
+      if (haloRef.current) haloRef.current.style.opacity = '1';
+    };
+
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    window.addEventListener('mousedown', onMouseDown, { passive: true });
+    window.addEventListener('mouseup', onMouseUp, { passive: true });
     document.addEventListener('mouseleave', onMouseLeave);
     document.addEventListener('mouseenter', onMouseEnter);
 
-    // Smooth follower dot lerp loop
-    let currentX = -100;
-    let currentY = -100;
-
+    // Ultra smooth lerping loop using GPU translate3d (No React re-renders!)
     const animateFollower = () => {
-      setPos(p => {
-        currentX += (p.x - currentX) * 0.18;
-        currentY += (p.y - currentY) * 0.18;
-        setFollowerPos({ x: currentX, y: currentY });
-        return p;
-      });
+      followerX += (targetX - followerX) * 0.22;
+      followerY += (targetY - followerY) * 0.22;
+
+      if (haloRef.current) {
+        haloRef.current.style.transform = `translate3d(${followerX}px, ${followerY}px, 0)`;
+      }
+
       animFrame = requestAnimationFrame(animateFollower);
     };
 
@@ -93,27 +129,15 @@ export default function CyberCursor() {
     };
   }, []);
 
-  if (!isVisible || !isDarkMode) return null;
+  if (!isDarkMode) return null;
 
   return (
     <div className="cyber-cursor-wrapper" style={{ pointerEvents: 'none', position: 'fixed', inset: 0, zIndex: 999999 }}>
-      {/* Soft Trailing Glow Aura Dot */}
-      <div 
-        className={`cyber-cursor-halo ${isClicked ? 'clicked' : ''} ${isHovered ? 'hovered' : ''}`}
-        style={{
-          left: `${followerPos.x}px`,
-          top: `${followerPos.y}px`
-        }}
-      />
+      {/* Soft Trailing Glow Aura Halo Dot */}
+      <div ref={haloRef} className="cyber-cursor-halo" />
 
       {/* Sharp Precision Central Glowing Neon Dot */}
-      <div 
-        className={`cyber-cursor-dot ${isClicked ? 'clicked' : ''} ${isHovered ? 'hovered' : ''}`}
-        style={{
-          left: `${pos.x}px`,
-          top: `${pos.y}px`
-        }}
-      />
+      <div ref={dotRef} className="cyber-cursor-dot" />
     </div>
   );
 }
