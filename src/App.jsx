@@ -25,6 +25,9 @@ import LocationBar from './components/LocationBar';
 import AIChatbot from './components/AIChatbot';
 import { useAuth } from './context/AuthContext';
 import AuthModal from './components/AuthModal';
+import CyberBackgroundCanvas from './components/CyberBackgroundCanvas';
+import CyberCursor from './components/CyberCursor';
+
 
 function ProductHistoryChart({ productId, currentPrice }) {
   const [history, setHistory] = useState([]);
@@ -360,7 +363,14 @@ function App() {
     <LocationProvider>
       <LocationContext.Consumer>
         {({ location }) => (
-          <div className="app-container">
+          <>
+            {/* CYART Cyber Interactive Node Network Canvas & Telemetry HUD */}
+            <CyberBackgroundCanvas interactive={true} opacity={0.85} showTelemetry={true} />
+            
+            {/* CYART Cyber Reticle & Cursor Pointer Glow */}
+            <CyberCursor />
+
+            <div className="app-container">
             {/* Amazon Double-Decker Header */}
             <header className="amazon-header">
               {/* Row 1: Upper Header */}
@@ -780,6 +790,7 @@ function App() {
       {/* Auth Signup/Login Modal */}
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} addToast={addToast} />
     </div>
+          </>
         )}
       </LocationContext.Consumer>
     </LocationProvider>

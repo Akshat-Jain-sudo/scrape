@@ -4220,3 +4220,219 @@ body::before, body::after {
     display: none; 
   }
 }
+
+/* ==========================================================================
+   CYBER GRAPHIC & ANIMATION STYLES (CYART Inspired)
+   ========================================================================== */
+
+/* Cyber Telemetry Corner Tags */
+.cyber-hud-tag {
+  position: absolute;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #ff5500;
+  background: rgba(8, 9, 10, 0.75);
+  border: 1px solid rgba(255, 85, 0, 0.3);
+  padding: 5px 12px;
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+  box-shadow: 0 0 15px rgba(255, 85, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.cyber-hud-tag.top-left { top: 20px; left: 20px; }
+.cyber-hud-tag.top-right { top: 20px; right: 20px; text-align: right; }
+.cyber-hud-tag.bottom-left { bottom: 20px; left: 20px; }
+.cyber-hud-tag.bottom-right { bottom: 20px; right: 20px; text-align: right; }
+
+.hud-indicator {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.hud-indicator.active {
+  animation: hudPulse 1.5s infinite alternate;
+}
+
+.hud-sub {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.62rem;
+}
+
+@keyframes hudPulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #10b981; }
+}
+
+/* Dark Mode Custom Cyber Dot Cursor Active Rule */
+body.custom-cyber-cursor-active,
+body.custom-cyber-cursor-active *,
+body.custom-cyber-cursor-active a,
+body.custom-cyber-cursor-active button,
+body.custom-cyber-cursor-active input,
+body.custom-cyber-cursor-active select {
+  cursor: none !important;
+}
+
+/* Precision Central Glowing Neon Dot */
+.cyber-cursor-dot {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  background-color: #ff5500;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease-out, background-color 0.2s ease, width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 12px #ff5500, 0 0 24px rgba(255, 85, 0, 0.8), 0 0 36px rgba(255, 85, 0, 0.4);
+  z-index: 1000000;
+  pointer-events: none;
+}
+
+.cyber-cursor-dot.hovered {
+  background-color: #00f0ff;
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 16px #00f0ff, 0 0 32px rgba(0, 240, 255, 0.9), 0 0 48px rgba(0, 240, 255, 0.5);
+}
+
+.cyber-cursor-dot.clicked {
+  transform: translate(-50%, -50%) scale(0.5);
+  background-color: #ffffff;
+  box-shadow: 0 0 20px #ffffff;
+}
+
+/* Soft Trailing Glow Aura Halo Dot */
+.cyber-cursor-halo {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 85, 0, 0.12);
+  border: 1px solid rgba(255, 85, 0, 0.4);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.22s ease, height 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+  box-shadow: 0 0 16px rgba(255, 85, 0, 0.2);
+  z-index: 999999;
+  pointer-events: none;
+}
+
+.cyber-cursor-halo.hovered {
+  width: 46px;
+  height: 46px;
+  background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.7);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.3);
+}
+
+.cyber-cursor-halo.clicked {
+  width: 18px;
+  height: 18px;
+  border-color: #ffffff;
+}
+
+/* ==========================================================================
+   CYBER SMOOTH TRANSITIONS & MICRO-INTERACTION ANIMATIONS
+   ========================================================================== */
+
+/* Global Smooth Theme & Element Transitions */
+body, 
+header, 
+.amazon-header, 
+.amazon-header-top, 
+.amazon-header-bottom, 
+.glass-card, 
+.btn, 
+.amazon-nav-item, 
+input, 
+select, 
+.cyber-hud-tag {
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Smooth Page & View Entrance Keyframes */
+.main-content > div,
+.cyber-view-enter {
+  animation: cyberViewEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cyberViewEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Staggered Card Entrance */
+.stagger-in {
+  opacity: 0;
+  animation: cyberCardStagger 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cyberCardStagger {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cyber Card Glow Hover Transition */
+.glass-card:hover,
+.card-content:hover {
+  border-color: rgba(255, 85, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 85, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+/* Cyber Button Micro-Transitions */
+.btn:hover,
+.amazon-search-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(255, 85, 0, 0.35);
+}
+
+.btn:active,
+.amazon-search-btn:active {
+  transform: translateY(0) scale(0.96);
+  transition: transform 0.08s ease;
+}
+
+/* Cyber Pulsing Glow Accent */
+.cyber-pulse-glow {
+  animation: cyberPulseGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes cyberPulseGlow {
+  0% {
+    box-shadow: 0 0 8px rgba(255, 85, 0, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 22px rgba(255, 85, 0, 0.7), 0 0 35px rgba(0, 240, 255, 0.4);
+  }
+}
+
+
+
