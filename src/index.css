@@ -4274,7 +4274,7 @@ body::before, body::after {
   100% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #10b981; }
 }
 
-/* Dark Mode Custom Cyber Dot Cursor Active Rule */
+/* Custom Cyber Cursor Active Rule */
 body.custom-cyber-cursor-active,
 body.custom-cyber-cursor-active *,
 body.custom-cyber-cursor-active a,
@@ -4287,26 +4287,34 @@ body.custom-cyber-cursor-active select {
 /* Precision Central Glowing Neon Dot */
 .cyber-cursor-dot {
   position: fixed;
+  top: 0;
+  left: 0;
   width: 10px;
   height: 10px;
+  margin-top: -5px;
+  margin-left: -5px;
   background-color: #ff5500;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: transform 0.08s ease-out, background-color 0.2s ease, width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 0 12px #ff5500, 0 0 24px rgba(255, 85, 0, 0.8), 0 0 36px rgba(255, 85, 0, 0.4);
   z-index: 1000000;
   pointer-events: none;
+  transition: width 0.15s ease, height 0.15s ease, margin 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .cyber-cursor-dot.hovered {
   background-color: #00f0ff;
   width: 14px;
   height: 14px;
+  margin-top: -7px;
+  margin-left: -7px;
   box-shadow: 0 0 16px #00f0ff, 0 0 32px rgba(0, 240, 255, 0.9), 0 0 48px rgba(0, 240, 255, 0.5);
 }
 
 .cyber-cursor-dot.clicked {
-  transform: translate(-50%, -50%) scale(0.5);
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  margin-left: -3px;
   background-color: #ffffff;
   box-shadow: 0 0 20px #ffffff;
 }
@@ -4314,31 +4322,39 @@ body.custom-cyber-cursor-active select {
 /* Soft Trailing Glow Aura Halo Dot */
 .cyber-cursor-halo {
   position: fixed;
+  top: 0;
+  left: 0;
   width: 28px;
   height: 28px;
-  background: rgba(255, 85, 0, 0.12);
-  border: 1px solid rgba(255, 85, 0, 0.4);
+  margin-top: -14px;
+  margin-left: -14px;
+  background: rgba(255, 85, 0, 0.15);
+  border: 1px solid rgba(255, 85, 0, 0.5);
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.22s ease, height 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
-  box-shadow: 0 0 16px rgba(255, 85, 0, 0.2);
+  box-shadow: 0 0 16px rgba(255, 85, 0, 0.25);
   z-index: 999999;
   pointer-events: none;
+  transition: width 0.22s ease, height 0.22s ease, margin 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease, opacity 0.2s ease;
 }
 
 .cyber-cursor-halo.hovered {
   width: 46px;
   height: 46px;
-  background: rgba(0, 240, 255, 0.12);
-  border-color: rgba(0, 240, 255, 0.7);
-  box-shadow: 0 0 24px rgba(0, 240, 255, 0.3);
+  margin-top: -23px;
+  margin-left: -23px;
+  background: rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.8);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.35);
 }
 
 .cyber-cursor-halo.clicked {
   width: 18px;
   height: 18px;
+  margin-top: -9px;
+  margin-left: -9px;
   border-color: #ffffff;
 }
+
 
 /* ==========================================================================
    CYBER SMOOTH TRANSITIONS & MICRO-INTERACTION ANIMATIONS (HIGH PERFORMANCE)
