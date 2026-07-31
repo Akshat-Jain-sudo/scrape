@@ -7,8 +7,8 @@
   --bg-card: #ffffff;
   --border-color: #dddddd;
   --border-focus: #e77600; /* Amazon orange focus */
-  --accent-primary: #f0c14b; /* Amazon button gold */
-  --accent-secondary: #ddb347; /* Amazon button hover gold */
+  --accent-primary: #ff8c00; /* Orange */
+  --accent-secondary: #e67e22; /* Darker orange */
   --accent-glow: rgba(231, 118, 0, 0.08);
   --accent-blue: #007185; /* Amazon link teal */
   --accent-blue-glow: rgba(0, 113, 133, 0.1);

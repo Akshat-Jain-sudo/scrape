@@ -1565,15 +1565,24 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
       ];
     } else {
       // General Electronics / Retail / Brand Store defaults
-      const isTech = ['phone', 'mobile', 'samsung', 'apple', 'oneplus', 'hp', 'lenovo', 'lg', 'laptop', 'television', 'tv', 'croma', 'reliance', 'vijay', 'headphone', 'earphone', 'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase'].some(kw => q.includes(kw));
-      if (isTech) {
-        targetStores = [
-          'amazon', 'flipkart', 'croma', 'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'lg', 'headphones', 'dailyobjects', 'lenskart',
-          'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'boat', 'noise', 'boult',
-          'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'titan', 'fastrack', 'sonata', 'casio', 'fossil',
-          'danielwellington', 'ethoswatches', 'helioswatches', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick',
-          'cleardekho', 'vincentchase'
-        ];
+      // Break down the monolithic "Tech" bucket into specific categories to prevent silly cross-listings (like Lenskart selling iPhones)
+      const qLower = q.toLowerCase();
+      const isEyewear = ['glasses', 'sunglasses', 'spectacles', 'lens', 'rayban', 'vincent chase', 'john jacobs', 'lenskart', 'titan eye'].some(kw => qLower.includes(kw));
+      const isWatch = ['watch', 'smartwatch', 'titan', 'fastrack', 'casio', 'fossil', 'sonata', 'daniel wellington'].some(kw => qLower.includes(kw));
+      const isAudio = ['headphone', 'earphone', 'earbuds', 'airpods', 'speaker', 'boat', 'noise', 'boult', 'mivi', 'jbl', 'sony', 'sennheiser', 'zebronics'].some(kw => qLower.includes(kw));
+      const isAppliance = ['tv', 'television', 'fridge', 'refrigerator', 'washing machine', 'ac', 'air conditioner', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'lg'].some(kw => qLower.includes(kw));
+      const isMobileOrLaptop = ['phone', 'mobile', 'iphone', 'smartphone', 'laptop', 'macbook', 'apple', 'samsung', 'oneplus', 'vivo', 'oppo', 'xiaomi', 'realme', 'dell', 'hp', 'lenovo', 'asus', 'acer'].some(kw => qLower.includes(kw));
+      
+      if (isEyewear) {
+        targetStores = ['lenskart', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase', 'amazon', 'flipkart'];
+      } else if (isWatch) {
+        targetStores = ['titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 'ethoswatches', 'helioswatches', 'amazon', 'flipkart', 'myntra', 'tatacliq'];
+      } else if (isAudio) {
+        targetStores = ['boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'sony', 'croma', 'reliance', 'vijaysales', 'amazon', 'flipkart', 'headphones'];
+      } else if (isAppliance) {
+        targetStores = ['croma', 'reliance', 'vijaysales', 'amazon', 'flipkart', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'lg', 'samsung', 'flipkart', 'amazon'];
+      } else if (isMobileOrLaptop) {
+        targetStores = ['croma', 'reliance', 'vijaysales', 'amazon', 'flipkart', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'dell', 'asus', 'acer', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola'];
       } else {
         targetStores = [
           'amazon', 'flipkart', 'snapdeal', 'jiomart', 'tatacliq', 'walmart', 'vishalmegamart', 'shopclues', 'etsy',
