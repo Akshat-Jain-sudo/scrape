@@ -27,6 +27,11 @@ function InsightHub({ savedProducts }) {
   const [loading, setLoading] = useState(true);
   const [filterProduct, setFilterProduct] = useState('');
   const [filterPlatform, setFilterPlatform] = useState('all');
+  
+  // Product History State
+  const [selectedHistoryProductId, setSelectedHistoryProductId] = useState('');
+  const [productHistory, setProductHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -54,6 +59,28 @@ function InsightHub({ savedProducts }) {
 
     return () => clearTimeout(delayDebounceFn);
   }, [savedProducts, filterProduct, filterPlatform]);
+
+  const handleSelectHistoryProduct = async (productId) => {
+    setSelectedHistoryProductId(productId);
+    if (!productId) {
+      setProductHistory([]);
+      return;
+    }
+    
+    setLoadingHistory(true);
+    try {
+      const response = await fetch(`/api/products/${productId}/history`);
+      if (response.ok) {
+        const data = await response.json();
+        // Sort by date ascending if not already
+        setProductHistory(data);
+      }
+    } catch (error) {
+      console.error('Error fetching product history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -387,6 +414,81 @@ function InsightHub({ savedProducts }) {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* Product Price History Section */}
+      {totalProducts > 0 && (
+        <div className="glass-card insights-card-wide" style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
+          <h3 className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            Product Price History (Last 6 Months)
+            <TrendingUp size={18} style={{ color: 'var(--accent-primary)' }} />
+          </h3>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <select 
+              value={selectedHistoryProductId}
+              onChange={(e) => handleSelectHistoryProduct(e.target.value)}
+              style={{ 
+                width: '100%', 
+                background: 'var(--bg-secondary)', 
+                border: '1px solid var(--border-color)', 
+                borderRadius: '8px', 
+                padding: '0.75rem 1rem', 
+                color: 'var(--text-primary)',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">-- Select a saved product to view its price trend --</option>
+              {savedProducts && savedProducts.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.store}) - ₹{p.price}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {loadingHistory ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div className="pulse-spinner" style={{ margin: '0 auto' }}></div>
+            </div>
+          ) : productHistory.length > 0 ? (
+            <div className="price-history-chart" style={{ height: '240px', display: 'flex', alignItems: 'flex-end', gap: '8px', paddingTop: '20px', paddingBottom: '10px' }}>
+              {productHistory.map((pt, i) => {
+                const prices = productHistory.map(p => p.price);
+                const maxPrice = Math.max(...prices);
+                const minPrice = Math.min(...prices);
+                const range = maxPrice - minPrice || maxPrice;
+                const heightPct = 15 + ((pt.price - minPrice) / range) * 85;
+                
+                return (
+                  <div key={i} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>₹{pt.price.toLocaleString('en-IN')}</div>
+                    <div style={{ 
+                      width: '100%', 
+                      maxWidth: '40px',
+                      height: `${heightPct}%`, 
+                      background: 'linear-gradient(to top, var(--accent-primary-dim), var(--accent-primary))',
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.5s ease'
+                    }} title={`₹${pt.price.toLocaleString('en-IN')} on ${pt.date}`}></div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                      {pt.date}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : selectedHistoryProductId ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Historical data is being collected. Check back soon for the price trend!
+            </div>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              Select a product from the dropdown above to visualize its price history.
+            </div>
+          )}
         </div>
       )}
     </div>

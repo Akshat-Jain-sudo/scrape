@@ -1030,7 +1030,8 @@ export function getNearbyRestaurants(location, query) {
     isOutletSearch = true;
   }
 
-  const numRestaurants = isOutletSearch ? 2 : (q ? 5 : 8);
+  // Increase the number of mock restaurants to simulate a fuller platform
+  const numRestaurants = isOutletSearch ? 4 : (q ? 12 : 24);
   const restaurants = [];
   
   for (let i = 0; i < numRestaurants; i++) {
