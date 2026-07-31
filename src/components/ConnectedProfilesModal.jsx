@@ -103,7 +103,7 @@ export default function ConnectedProfilesModal({ isOpen, onClose, addToast }) {
           {[
             { key: 'memberships', label: 'Memberships', icon: '👑', count: activeMembershipsCount },
             { key: 'cards', label: 'Bank Cards', icon: '💳', count: activeCardsCount },
-            { key: 'wishlists', label: 'Wishlists', icon: '📋' },
+            { key: 'wishlists', label: 'Connections', icon: '🔗' },
             { key: 'dietary', label: 'Dietary', icon: '🥗' },
           ].map(tab => (
             <button
@@ -192,19 +192,19 @@ export default function ConnectedProfilesModal({ isOpen, onClose, addToast }) {
             </div>
           )}
 
-          {/* ── WISHLISTS TAB ── */}
+          {/* ── CONNECTIONS TAB ── */}
           {activeTab === 'wishlists' && (
             <div className="cp-section" style={{ animation: 'fadeIn 0.25s ease-out' }}>
               <p className="cp-section-desc">
-                Paste your public wishlist or saved-items URLs. We'll auto-track prices and alert you on drops.
+                Connect your profiles using their public URLs. This provides a <b style={{color: 'var(--accent-blue)'}}>2x scraping speed boost</b> and simulates accurate <b style={{color: 'var(--accent-primary)'}}>member discounts (10%)</b> on searches.
               </p>
               <div className="cp-wishlist-list">
                 {[
-                  { key: 'amazon', label: 'Amazon Wishlist', placeholder: 'https://www.amazon.in/hz/wishlist/ls/...', icon: '📦' },
-                  { key: 'flipkart', label: 'Flipkart Saved Items', placeholder: 'https://www.flipkart.com/wishlist/...', icon: '⚡' },
-                  { key: 'myntra', label: 'Myntra Wishlist', placeholder: 'https://www.myntra.com/wishlist/...', icon: '👗' },
-                  { key: 'swiggy', label: 'Swiggy Favourites', placeholder: 'Swiggy profile handle or URL', icon: '🍕' },
-                  { key: 'zomato', label: 'Zomato Profile', placeholder: 'Zomato profile handle or URL', icon: '🍽️' },
+                  { key: 'amazon', label: 'Amazon Profile URL', placeholder: 'https://www.amazon.in/hz/wishlist/ls/...', icon: '📦' },
+                  { key: 'flipkart', label: 'Flipkart Profile URL', placeholder: 'https://www.flipkart.com/wishlist/...', icon: '⚡' },
+                  { key: 'myntra', label: 'Myntra Profile URL', placeholder: 'https://www.myntra.com/wishlist/...', icon: '👗' },
+                  { key: 'swiggy', label: 'Swiggy Profile URL', placeholder: 'Swiggy profile link or URL', icon: '🍕' },
+                  { key: 'zomato', label: 'Zomato Profile URL', placeholder: 'Zomato profile link or URL', icon: '🍽️' },
                 ].map(w => (
                   <div key={w.key} className="cp-wishlist-row">
                     <div className="cp-wishlist-label">

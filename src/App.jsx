@@ -28,7 +28,7 @@ import AuthModal from './components/AuthModal';
 import CyberBackgroundCanvas from './components/CyberBackgroundCanvas';
 import CyberCursor from './components/CyberCursor';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
-import ConnectedProfilesModal from './components/ConnectedProfilesModal';
+import UserProfile from './components/UserProfile';
 
 
 function ProductHistoryChart({ productId, currentPrice }) {
@@ -142,7 +142,7 @@ function App() {
   const { session, user, signOut, profile, preferences, loading } = useAuth();
   const { activePerksCount } = useProfile();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [locationError, setLocationError] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [savedProducts, setSavedProducts] = useState([]);
   const [showCharts, setShowCharts] = useState({});
@@ -461,6 +461,15 @@ function App() {
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
                   </svg>
                   <span style={{ marginTop: '8px' }}>Cart</span>
+                </div>
+
+                {/* Profiles & Perks Box */}
+                <div className="amazon-cart-box" onClick={() => setCurrentView('profile')} style={{ minWidth: 'auto', padding: '0 12px' }} title="Connected Profiles & Perks">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span style={{ marginTop: '8px' }}>Profile</span>
                 </div>
 
                 {/* Theme Toggle Button */}
@@ -802,6 +811,10 @@ function App() {
         {currentView === 'insights' && (
           <InsightHub savedProducts={savedProducts} />
         )}
+
+        {currentView === 'profile' && (
+          <UserProfile addToast={addToast} />
+        )}
       </main>
 
       {/* AI Chatbot Widget */}
@@ -809,13 +822,6 @@ function App() {
 
       {/* Auth Signup/Login Modal */}
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} addToast={addToast} />
-
-      {/* Connected Profiles & Perks Modal */}
-      <ConnectedProfilesModal
-        isOpen={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
-        addToast={addToast}
-      />
     </div>
           </>
         )}

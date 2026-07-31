@@ -1496,7 +1496,7 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
 const priceCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-export async function compareProductPrices(query, category = 'ecommerce', location = 'Mumbai', profileUrl = null) {
+export async function compareProductPrices(query, category = 'ecommerce', location = 'Mumbai', profileUrls = []) {
   const cacheKey = `${query}-${category}-${location}`;
   if (priceCache.has(cacheKey)) {
     const cached = priceCache.get(cacheKey);
@@ -1507,10 +1507,10 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
   }
 
   const loc = normalizeLocation(location);
-  console.log(`Comparing "${query}" under category "${category}" in "${loc.full}" in real-time... (profileUrl: ${profileUrl})`);
+  console.log(`Comparing "${query}" under category "${category}" in "${loc.full}" in real-time... (profileUrls: ${profileUrls?.length})`);
   
-  // Simulate 2x faster scraping if profileUrl is provided
-  if (!profileUrl) {
+  // Simulate 2x faster scraping if profileUrls are provided
+  if (!profileUrls || profileUrls.length === 0) {
     await delay(1200, 2500); // Slower simulated scraping
   } else {
     await delay(300, 600);   // Super fast direct-profile scraping
@@ -1679,29 +1679,33 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     });
   }
 
-  // Accuracy Boost: If profileUrl is provided, slightly reduce prices for the matched store to simulate accurate member discounts
-  if (profileUrl) {
-    let matchedStore = null;
-    const urlLower = profileUrl.toLowerCase();
-    if (urlLower.includes('zomato')) matchedStore = 'zomato';
-    else if (urlLower.includes('swiggy')) matchedStore = 'swiggy';
-    else if (urlLower.includes('amazon')) matchedStore = 'amazon';
-    else if (urlLower.includes('flipkart')) matchedStore = 'flipkart';
+  // Accuracy Boost: If profileUrls are provided, slightly reduce prices for the matched store to simulate accurate member discounts
+  if (profileUrls && profileUrls.length > 0) {
+    let matchedStores = new Set();
+    profileUrls.forEach(url => {
+      const urlLower = url.toLowerCase();
+      if (urlLower.includes('zomato')) matchedStores.add('zomato');
+      if (urlLower.includes('swiggy')) matchedStores.add('swiggy');
+      if (urlLower.includes('amazon')) matchedStores.add('amazon');
+      if (urlLower.includes('flipkart')) matchedStores.add('flipkart');
+    });
     
-    if (matchedStore && comparisonData.comparison[matchedStore]) {
-      const storeData = comparisonData.comparison[matchedStore];
-      const applyDiscount = (item) => {
-        item.price = Math.floor(item.price * 0.9); // 10% exact member discount
-        item.priceFormatted = `₹${item.price.toLocaleString('en-IN')}`;
-        item.sourceMode = 'live-profile'; // indicate highly accurate mode
-      };
-      
-      if (Array.isArray(storeData)) {
-        storeData.forEach(applyDiscount);
-      } else {
-        applyDiscount(storeData);
+    matchedStores.forEach(matchedStore => {
+      if (comparisonData.comparison[matchedStore]) {
+        const storeData = comparisonData.comparison[matchedStore];
+        const applyDiscount = (item) => {
+          item.price = Math.floor(item.price * 0.9); // 10% exact member discount
+          item.priceFormatted = `₹${item.price.toLocaleString('en-IN')}`;
+          item.sourceMode = 'live-profile'; // indicate highly accurate mode
+        };
+        
+        if (Array.isArray(storeData)) {
+          storeData.forEach(applyDiscount);
+        } else {
+          applyDiscount(storeData);
+        }
       }
-    }
+    });
   }
 
   // Identify cheapest platform

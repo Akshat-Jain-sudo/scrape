@@ -499,13 +499,13 @@ app.get('/api/trending', (req, res) => {
 
 // ── POST /api/compare — Compare product prices across stores ──
 app.post('/api/compare', async (req, res) => {
-  const { query, category = 'electronics', location = 'Mumbai', profileUrl } = req.body;
+  const { query, category = 'electronics', location = 'Mumbai', profileUrls } = req.body;
   if (!query) {
     return res.status(400).json({ error: 'Search query is required' });
   }
 
   try {
-    const comparison = await compareProductPrices(query.trim(), category, location, profileUrl);
+    const comparison = await compareProductPrices(query.trim(), category, location, profileUrls);
     res.json(comparison);
   } catch (error) {
     console.error('Comparison error:', error);
