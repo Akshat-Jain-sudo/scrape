@@ -55,6 +55,15 @@ export async function initNeonDb() {
       );
     `);
 
+    // Add new columns if they don't exist
+    await db.query(`
+      ALTER TABLE user_preferences
+      ADD COLUMN IF NOT EXISTS memberships JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS bank_cards JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS wishlist_urls JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS dietary_preference TEXT DEFAULT 'any';
+    `);
+
     console.log('✅ Neon DB tables initialized successfully');
   } catch (err) {
     console.error('❌ Neon DB initialization failed:', err.message);
@@ -138,13 +147,21 @@ export async function getNeonUserProfile(userId) {
   const db = getNeonPool();
   const result = await db.query(
     `SELECT u.id, u.email, u.full_name, u.created_at,
-            p.theme, p.notifications_enabled
+            p.theme, p.notifications_enabled,
+            p.memberships, p.bank_cards, p.wishlist_urls, p.dietary_preference
      FROM users u
      LEFT JOIN user_preferences p ON p.user_id = u.id
      WHERE u.id = $1`,
     [userId]
   );
-  return result.rows[0] || null;
+  if (!result.rows[0]) return null;
+  const row = result.rows[0];
+  return {
+    ...row,
+    bankCards: row.bank_cards || [],
+    wishlistUrls: row.wishlist_urls || {},
+    dietaryPreference: row.dietary_preference || 'any'
+  };
 }
 
 export async function updateNeonUserProfile(userId, updates) {
@@ -158,8 +175,15 @@ export async function updateNeonUserProfile(userId, updates) {
     );
   }
 
-  // Update preferences if theme or notifications are provided
-  if (updates.theme !== undefined || updates.notifications_enabled !== undefined) {
+  // Update preferences if any preference fields are provided
+  if (
+    updates.theme !== undefined || 
+    updates.notifications_enabled !== undefined ||
+    updates.memberships !== undefined ||
+    updates.bankCards !== undefined ||
+    updates.wishlistUrls !== undefined ||
+    updates.dietaryPreference !== undefined
+  ) {
     const fields = [];
     const values = [];
     let idx = 1;
@@ -171,6 +195,22 @@ export async function updateNeonUserProfile(userId, updates) {
     if (updates.notifications_enabled !== undefined) {
       fields.push(`notifications_enabled = $${idx++}`);
       values.push(updates.notifications_enabled);
+    }
+    if (updates.memberships !== undefined) {
+      fields.push(`memberships = $${idx++}`);
+      values.push(JSON.stringify(updates.memberships));
+    }
+    if (updates.bankCards !== undefined) {
+      fields.push(`bank_cards = $${idx++}`);
+      values.push(JSON.stringify(updates.bankCards));
+    }
+    if (updates.wishlistUrls !== undefined) {
+      fields.push(`wishlist_urls = $${idx++}`);
+      values.push(JSON.stringify(updates.wishlistUrls));
+    }
+    if (updates.dietaryPreference !== undefined) {
+      fields.push(`dietary_preference = $${idx++}`);
+      values.push(updates.dietaryPreference);
     }
 
     fields.push(`updated_at = NOW()`);

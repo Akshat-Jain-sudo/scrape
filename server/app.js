@@ -36,9 +36,7 @@ import {
   saveFeedback,
   getFeedback,
   saveChatMessage,
-  getChatHistory,
-  saveUserProfile,
-  getUserProfile
+  getChatHistory
 } from './db.js';
 import { generateResponse } from './chatbot.js';
 import { startPriceHistoryScheduler } from './cron.js';
@@ -173,9 +171,9 @@ app.put('/api/auth/profile', async (req, res) => {
 });
 
 // ── GET /api/user/profile — Get user's connected store profiles & membership perks ──
-app.get('/api/user/profile', (req, res) => {
+app.get('/api/user/profile', async (req, res) => {
   try {
-    const profile = getUserProfile(req.userId);
+    const profile = await getNeonUserProfile(req.userId);
     res.json(profile || {
       userId: req.userId,
       pincode: '',
@@ -199,10 +197,10 @@ app.get('/api/user/profile', (req, res) => {
 });
 
 // ── POST /api/user/profile — Save/update user's connected store profiles & membership perks ──
-app.post('/api/user/profile', (req, res) => {
+app.post('/api/user/profile', async (req, res) => {
   const { pincode, lat, lng, memberships, bankCards, wishlistUrls, dietaryPreference } = req.body;
   try {
-    saveUserProfile(req.userId, {
+    await updateNeonUserProfile(req.userId, {
       pincode: pincode || '',
       lat: lat || null,
       lng: lng || null,
@@ -211,7 +209,7 @@ app.post('/api/user/profile', (req, res) => {
       wishlistUrls: wishlistUrls || {},
       dietaryPreference: dietaryPreference || 'any'
     });
-    const updated = getUserProfile(req.userId);
+    const updated = await getNeonUserProfile(req.userId);
     res.json({ success: true, profile: updated });
   } catch (err) {
     console.error('Error saving user profile:', err);
