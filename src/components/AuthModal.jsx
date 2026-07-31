@@ -1,48 +1,72 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Mail, Lock, AlertCircle } from 'lucide-react';
+import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, addToast }) {
-  const { sendOtp, verifyOtp } = useAuth();
+  const { signup, login } = useAuth();
+  const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSendOtp = async (e) => {
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setFullName('');
+    setError('');
+  };
+
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    resetForm();
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      await sendOtp(email);
-      setOtpSent(true);
-      addToast('OTP sent to your email!', 'success');
+      await login(email, password);
+      addToast?.('Logged in successfully! 🎉', 'success');
+      onClose();
     } catch (err) {
       console.error(err);
-      setError(err.message || 'An error occurred while sending OTP.');
-      addToast(err.message || 'Failed to send OTP', 'error');
+      setError(err.message || 'Login failed.');
+      addToast?.(err.message || 'Login failed', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await verifyOtp(email, otp);
-      addToast('Logged in successfully!', 'success');
+      await signup(email, password, fullName);
+      addToast?.('Account created & logged in! 🎉', 'success');
       onClose();
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Invalid OTP.');
-      addToast(err.message || 'Authentication failed', 'error');
+      setError(err.message || 'Signup failed.');
+      addToast?.(err.message || 'Failed to create account', 'error');
     } finally {
       setLoading(false);
     }
@@ -58,8 +82,29 @@ export default function AuthModal({ isOpen, onClose, addToast }) {
         </button>
 
         <div className="auth-modal-header">
-          <h2>{otpSent ? '🔑 Enter OTP' : '🚀 Sign In / Sign Up'}</h2>
-          <p>{otpSent ? 'Please enter the one-time password sent to your email.' : 'Enter your email to receive a one-time password.'}</p>
+          <h2>{mode === 'login' ? '🔑 Welcome Back' : '🚀 Create Account'}</h2>
+          <p>{mode === 'login' 
+            ? 'Sign in with your email and password.' 
+            : 'Create a new account to save your preferences.'
+          }</p>
+        </div>
+
+        {/* Mode Tabs */}
+        <div className="auth-mode-tabs">
+          <button 
+            className={`auth-mode-tab ${mode === 'login' ? 'active' : ''}`}
+            onClick={() => switchMode('login')}
+            type="button"
+          >
+            Login
+          </button>
+          <button 
+            className={`auth-mode-tab ${mode === 'signup' ? 'active' : ''}`}
+            onClick={() => switchMode('signup')}
+            type="button"
+          >
+            Sign Up
+          </button>
         </div>
 
         {error && (
@@ -69,45 +114,36 @@ export default function AuthModal({ isOpen, onClose, addToast }) {
           </div>
         )}
 
-        {!otpSent ? (
-          <form onSubmit={handleSendOtp} className="auth-form">
+        {mode === 'login' ? (
+          <form onSubmit={handleLogin} className="auth-form">
             <div className="auth-input-group">
-              <label htmlFor="email">Email Address</label>
+              <label htmlFor="login-email">Email Address</label>
               <div className="auth-input-wrapper">
                 <Mail size={16} className="auth-input-icon" />
                 <input
-                  id="email"
+                  id="login-email"
                   type="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
-              {loading ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                  <span className="pulse-spinner" style={{ width: '14px', height: '14px' }}></span>
-                  Processing...
-                </div>
-              ) : 'Send OTP'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} className="auth-form">
             <div className="auth-input-group">
-              <label htmlFor="otp">One-Time Password</label>
+              <label htmlFor="login-password">Password</label>
               <div className="auth-input-wrapper">
                 <Lock size={16} className="auth-input-icon" />
                 <input
-                  id="otp"
-                  type="text"
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  id="login-password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -116,22 +152,105 @@ export default function AuthModal({ isOpen, onClose, addToast }) {
               {loading ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                   <span className="pulse-spinner" style={{ width: '14px', height: '14px' }}></span>
-                  Verifying...
+                  Signing in...
                 </div>
-              ) : 'Verify & Login'}
+              ) : 'Login'}
             </button>
+
             <div className="auth-modal-footer">
-              <span>Didn't receive the email?</span>
+              <span>Don't have an account?</span>
               <button 
                 type="button" 
                 className="auth-switch-btn"
-                onClick={() => {
-                  setOtpSent(false);
-                  setOtp('');
-                  setError('');
-                }}
+                onClick={() => switchMode('signup')}
               >
-                Try again
+                Sign Up
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleSignup} className="auth-form">
+            <div className="auth-input-group">
+              <label htmlFor="signup-name">Full Name</label>
+              <div className="auth-input-wrapper">
+                <User size={16} className="auth-input-icon" />
+                <input
+                  id="signup-name"
+                  type="text"
+                  placeholder="Your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                />
+              </div>
+            </div>
+
+            <div className="auth-input-group">
+              <label htmlFor="signup-email">Email Address</label>
+              <div className="auth-input-wrapper">
+                <Mail size={16} className="auth-input-icon" />
+                <input
+                  id="signup-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            <div className="auth-input-group">
+              <label htmlFor="signup-password">Password</label>
+              <div className="auth-input-wrapper">
+                <Lock size={16} className="auth-input-icon" />
+                <input
+                  id="signup-password"
+                  type="password"
+                  placeholder="Min 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+
+            <div className="auth-input-group">
+              <label htmlFor="signup-confirm">Confirm Password</label>
+              <div className="auth-input-wrapper">
+                <Lock size={16} className="auth-input-icon" />
+                <input
+                  id="signup-confirm"
+                  type="password"
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  <span className="pulse-spinner" style={{ width: '14px', height: '14px' }}></span>
+                  Creating account...
+                </div>
+              ) : 'Create Account'}
+            </button>
+
+            <div className="auth-modal-footer">
+              <span>Already have an account?</span>
+              <button 
+                type="button" 
+                className="auth-switch-btn"
+                onClick={() => switchMode('login')}
+              >
+                Login
               </button>
             </div>
           </form>

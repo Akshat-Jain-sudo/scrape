@@ -1,10 +1,20 @@
 import app from './app.js';
 import { runAllHealthChecks } from './scraperHealth.js';
+import { initNeonDb } from './neonDb.js';
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🚀 Symbiote Server running on http://localhost:${PORT}`);
+
+  // Initialize Neon DB (create auth tables)
+  try {
+    await initNeonDb();
+    console.log(`   ✅ Neon DB connected and tables initialized`);
+  } catch (err) {
+    console.error(`   ❌ Neon DB init failed:`, err.message);
+  }
+
   console.log(`   API endpoints:`);
   console.log(`   POST /api/scrape          — Scrape Flipkart products`);
   console.log(`   GET  /api/products        — List saved products`);

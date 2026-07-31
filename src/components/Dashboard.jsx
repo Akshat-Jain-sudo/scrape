@@ -1172,8 +1172,8 @@ function Dashboard({
     }
   };
 
-  const handleSaveComparison = async (products) => {
-    await onSaveProducts(products);
+  const handleSaveComparison = async (products, silent = false) => {
+    await onSaveProducts(products, silent);
   };
 
   const currentTrendingItems = trendingDeals ? trendingDeals[activeCategory] || [] : [];

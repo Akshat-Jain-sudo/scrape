@@ -3288,6 +3288,43 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   text-decoration: underline;
 }
 
+/* Auth Mode Tabs (Login / Sign Up) */
+.auth-mode-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.auth-mode-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-sans);
+}
+
+.auth-mode-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.auth-mode-tab.active {
+  background: var(--accent-primary);
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 153, 0, 0.3);
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    INTERACTIVE ONBOARDING SETUP CARD
    ═══════════════════════════════════════════════════════════════════ */
@@ -4444,5 +4481,585 @@ body.custom-cyber-cursor-active select {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONNECTED PROFILES MODAL — Codolio-Inspired Store Profile & Perks Engine
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Modal Overlay */
+.cp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  padding: 1rem;
+}
 
+/* Modal Card */
+.cp-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 40px rgba(255, 153, 0, 0.08);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal Header */
+.cp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.05), rgba(0, 200, 255, 0.03));
+}
+
+.cp-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cp-modal-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff9900, #ff6600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.cp-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.cp-modal-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+.cp-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+}
+.cp-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* Active Perks Summary */
+.cp-perks-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.6rem 1.5rem;
+  background: linear-gradient(90deg, rgba(255, 153, 0, 0.1), rgba(0, 200, 255, 0.06));
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cp-perks-count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ff9900;
+  background: rgba(255, 153, 0, 0.12);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 153, 0, 0.25);
+}
+
+.cp-perks-detail {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Tab Navigation */
+.cp-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cp-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+}
+
+.cp-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.cp-tab.active {
+  background: rgba(255, 153, 0, 0.12);
+  color: #ff9900;
+  font-weight: 600;
+}
+
+.cp-tab-icon {
+  font-size: 1rem;
+}
+
+.cp-tab-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #ff9900;
+  color: #000;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* Tab Content Area */
+.cp-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  min-height: 200px;
+}
+
+.cp-section-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+/* ── Membership Toggle Cards ── */
+.cp-membership-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.cp-membership-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.cp-membership-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--membership-color, var(--accent-primary));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.cp-membership-card.active {
+  background: linear-gradient(135deg, rgba(var(--membership-color-rgb, 255,153,0), 0.08), rgba(255, 255, 255, 0.02));
+  border-color: var(--membership-color, #ff9900);
+  box-shadow: 0 0 20px rgba(255, 153, 0, 0.1), 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.cp-membership-icon-wrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-membership-emoji {
+  font-size: 1.8rem;
+}
+
+.cp-membership-check {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 2px solid var(--bg-card);
+}
+
+.cp-membership-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.cp-membership-stores {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Toggle Switch */
+.cp-membership-toggle {
+  width: 38px;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: background 0.25s;
+  margin-top: 4px;
+}
+
+.cp-membership-toggle.on {
+  background: #10b981;
+}
+
+.cp-toggle-knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.cp-membership-toggle.on .cp-toggle-knob {
+  transform: translateX(18px);
+}
+
+/* ── Bank Card Pills ── */
+.cp-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cp-bank-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cp-bank-pill:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cp-bank-pill.active {
+  background: rgba(255, 153, 0, 0.12);
+  border-color: #ff9900;
+  color: #ff9900;
+  font-weight: 600;
+}
+
+.cp-bank-icon {
+  font-size: 1rem;
+}
+
+/* ── Wishlist Inputs ── */
+.cp-wishlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cp-wishlist-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cp-wishlist-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cp-wishlist-icon {
+  font-size: 1.1rem;
+}
+
+.cp-wishlist-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: all 0.2s;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cp-wishlist-input:focus {
+  border-color: #ff9900;
+  box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.1);
+}
+
+.cp-wishlist-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* ── Dietary Preference Pills ── */
+.cp-dietary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cp-dietary-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cp-dietary-pill:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.cp-dietary-pill.active {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.cp-dietary-icon {
+  font-size: 1.2rem;
+}
+
+/* ── Modal Footer ── */
+.cp-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.cp-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.cp-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Savings Badges (on product cards in Dashboard) ── */
+.savings-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.savings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.3;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.savings-badge.membership {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.savings-badge.bank {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.savings-total-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.08), rgba(59, 130, 246, 0.06));
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* ── My Perks Header Button ── */
+.my-perks-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.15), rgba(255, 102, 0, 0.1));
+  color: #ff9900;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 153, 0, 0.2);
+}
+
+.my-perks-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.25), rgba(255, 102, 0, 0.15));
+  box-shadow: 0 0 15px rgba(255, 153, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.my-perks-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #ff9900;
+  color: #000;
+  padding: 1px 6px;
+  border-radius: 8px;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ── Effective Price Display ── */
+.effective-price {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.original-price-struck {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  margin-left: 6px;
+}
+
+/* ── Responsive ── */
+@media screen and (max-width: 600px) {
+  .cp-modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 12px 12px 0 0;
+    margin-top: auto;
+  }
+
+  .cp-membership-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .cp-membership-card {
+    padding: 12px 8px;
+  }
+
+  .cp-tabs {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .cp-tab {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .cp-tab-content {
+    padding: 0.75rem 1rem;
+  }
+}

@@ -100,7 +100,67 @@ export function initDb() {
     db.exec("ALTER TABLE chat_messages ADD COLUMN user_id TEXT DEFAULT 'anonymous'");
   } catch (e) {}
 
+  // Create user_profiles table for connected store profiles & membership perks
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id TEXT PRIMARY KEY,
+      pincode TEXT DEFAULT '',
+      lat REAL,
+      lng REAL,
+      memberships TEXT DEFAULT '{}',
+      bank_cards TEXT DEFAULT '[]',
+      wishlist_urls TEXT DEFAULT '{}',
+      dietary_preference TEXT DEFAULT 'any',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   console.log(`SQLite Database initialized at: ${DB_PATH}`);
+}
+
+// ── USER PROFILES CRUD ──
+
+export function saveUserProfile(userId, profileData) {
+  const stmt = db.prepare(`
+    INSERT INTO user_profiles (user_id, pincode, lat, lng, memberships, bank_cards, wishlist_urls, dietary_preference, updated_at)
+    VALUES (@user_id, @pincode, @lat, @lng, @memberships, @bank_cards, @wishlist_urls, @dietary_preference, CURRENT_TIMESTAMP)
+    ON CONFLICT(user_id) DO UPDATE SET
+      pincode = @pincode,
+      lat = @lat,
+      lng = @lng,
+      memberships = @memberships,
+      bank_cards = @bank_cards,
+      wishlist_urls = @wishlist_urls,
+      dietary_preference = @dietary_preference,
+      updated_at = CURRENT_TIMESTAMP
+  `);
+  stmt.run({
+    user_id: userId,
+    pincode: profileData.pincode || '',
+    lat: profileData.lat || null,
+    lng: profileData.lng || null,
+    memberships: JSON.stringify(profileData.memberships || {}),
+    bank_cards: JSON.stringify(profileData.bankCards || []),
+    wishlist_urls: JSON.stringify(profileData.wishlistUrls || {}),
+    dietary_preference: profileData.dietaryPreference || 'any'
+  });
+}
+
+export function getUserProfile(userId) {
+  const stmt = db.prepare(`SELECT * FROM user_profiles WHERE user_id = ?`);
+  const row = stmt.get(userId);
+  if (!row) return null;
+  return {
+    userId: row.user_id,
+    pincode: row.pincode,
+    lat: row.lat,
+    lng: row.lng,
+    memberships: JSON.parse(row.memberships || '{}'),
+    bankCards: JSON.parse(row.bank_cards || '[]'),
+    wishlistUrls: JSON.parse(row.wishlist_urls || '{}'),
+    dietaryPreference: row.dietary_preference,
+    updatedAt: row.updated_at
+  };
 }
 
 // ── PRODUCTS CRUD ──

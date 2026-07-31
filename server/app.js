@@ -36,11 +36,14 @@ import {
   saveFeedback,
   getFeedback,
   saveChatMessage,
-  getChatHistory
+  getChatHistory,
+  saveUserProfile,
+  getUserProfile
 } from './db.js';
 import { generateResponse } from './chatbot.js';
 import { startPriceHistoryScheduler } from './cron.js';
-import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
+import { initNeonDb, createUser, authenticateUser, findUserById, getNeonUserProfile, updateNeonUserProfile } from './neonDb.js';
 
 import { saveCredentials, listCredentials, getCredentials, deleteCredentials } from './automator/credentialStore.js';
 import { launchOrderSession, confirmOrder, getSupportedStores } from './automator/index.js';
@@ -50,33 +53,31 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-// Initialize Supabase Server Client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-let supabaseServer = null;
+const JWT_SECRET = process.env.JWT_SECRET || 'symbiote-fallback-secret';
 
-if (supabaseUrl && supabaseAnonKey) {
-  try {
-    supabaseServer = createClient(supabaseUrl, supabaseAnonKey);
-  } catch (err) {
-    console.error('Failed to initialize Supabase server client:', err);
-  }
+// Generate JWT token for a user
+function generateToken(user) {
+  return jwt.sign(
+    { userId: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
 }
 
-// User Verification Middleware
+// User Verification Middleware (JWT-based, replaces Supabase)
 async function verifyUser(req, res, next) {
   const authHeader = req.headers.authorization;
   req.userId = 'anonymous'; // default fallback
 
-  if (authHeader && authHeader.startsWith('Bearer ') && supabaseServer) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
-      const { data: { user }, error } = await supabaseServer.auth.getUser(token);
-      if (!error && user) {
-        req.userId = user.id;
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded && decoded.userId) {
+        req.userId = decoded.userId;
       }
     } catch (e) {
-      console.error('Error verifying Supabase user token:', e);
+      // Token expired or invalid — proceed as anonymous
     }
   }
   next();
@@ -89,12 +90,133 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(verifyUser);
 
-// ── GET /api/config/supabase — Public Supabase Config for client ──
-app.get('/api/config/supabase', (req, res) => {
-  res.json({
-    url: process.env.SUPABASE_URL || '',
-    anonKey: process.env.SUPABASE_ANON_KEY || ''
-  });
+// ── POST /api/auth/signup — Register new account ──
+app.post('/api/auth/signup', async (req, res) => {
+  const { email, password, fullName } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    const user = await createUser(email, password, fullName || '');
+    const token = generateToken(user);
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+      }
+    });
+  } catch (err) {
+    console.error('Signup error:', err.message);
+    res.status(400).json({ error: err.message || 'Failed to create account' });
+  }
+});
+
+// ── POST /api/auth/login — Login with email + password ──
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  try {
+    const user = await authenticateUser(email, password);
+    const token = generateToken(user);
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+      }
+    });
+  } catch (err) {
+    console.error('Login error:', err.message);
+    res.status(401).json({ error: err.message || 'Authentication failed' });
+  }
+});
+
+// ── GET /api/auth/me — Get current authenticated user ──
+app.get('/api/auth/me', async (req, res) => {
+  if (req.userId === 'anonymous') {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  try {
+    const profile = await getNeonUserProfile(req.userId);
+    if (!profile) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ user: profile });
+  } catch (err) {
+    console.error('Auth me error:', err);
+    res.status(500).json({ error: 'Failed to fetch user data' });
+  }
+});
+
+// ── PUT /api/auth/profile — Update user profile ──
+app.put('/api/auth/profile', async (req, res) => {
+  if (req.userId === 'anonymous') {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  try {
+    const updated = await updateNeonUserProfile(req.userId, req.body);
+    res.json({ user: updated });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// ── GET /api/user/profile — Get user's connected store profiles & membership perks ──
+app.get('/api/user/profile', (req, res) => {
+  try {
+    const profile = getUserProfile(req.userId);
+    res.json(profile || {
+      userId: req.userId,
+      pincode: '',
+      lat: null,
+      lng: null,
+      memberships: {
+        amazonPrime: false,
+        flipkartPlus: false,
+        zomatoGold: false,
+        swiggyOne: false,
+        blinkitPass: false
+      },
+      bankCards: [],
+      wishlistUrls: {},
+      dietaryPreference: 'any'
+    });
+  } catch (err) {
+    console.error('Error fetching user profile:', err);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
+// ── POST /api/user/profile — Save/update user's connected store profiles & membership perks ──
+app.post('/api/user/profile', (req, res) => {
+  const { pincode, lat, lng, memberships, bankCards, wishlistUrls, dietaryPreference } = req.body;
+  try {
+    saveUserProfile(req.userId, {
+      pincode: pincode || '',
+      lat: lat || null,
+      lng: lng || null,
+      memberships: memberships || {},
+      bankCards: bankCards || [],
+      wishlistUrls: wishlistUrls || {},
+      dietaryPreference: dietaryPreference || 'any'
+    });
+    const updated = getUserProfile(req.userId);
+    res.json({ success: true, profile: updated });
+  } catch (err) {
+    console.error('Error saving user profile:', err);
+    res.status(500).json({ error: 'Failed to save user profile' });
+  }
 });
 
 // ── GET /api/location/autocomplete — Search address suggestions via Google Places or OSM ──

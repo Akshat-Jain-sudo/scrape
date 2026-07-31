@@ -2223,3 +2223,122 @@ export async function compareCabFares(pickup, drop, city = 'Mumbai') {
     }
   };
 }
+
+// ── Profile-Aware Discount Engine ──
+// Takes raw scraped product results and a user profile, returns adjusted prices
+// with membership free delivery, bank card instant discounts, and savings breakdown.
+
+// Membership → Store mapping for free delivery eligibility
+const MEMBERSHIP_DELIVERY_RULES = {
+  amazonPrime: { stores: ['amazon', 'amazonfresh'], freeDelivery: true, discountPct: 0 },
+  flipkartPlus: { stores: ['flipkart', 'fkminutes', 'shopsy'], freeDelivery: true, discountPct: 0 },
+  zomatoGold: { stores: ['zomato'], freeDelivery: true, discountPct: 15 },
+  swiggyOne: { stores: ['swiggy', 'instamart'], freeDelivery: true, discountPct: 10 },
+  blinkitPass: { stores: ['blinkit'], freeDelivery: true, discountPct: 0 }
+};
+
+// Bank card offers: { bankKey: { discountPct, maxDiscount, applicableStores (null = all) } }
+const BANK_CARD_OFFERS = {
+  'HDFC': { discountPct: 10, maxDiscount: 1500, applicableStores: null },
+  'ICICI': { discountPct: 10, maxDiscount: 1250, applicableStores: null },
+  'SBI': { discountPct: 7.5, maxDiscount: 750, applicableStores: null },
+  'Axis': { discountPct: 5, maxDiscount: 500, applicableStores: ['flipkart', 'myntra', 'ajio'] },
+  'Kotak': { discountPct: 5, maxDiscount: 500, applicableStores: ['amazon'] },
+  'RBL': { discountPct: 5, maxDiscount: 300, applicableStores: ['swiggy', 'zomato'] },
+  'AMEX': { discountPct: 10, maxDiscount: 1000, applicableStores: ['amazon', 'flipkart'] },
+  'Citi': { discountPct: 7.5, maxDiscount: 1000, applicableStores: null },
+  'YES': { discountPct: 5, maxDiscount: 400, applicableStores: null },
+  'IDFC': { discountPct: 5, maxDiscount: 500, applicableStores: null },
+  'IndusInd': { discountPct: 5, maxDiscount: 400, applicableStores: null },
+  'BOB': { discountPct: 5, maxDiscount: 300, applicableStores: null },
+  'Federal': { discountPct: 5, maxDiscount: 300, applicableStores: null },
+  'AU': { discountPct: 5, maxDiscount: 300, applicableStores: null }
+};
+
+export function applyProfileDiscounts(products, userProfile) {
+  if (!userProfile || !products || products.length === 0) {
+    return products.map(p => ({ ...p, effectivePrice: p.price, savingsBadges: [], totalSaved: 0 }));
+  }
+
+  const memberships = userProfile.memberships || {};
+  const bankCards = userProfile.bankCards || [];
+
+  return products.map(product => {
+    const store = (product.source || product.store || '').toLowerCase();
+    let effectivePrice = product.price || 0;
+    let deliveryFee = product.deliveryFee || 0;
+    const savingsBadges = [];
+    let totalSaved = 0;
+
+    // 1. Apply membership benefits (free delivery + store-specific discount)
+    for (const [membershipKey, rules] of Object.entries(MEMBERSHIP_DELIVERY_RULES)) {
+      if (memberships[membershipKey] && rules.stores.includes(store)) {
+        // Free delivery
+        if (rules.freeDelivery && deliveryFee > 0) {
+          const saved = deliveryFee;
+          deliveryFee = 0;
+          totalSaved += saved;
+          savingsBadges.push({
+            type: 'membership',
+            label: `Free Delivery (${membershipKey.replace(/([A-Z])/g, ' $1').trim()})`,
+            saved,
+            icon: '🚀'
+          });
+        }
+        // Membership % discount on item price
+        if (rules.discountPct > 0) {
+          const discount = Math.round(effectivePrice * rules.discountPct / 100);
+          effectivePrice -= discount;
+          totalSaved += discount;
+          savingsBadges.push({
+            type: 'membership',
+            label: `${rules.discountPct}% Off (${membershipKey.replace(/([A-Z])/g, ' $1').trim()})`,
+            saved: discount,
+            icon: '👑'
+          });
+        }
+      }
+    }
+
+    // 2. Apply best bank card offer (only the best single card, not stacking)
+    let bestBankSaving = 0;
+    let bestBankLabel = '';
+
+    for (const cardName of bankCards) {
+      const offer = BANK_CARD_OFFERS[cardName];
+      if (!offer) continue;
+
+      // Check if store is eligible
+      if (offer.applicableStores && !offer.applicableStores.includes(store)) continue;
+
+      const rawDiscount = Math.round(effectivePrice * offer.discountPct / 100);
+      const cappedDiscount = Math.min(rawDiscount, offer.maxDiscount);
+
+      if (cappedDiscount > bestBankSaving) {
+        bestBankSaving = cappedDiscount;
+        bestBankLabel = `${offer.discountPct}% Off (${cardName} Card, max ₹${offer.maxDiscount})`;
+      }
+    }
+
+    if (bestBankSaving > 0) {
+      effectivePrice -= bestBankSaving;
+      totalSaved += bestBankSaving;
+      savingsBadges.push({
+        type: 'bank',
+        label: bestBankLabel,
+        saved: bestBankSaving,
+        icon: '💳'
+      });
+    }
+
+    return {
+      ...product,
+      effectivePrice: Math.max(0, effectivePrice + deliveryFee),
+      effectivePriceFormatted: `₹${Math.max(0, effectivePrice + deliveryFee).toLocaleString('en-IN')}`,
+      deliveryFee,
+      savingsBadges,
+      totalSaved,
+      totalSavedFormatted: totalSaved > 0 ? `₹${totalSaved.toLocaleString('en-IN')}` : null
+    };
+  });
+}

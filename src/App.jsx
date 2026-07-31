@@ -27,6 +27,8 @@ import { useAuth } from './context/AuthContext';
 import AuthModal from './components/AuthModal';
 import CyberBackgroundCanvas from './components/CyberBackgroundCanvas';
 import CyberCursor from './components/CyberCursor';
+import { ProfileProvider, useProfile } from './context/ProfileContext';
+import ConnectedProfilesModal from './components/ConnectedProfilesModal';
 
 
 function ProductHistoryChart({ productId, currentPrice }) {
@@ -137,8 +139,10 @@ const LiveClock = React.memo(function LiveClock() {
 });
 
 function App() {
-  const { session, user, signOut, profile, preferences } = useAuth();
+  const { session, user, signOut, profile, preferences, loading } = useAuth();
+  const { activePerksCount } = useProfile();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [savedProducts, setSavedProducts] = useState([]);
   const [showCharts, setShowCharts] = useState({});
@@ -149,6 +153,13 @@ function App() {
   const [scraperHealth, setScraperHealth] = useState(null);
   const [headerSearchVal, setHeaderSearchVal] = useState('');
   const [cartCount, setCartCount] = useState(0);
+
+  // Automatically open auth modal for new / unauthenticated users
+  useEffect(() => {
+    if (!loading && !user) {
+      setAuthModalOpen(true);
+    }
+  }, [loading, user]);
 
   // Sync Cart count from localStorage
   useEffect(() => {
@@ -444,9 +455,6 @@ function App() {
 
                 {/* Cart Box */}
                 <div className="amazon-cart-box" onClick={() => setCurrentView('cart')}>
-                  <span className="amazon-cart-count">
-                    {cartCount}
-                  </span>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', marginLeft: '6px' }}>
                     <circle cx="9" cy="21" r="1"/>
                     <circle cx="20" cy="21" r="1"/>
@@ -517,6 +525,18 @@ function App() {
                 </div>
 
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: '#ccc' }}>
+                  {/* My Perks Button */}
+                  <button
+                    className="my-perks-btn"
+                    onClick={() => setProfileModalOpen(true)}
+                    title="Connected Profiles & Membership Perks"
+                  >
+                    👑 My Perks
+                    {activePerksCount > 0 && (
+                      <span className="my-perks-badge">{activePerksCount}</span>
+                    )}
+                  </button>
+                  <span>|</span>
                   <span>Live clock: <LiveClock /></span>
                   <span>|</span>
                   {(() => {
@@ -789,6 +809,13 @@ function App() {
 
       {/* Auth Signup/Login Modal */}
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} addToast={addToast} />
+
+      {/* Connected Profiles & Perks Modal */}
+      <ConnectedProfilesModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        addToast={addToast}
+      />
     </div>
           </>
         )}
@@ -797,4 +824,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWithProviders() {
+  return (
+    <ProfileProvider>
+      <App />
+    </ProfileProvider>
+  );
+}
+
+export default AppWithProviders;
