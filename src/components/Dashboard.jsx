@@ -980,6 +980,7 @@ function Dashboard({
 
   const [selectedSources, setSelectedSources] = useState(['amazon', 'flipkart', 'snapdeal', 'myntra', 'ajio']);
   const [storeSearch, setStoreSearch] = useState('');
+  const [profileUrl, setProfileUrl] = useState('');
 
   // Sync selectedSources with category
   useEffect(() => {
@@ -1101,7 +1102,7 @@ function Dashboard({
         const response = await fetch('/api/compare', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: transcript.trim(), category: activeCategory, location })
+          body: JSON.stringify({ query: transcript.trim(), category: activeCategory, location, profileUrl: profileUrl.trim() || undefined })
         });
 
         if (response.ok) {
@@ -1154,7 +1155,7 @@ function Dashboard({
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery.trim(), category: activeCategory, location })
+        body: JSON.stringify({ query: searchQuery.trim(), category: activeCategory, location, profileUrl: profileUrl.trim() || undefined })
       });
 
       if (response.ok) {
@@ -1377,6 +1378,19 @@ function Dashboard({
           {activeCategory === 'quickcommerce' && <strong>Blinkit, Zepto, Swiggy Instamart, BigBasket Now, Flipkart Minutes, Amazon Fresh, JioMart Express, BB Daily, Dunzo, Country Delight</strong>}
           {activeCategory === 'food' && <strong>Zomato, Swiggy</strong>}
         </p>
+        
+        <div className="profile-url-prompt" style={{ marginBottom: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--accent-blue)', borderRadius: '8px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <label style={{ fontSize: '0.85rem', color: 'var(--accent-blue)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Zap size={14} /> Connect Profile URL for 2x Faster & Accurate Scraping
+          </label>
+          <input 
+            type="text" 
+            placeholder="e.g. Zomato / Swiggy / Amazon profile URL..." 
+            value={profileUrl}
+            onChange={(e) => setProfileUrl(e.target.value)}
+            style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', fontSize: '0.9rem' }}
+          />
+        </div>
         
         <div className="search-box">
           <input 
