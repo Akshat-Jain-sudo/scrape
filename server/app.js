@@ -51,7 +51,15 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'symbiote-fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET environment variable is missing.');
+  process.exit(1);
+}
+if (process.env.NODE_ENV === 'production' && (JWT_SECRET === 'symbiote-jwt-secret-key-2024-change-in-prod' || JWT_SECRET === 'symbiote-fallback-secret')) {
+  console.error('FATAL ERROR: A weak JWT_SECRET is configured in a production environment.');
+  process.exit(1);
+}
 
 // Generate JWT token for a user
 function generateToken(user) {
@@ -65,26 +73,77 @@ function generateToken(user) {
 // User Verification Middleware (JWT-based, replaces Supabase)
 async function verifyUser(req, res, next) {
   const authHeader = req.headers.authorization;
+  const anonHeader = req.headers['x-anonymous-session'];
   req.userId = 'anonymous'; // default fallback
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
+    
+    // Ignore stringified placeholders from frontend
+    if (!token || token === 'null' || token === 'undefined') {
+      req.userId = 'anonymous';
+      return next();
+    }
+
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       if (decoded && decoded.userId) {
         req.userId = decoded.userId;
+      } else {
+        return res.status(401).json({ error: 'Invalid authentication token payload' });
       }
     } catch (e) {
-      // Token expired or invalid — proceed as anonymous
+      return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
+  } else if (anonHeader) {
+    // Validate format of X-Anonymous-Session to prevent injection
+    const ANON_REGEX = /^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (ANON_REGEX.test(anonHeader)) {
+      req.userId = anonHeader;
+    }
+  }
+  next();
+}
+
+// Middleware to ensure user is authenticated (not anonymous)
+function requireAuth(req, res, next) {
+  if (req.userId === 'anonymous' || req.userId.startsWith('anon-')) {
+    return res.status(401).json({ error: 'Authentication required' });
   }
   next();
 }
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Configure CORS: restrict in production, preserve local development
+app.use(cors((req, callback) => {
+  const origin = req.header('Origin');
+  const host = req.header('Host');
+  const proto = req.connection.encrypted ? 'https' : 'http';
+  const sameOrigin = origin === `${proto}://${host}`;
+  
+  let corsOptions = { origin: false, credentials: true };
+  
+  const isLocal = origin && (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'));
+  const isExtension = origin && origin.startsWith('chrome-extension://');
+  const isProdFrontend = process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL;
+  
+  if (process.env.NODE_ENV === 'production') {
+    if (sameOrigin || isProdFrontend || isExtension) {
+      corsOptions.origin = true;
+    }
+  } else {
+    // In development, allow localhost, extension, and sameOrigin
+    if (!origin || sameOrigin || isLocal || isExtension) {
+      corsOptions.origin = true;
+    } else {
+      corsOptions.origin = true; // Allow all other origins in development for simplicity
+    }
+  }
+  
+  callback(null, corsOptions);
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(verifyUser);
 
@@ -197,7 +256,7 @@ app.get('/api/user/profile', async (req, res) => {
 });
 
 // ── POST /api/user/profile — Save/update user's connected store profiles & membership perks ──
-app.post('/api/user/profile', async (req, res) => {
+app.post('/api/user/profile', requireAuth, async (req, res) => {
   const { pincode, lat, lng, memberships, bankCards, wishlistUrls, dietaryPreference } = req.body;
   try {
     await updateNeonUserProfile(req.userId, {
@@ -436,9 +495,9 @@ try {
 
 // -- GET /api/food/restaurants --
 app.get('/api/food/restaurants', (req, res) => {
-  const { lat, lng, city, locality, query } = req.query;
+  const { lat, lng, city, locality, query, mode } = req.query;
   const location = { lat: parseFloat(lat), lng: parseFloat(lng), city, locality };
-  const restaurants = getNearbyRestaurants(location, query);
+  const restaurants = getNearbyRestaurants(location, query, mode);
   res.json(restaurants);
 });
 
@@ -915,7 +974,7 @@ app.post('/api/scrape', async (req, res) => {
 // ── GET /api/products — Get all saved products ──
 app.get('/api/products', async (req, res) => {
   try {
-    const products = getProducts(req.userId);
+    const products = await getProducts(req.userId);
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -937,7 +996,7 @@ app.post('/api/products', async (req, res) => {
       id: p.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }));
 
-    saveProducts(preparedProducts, req.userId);
+    await saveProducts(preparedProducts, req.userId);
     
     res.status(201).json({ 
       message: `Saved ${preparedProducts.length} products to database`,
@@ -968,7 +1027,7 @@ app.post('/api/extension/sync', async (req, res) => {
       category: 'extension',
     };
 
-    saveProducts([preparedProduct], req.userId);
+    await saveProducts([preparedProduct], req.userId);
 
     res.json({
       success: true,
@@ -985,7 +1044,7 @@ app.post('/api/extension/sync', async (req, res) => {
 app.get('/api/products/:id/history', async (req, res) => {
   const { id } = req.params;
   try {
-    const history = getProductHistory(id);
+    const history = await getProductHistory(id);
     res.json(history);
   } catch (error) {
     console.error('Error fetching history:', error);
@@ -999,7 +1058,7 @@ app.put('/api/products/:id/alert', async (req, res) => {
   const { targetPrice } = req.body;
 
   try {
-    updateTargetPrice(id, targetPrice ? parseFloat(targetPrice) : null, req.userId);
+    await updateTargetPrice(id, targetPrice ? parseFloat(targetPrice) : null, req.userId);
     res.json({ message: 'Target price updated successfully', targetPrice });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update alert' });
@@ -1010,7 +1069,7 @@ app.put('/api/products/:id/alert', async (req, res) => {
 app.delete('/api/products/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    deleteProduct(id, req.userId);
+    await deleteProduct(id, req.userId);
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete product' });
@@ -1020,7 +1079,7 @@ app.delete('/api/products/:id', async (req, res) => {
 // ── DELETE /api/products — Clear all saved products ──
 app.delete('/api/products', async (req, res) => {
   try {
-    clearAllProducts(req.userId);
+    await clearAllProducts(req.userId);
     res.json({ message: 'All products cleared successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to clear products' });
@@ -1029,7 +1088,7 @@ app.delete('/api/products', async (req, res) => {
 
 // ── GET /api/analytics — Product analytics ──
 app.get('/api/analytics', async (req, res) => {
-  let products = getProducts(req.userId);
+  let products = await getProducts(req.userId);
   const { product, platform } = req.query;
 
   if (product && product.trim() !== '') {
@@ -1048,7 +1107,7 @@ app.get('/api/analytics', async (req, res) => {
 
 // ── GET /api/export/csv — Export saved products as CSV ──
 app.get('/api/export/csv', async (req, res) => {
-  const products = getProducts(req.userId);
+  const products = await getProducts(req.userId);
   
   if (products.length === 0) {
     return res.status(404).json({ error: 'No products to export' });
@@ -1077,7 +1136,7 @@ app.get('/api/export/csv', async (req, res) => {
 
 // ── GET /api/export/excel — Export saved products as Excel ──
 app.get('/api/export/excel', async (req, res) => {
-  const products = getProducts();
+  const products = await getProducts(req.userId);
   
   if (products.length === 0) {
     return res.status(404).json({ error: 'No products to export' });
@@ -1163,9 +1222,9 @@ app.get('/api/history', async (req, res) => {
 });
 
 // ── GET /api/health/scrapers — Scraper Health endpoint ──
-app.get('/api/health/scrapers', (req, res) => {
+app.get('/api/health/scrapers', async (req, res) => {
   try {
-    const health = getAllScraperHealth();
+    const health = await getAllScraperHealth();
     res.json(health);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get scraper health' });
@@ -1370,7 +1429,7 @@ app.post('/api/cab-compare', async (req, res) => {
 });
 
 // ── POST /api/chat — AI Chatbot message endpoint ──
-app.post('/api/chat', (req, res) => {
+app.post('/api/chat', async (req, res) => {
   const { message, sessionId, currentPage } = req.body;
   if (!message || !sessionId) {
     return res.status(400).json({ error: 'Message and sessionId are required' });
@@ -1378,17 +1437,17 @@ app.post('/api/chat', (req, res) => {
 
   try {
     // Save user message
-    saveChatMessage({ sessionId, role: 'user', content: message, userId: req.userId });
+    await saveChatMessage({ sessionId, role: 'user', content: message, userId: req.userId });
 
     // Generate AI response
     const result = generateResponse(message, sessionId, currentPage);
 
     // Save assistant response
-    saveChatMessage({ sessionId, role: 'assistant', content: result.reply, userId: req.userId });
+    await saveChatMessage({ sessionId, role: 'assistant', content: result.reply, userId: req.userId });
 
     // If feedback was collected, save it
     if (result.feedbackSaved) {
-      saveFeedback({ ...result.feedbackSaved, userId: req.userId });
+      await saveFeedback({ ...result.feedbackSaved, userId: req.userId });
     }
 
     res.json({
@@ -1403,14 +1462,14 @@ app.post('/api/chat', (req, res) => {
 });
 
 // ── POST /api/feedback — Submit structured feedback ──
-app.post('/api/feedback', (req, res) => {
+app.post('/api/feedback', async (req, res) => {
   const { category, message, rating, page } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Feedback message is required' });
   }
 
   try {
-    saveFeedback({ category, message, rating, page, userId: req.userId });
+    await saveFeedback({ category, message, rating, page, userId: req.userId });
     res.json({ success: true, message: 'Feedback saved successfully' });
   } catch (error) {
     console.error('Feedback error:', error);
@@ -1419,9 +1478,9 @@ app.post('/api/feedback', (req, res) => {
 });
 
 // ── GET /api/feedback — Retrieve all feedback ──
-app.get('/api/feedback', (req, res) => {
+app.get('/api/feedback', async (req, res) => {
   try {
-    const feedback = getFeedback(req.userId);
+    const feedback = await getFeedback(req.userId);
     res.json(feedback);
   } catch (error) {
     console.error('Feedback fetch error:', error);
@@ -1430,9 +1489,9 @@ app.get('/api/feedback', (req, res) => {
 });
 
 // ── GET /api/chat/history/:sessionId — Retrieve chat history ──
-app.get('/api/chat/history/:sessionId', (req, res) => {
+app.get('/api/chat/history/:sessionId', async (req, res) => {
   try {
-    const history = getChatHistory(req.params.sessionId, req.userId);
+    const history = await getChatHistory(req.params.sessionId, req.userId);
     res.json(history);
   } catch (error) {
     console.error('Chat history error:', error);
@@ -1462,7 +1521,7 @@ app.get('/api/order/stores', (req, res) => {
 });
 
 // POST /api/order/credentials -- Save encrypted platform credentials
-app.post('/api/order/credentials', (req, res) => {
+app.post('/api/order/credentials', requireAuth, (req, res) => {
   const { platform, username, password } = req.body;
   if (!platform || !username || !password) return res.status(400).json({ error: 'platform, username, and password are required' });
   try {
@@ -1474,7 +1533,7 @@ app.post('/api/order/credentials', (req, res) => {
 });
 
 // GET /api/order/credentials -- List saved platforms (no passwords returned)
-app.get('/api/order/credentials', (req, res) => {
+app.get('/api/order/credentials', requireAuth, (req, res) => {
   try {
     const creds = listCredentials(req.userId);
     res.json(creds);
@@ -1484,13 +1543,13 @@ app.get('/api/order/credentials', (req, res) => {
 });
 
 // DELETE /api/order/credentials/:platform -- Remove credentials
-app.delete('/api/order/credentials/:platform', (req, res) => {
+app.delete('/api/order/credentials/:platform', requireAuth, (req, res) => {
   const deleted = deleteCredentials(req.userId, req.params.platform);
   res.json({ success: deleted });
 });
 
 // POST /api/order/initiate -- Start order automation session
-app.post('/api/order/initiate', async (req, res) => {
+app.post('/api/order/initiate', requireAuth, async (req, res) => {
   const { store, productUrl, productName, deliveryAddress } = req.body;
   if (!store || !productUrl) return res.status(400).json({ error: 'store and productUrl are required' });
   const creds = getCredentials(req.userId, store);
@@ -1504,7 +1563,7 @@ app.post('/api/order/initiate', async (req, res) => {
 });
 
 // GET /api/order/screenshot/:sessionId -- Get latest browser screenshot
-app.get('/api/order/screenshot/:sessionId', async (req, res) => {
+app.get('/api/order/screenshot/:sessionId', requireAuth, async (req, res) => {
   const session = getSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: 'Session not found or expired' });
   if (session.userId !== req.userId) return res.status(403).json({ error: 'Not authorized' });
@@ -1514,7 +1573,7 @@ app.get('/api/order/screenshot/:sessionId', async (req, res) => {
 });
 
 // POST /api/order/confirm/:sessionId -- User confirms -> system places order
-app.post('/api/order/confirm/:sessionId', async (req, res) => {
+app.post('/api/order/confirm/:sessionId', requireAuth, async (req, res) => {
   const session = getSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: 'Session not found or expired' });
   if (session.userId !== req.userId) return res.status(403).json({ error: 'Not authorized' });
@@ -1528,7 +1587,7 @@ app.post('/api/order/confirm/:sessionId', async (req, res) => {
 });
 
 // GET /api/order/sessions -- List all active sessions for user
-app.get('/api/order/sessions', (req, res) => {
+app.get('/api/order/sessions', requireAuth, (req, res) => {
   res.json(listSessions(req.userId));
 });
 

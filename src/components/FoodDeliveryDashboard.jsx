@@ -38,7 +38,8 @@ function FoodDeliveryDashboard({ baseUrl }) {
         if (location.city) url += `city=${encodeURIComponent(location.city)}&`;
         if (location.locality) url += `locality=${encodeURIComponent(location.locality)}&`;
       }
-      if (query) url += `query=${encodeURIComponent(query)}`;
+      if (query) url += `query=${encodeURIComponent(query)}&`;
+      url += `mode=${searchMode}`;
       
       const res = await fetch(url);
       const data = await res.json();

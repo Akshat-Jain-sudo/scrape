@@ -27,7 +27,7 @@ export function startPriceHistoryScheduler() {
  */
 export async function updateSavedProductsPriceHistory() {
   console.log('🔍 [Price Cron Worker] Starting periodic price scan for saved products...');
-  const products = getAllProducts();
+  const products = await getAllProducts();
 
   if (!products || products.length === 0) {
     console.log('ℹ️ [Price Cron Worker] No saved products in database. Skipping price scan.');
@@ -57,7 +57,7 @@ export async function updateSavedProductsPriceHistory() {
       }
 
       // Update the database
-      updateProductPrice(product.id, newPrice);
+      await updateProductPrice(product.id, newPrice);
 
       // Check if price fell below target alert price
       if (product.targetPrice && newPrice <= product.targetPrice) {

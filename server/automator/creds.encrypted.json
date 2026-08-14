@@ -1,0 +1,25 @@
+{
+  "anonymous": {},
+  "ba59523e-6a67-4b76-bb81-78e0d0649868": {
+    "flipkart": {
+      "username": "user_a_fk",
+      "password": {
+        "iv": "12fca4393d460c4a0512ad95",
+        "authTag": "dfac18a7707d2aa1eaf73ca2a4deae82",
+        "data": "f1b59c939d73bb358fff84cb68c795"
+      },
+      "savedAt": "2026-08-14T18:44:07.027Z"
+    }
+  },
+  "01e13fc5-46ca-40d6-ba74-137fa864bb3d": {
+    "flipkart": {
+      "username": "user_a_fk",
+      "password": {
+        "iv": "d5d181ed3c79589933dda1b5",
+        "authTag": "6a2eaa55a53cfff7698f0b251cb63147",
+        "data": "ff86f52aaefb5762a4897a29d05c5f"
+      },
+      "savedAt": "2026-08-14T18:44:51.306Z"
+    }
+  }
+}

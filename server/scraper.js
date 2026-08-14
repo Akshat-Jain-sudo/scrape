@@ -1019,26 +1019,31 @@ function getFoodProductLink(store, location, restaurantName, query) {
   }
 }
 
-export function getNearbyRestaurants(location, query) {
+export function getNearbyRestaurants(location, query, mode) {
   const loc = normalizeLocation(location);
   const q = (query || '').toLowerCase();
   
-  // If query is likely a food outlet search (e.g. "Burger King")
-  let isOutletSearch = false;
+  // If query is likely a food outlet search (e.g. "Burger King") or explicit mode
+  let isOutletSearch = (mode === 'outlet');
   const knownOutlets = ["dominos", "pizza hut", "burger king", "mcdonald's", "kfc", "haldiram's", "theobroma", "behrouz"];
   if (q && knownOutlets.some(outlet => q.includes(outlet))) {
     isOutletSearch = true;
   }
 
   // Increase the number of mock restaurants to simulate a fuller platform
-  const numRestaurants = isOutletSearch ? 4 : (q ? 12 : 24);
+  const numRestaurants = (isOutletSearch && q) ? 4 : (q ? 12 : 24);
   const restaurants = [];
   
   for (let i = 0; i < numRestaurants; i++) {
     let name = getRestaurantName('zomato', location, q, i).replace('Zomato Special: ', '');
-    // Ensure variety if outlet search didn't fully hit
-    if (isOutletSearch && i === 0 && q) {
-      name = q.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' - ' + (loc.locality || 'Outlet');
+    
+    // If it's an explicit outlet search, force the name to match the query exactly
+    if (isOutletSearch && q) {
+      const variations = [loc.locality || 'Area', 'Sector', 'Phase', 'Mall', 'High Street'];
+      const suffix = variations[i % variations.length];
+      const randomNum = Math.floor(Math.random() * 50) + 1;
+      const formattedQ = q.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      name = `${formattedQ} - ${suffix} ${suffix !== loc.locality ? randomNum : ''}`.trim();
     }
 
     const distNum = parseFloat((0.5 + Math.random() * 3.5).toFixed(1));

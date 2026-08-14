@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { 
   LayoutDashboard, 
   Terminal, 
@@ -15,11 +15,6 @@ import {
 } from 'lucide-react';
 import SymbioteLogo from './components/SymbioteLogo';
 import Dashboard from './components/Dashboard';
-import ScrapeConsole from './components/ScrapeConsole';
-import InsightHub from './components/InsightHub';
-import CartOptimizer from './components/CartOptimizer';
-import CabCompare from './components/CabCompare';
-import OrderRelay from './components/OrderRelay';
 import { LocationProvider, LocationContext } from './context/LocationContext';
 import LocationBar from './components/LocationBar';
 import AIChatbot from './components/AIChatbot';
@@ -28,7 +23,17 @@ import AuthModal from './components/AuthModal';
 import CyberBackgroundCanvas from './components/CyberBackgroundCanvas';
 import CyberCursor from './components/CyberCursor';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
-import UserProfile from './components/UserProfile';
+import LandingPage from './components/LandingPage';
+import SuspenseLoader from './components/common/SuspenseLoader';
+import SkeletonCard from './components/common/SkeletonCard';
+
+// Lazy-loaded heavy views for optimal bundle splitting
+const ScrapeConsole = lazy(() => import('./components/ScrapeConsole'));
+const InsightHub = lazy(() => import('./components/InsightHub'));
+const CartOptimizer = lazy(() => import('./components/CartOptimizer'));
+const CabCompare = lazy(() => import('./components/CabCompare'));
+const OrderRelay = lazy(() => import('./components/OrderRelay'));
+const UserProfile = lazy(() => import('./components/UserProfile'));
 
 
 function ProductHistoryChart({ productId, currentPrice }) {
@@ -52,7 +57,7 @@ function ProductHistoryChart({ productId, currentPrice }) {
     fetchHistory();
   }, [productId]);
 
-  if (loading) return <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>Loading history...</div>;
+  if (loading) return <SkeletonCard height="80px" count={1} />;
 
   if (!history || history.length < 2) {
     return (
@@ -154,12 +159,12 @@ function App() {
   const [headerSearchVal, setHeaderSearchVal] = useState('');
   const [cartCount, setCartCount] = useState(0);
 
-  // Automatically open auth modal for new / unauthenticated users
-  useEffect(() => {
-    if (!loading && !user) {
-      setAuthModalOpen(true);
-    }
-  }, [loading, user]);
+  // Landing page CTA handler — opens auth modal in specific mode
+  const handleLandingAuth = useCallback((mode) => {
+    setAuthModalOpen(true);
+    // Dispatch a custom event so AuthModal can switch to the correct tab
+    window.dispatchEvent(new CustomEvent('auth-mode-request', { detail: mode }));
+  }, []);
 
   // Sync Cart count from localStorage
   useEffect(() => {
@@ -369,6 +374,28 @@ function App() {
     }
     return count;
   }, 0);
+
+  // ── Show landing page for unauthenticated visitors ──
+  if (!loading && !user) {
+    return (
+      <>
+        <LandingPage onOpenAuth={handleLandingAuth} />
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} addToast={addToast} />
+      </>
+    );
+  }
+
+  // ── Loading state while checking auth ──
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0a0a0f', color: '#f0f0f5', fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ textAlign: 'center' }}>
+          <SymbioteLogo size={48} />
+          <p style={{ marginTop: '1rem', opacity: 0.6 }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <LocationProvider>
@@ -582,239 +609,238 @@ function App() {
       <main className="main-content">
         <LocationBar />
         
-        {currentView === 'dashboard' && (
-          <Dashboard 
-            savedProducts={savedProducts} 
-            onSaveProducts={handleSaveProducts} 
-            onNavigateToScraper={() => setCurrentView('scraper')}
-            addToast={addToast}
-            onAddToCart={handleAddToCart}
-          />
-        )}
-        
-        {currentView === 'scraper' && (
-          <ScrapeConsole 
-            savedProducts={savedProducts}
-            onSaveProducts={handleSaveProducts}
-            addToast={addToast}
-            onAddToCart={handleAddToCart}
-          />
-        )}
+        <Suspense fallback={<SuspenseLoader height="500px" label="Loading requested module..." />}>
+          {currentView === 'dashboard' && (
+            <Dashboard 
+              savedProducts={savedProducts} 
+              onSaveProducts={handleSaveProducts} 
+              onNavigateToScraper={() => setCurrentView('scraper')}
+              addToast={addToast}
+              onAddToCart={handleAddToCart}
+            />
+          )}
+          
+          {currentView === 'scraper' && (
+            <ScrapeConsole 
+              savedProducts={savedProducts}
+              onSaveProducts={handleSaveProducts}
+              addToast={addToast}
+              onAddToCart={handleAddToCart}
+            />
+          )}
 
-        {currentView === 'archive' && (
-          <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-            <div className="view-header">
-              <div className="view-title">
-                <h1>
-                  Saved Products
-                  {savedProducts.length > 0 && (
-                    <span className="header-count-badge">{savedProducts.length} products</span>
-                  )}
-                </h1>
-                <p>Browse through your collection of saved e-commerce & grocery products</p>
+          {currentView === 'archive' && (
+            <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+              <div className="view-header">
+                <div className="view-title">
+                  <h1>
+                    Saved Products
+                    {savedProducts.length > 0 && (
+                      <span className="header-count-badge">{savedProducts.length} products</span>
+                    )}
+                  </h1>
+                  <p>Browse through your collection of saved e-commerce & grocery products</p>
+                </div>
+                {savedProducts.length > 0 && (
+                  <div className="btn-group">
+                    <a href="/api/export/csv" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+                      📄 Export CSV
+                    </a>
+                    <a href="/api/export/excel" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
+                      📊 Export Excel
+                    </a>
+                    <button className="btn btn-outline" style={{ color: 'var(--danger)' }} onClick={handleClearAll}>
+                      Clear All
+                    </button>
+                  </div>
+                )}
               </div>
-              {savedProducts.length > 0 && (
-                <div className="btn-group">
-                  <a href="/api/export/csv" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
-                    📄 Export CSV
-                  </a>
-                  <a href="/api/export/excel" className="btn btn-secondary" style={{ textDecoration: 'none' }}>
-                    📊 Export Excel
-                  </a>
-                  <button className="btn btn-outline" style={{ color: 'var(--danger)' }} onClick={handleClearAll}>
-                    Clear All
+              
+              {loadingProducts ? (
+                <SkeletonCard count={3} height="180px" />
+              ) : savedProducts.length === 0 ? (
+                <div className="glass-card empty-state">
+                  <Archive />
+                  <h3>No products saved yet</h3>
+                  <p>Scrape products and save them to build your collection.</p>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => setCurrentView('scraper')}
+                    style={{ marginTop: '1rem' }}
+                  >
+                    Start Scraping
                   </button>
+                </div>
+              ) : (
+                <div className="grid-cards">
+                  {savedProducts.map((product, index) => (
+                    <div 
+                      key={product.id} 
+                      className="glass-card product-card stagger-in" 
+                      style={{ animationDelay: `${index * 60}ms` }}
+                    >
+                      <div className="card-img-wrapper">
+                        {product.imageUrl ? (
+                          <img 
+                            src={product.imageUrl.startsWith('http') && !product.imageUrl.includes('unsplash.com') ? `/api/proxy-image?url=${encodeURIComponent(product.imageUrl)}` : product.imageUrl} 
+                            alt={product.name} 
+                            className="card-img" 
+                            onError={(e) => {
+                              e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
+                            }} 
+                            loading="lazy"
+                          />
+                        ) : (
+                          <ShoppingCart size={40} style={{ color: 'var(--text-muted)', opacity: 0.3 }} />
+                        )}
+                        {product.discount && (
+                          <span className="discount-badge">{product.discountFormatted}</span>
+                        )}
+                      </div>
+                      <div className="card-content">
+                        <h3 className="card-title">{product.name}</h3>
+                        
+                        <div className="price-row">
+                          <span className="price-current">{product.priceFormatted || 'N/A'}</span>
+                          {product.originalPriceFormatted && (
+                            <span className="price-original">{product.originalPriceFormatted}</span>
+                          )}
+                        </div>
+
+                        {/* Alert Met Banner */}
+                        {product.targetPrice && product.price <= product.targetPrice && (
+                          <div className="price-alert-met-banner">
+                            🔥 Price Alert Met! Target: ₹{product.targetPrice}
+                          </div>
+                        )}
+
+                        {/* Alert Config and Badge */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                          {product.targetPrice && product.price > product.targetPrice && (
+                            <div className="price-alert-pill">
+                              <Bell size={10} /> Target: ₹{product.targetPrice}
+                            </div>
+                          )}
+                          <div className="target-price-input-container">
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center' }}>Alert: ₹</span>
+                            <input 
+                              type="number" 
+                              placeholder="Set target" 
+                              className="target-price-input" 
+                              style={{ width: '70px', height: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', padding: '0 4px', fontSize: '0.75rem' }}
+                              defaultValue={product.targetPrice || ''}
+                              onBlur={async (e) => {
+                                const val = e.target.value ? parseFloat(e.target.value) : null;
+                                try {
+                                  const response = await fetch(`/api/products/${product.id}/alert`, {
+                                    method: 'PUT',
+                                    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                                    body: JSON.stringify({ targetPrice: val })
+                                  });
+                                  if (response.ok) {
+                                    addToast('Target price updated', 'success');
+                                    setSavedProducts(prev => prev.map(pp => 
+                                      pp.id === product.id ? { ...pp, targetPrice: val } : pp
+                                    ));
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {product.rating && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <span className={`star-rating-badge ${product.rating >= 4 ? 'high' : product.rating >= 3 ? 'medium' : 'low'}`}>
+                              {product.rating} ★
+                            </span>
+                            {product.ratingsCount && (
+                              <span className="review-count">
+                                ({product.ratingsCount.toLocaleString()} ratings)
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Line Chart */}
+                        {showCharts[product.id] && (
+                          <ProductHistoryChart productId={product.id} currentPrice={product.price} />
+                        )}
+
+                        <div className="card-footer">
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {product.searchQuery}
+                          </span>
+                          <div className="card-actions">
+                            <button 
+                              className="btn-icon" 
+                              style={{ color: showCharts[product.id] ? 'var(--accent-primary)' : 'var(--text-muted)' }}
+                              onClick={() => setShowCharts(prev => ({ ...prev, [product.id]: !prev[product.id] }))}
+                              title="Toggle Price History Chart"
+                            >
+                              <LineChart size={18} />
+                            </button>
+                            <button 
+                              className="btn-icon" 
+                              style={{ color: 'var(--accent-blue)' }}
+                              onClick={() => handleAddToCart(product.searchQuery || product.query || product.name)}
+                              title="Add to Cart Optimizer"
+                            >
+                              <ShoppingCart size={18} />
+                            </button>
+                            {product.productLink && (
+                              <a 
+                                href={product.productLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="btn-icon" 
+                                title="View on Store"
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                              </a>
+                            )}
+                            <button 
+                              className="btn-icon" 
+                              style={{ color: 'var(--danger)' }}
+                              onClick={() => handleDeleteProduct(product.id)}
+                              title="Remove"
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-            
-            {loadingProducts ? (
-              <div className="spinner-container">
-                <div className="pulse-spinner"></div>
-                <p style={{ color: 'var(--text-secondary)' }}>Loading saved products...</p>
-              </div>
-            ) : savedProducts.length === 0 ? (
-              <div className="glass-card empty-state">
-                <Archive />
-                <h3>No products saved yet</h3>
-                <p>Scrape products and save them to build your collection.</p>
-                <button 
-                  className="btn btn-primary" 
-                  onClick={() => setCurrentView('scraper')}
-                  style={{ marginTop: '1rem' }}
-                >
-                  Start Scraping
-                </button>
-              </div>
-            ) : (
-              <div className="grid-cards">
-                {savedProducts.map((product, index) => (
-                  <div 
-                    key={product.id} 
-                    className="glass-card product-card stagger-in" 
-                    style={{ animationDelay: `${index * 60}ms` }}
-                  >
-                    <div className="card-img-wrapper">
-                      {product.imageUrl ? (
-                        <img 
-                          src={product.imageUrl.startsWith('http') && !product.imageUrl.includes('unsplash.com') ? `/api/proxy-image?url=${encodeURIComponent(product.imageUrl)}` : product.imageUrl} 
-                          alt={product.name} 
-                          className="card-img" 
-                          onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
-                          }} 
-                          loading="lazy"
-                        />
-                      ) : (
-                        <ShoppingCart size={40} style={{ color: 'var(--text-muted)', opacity: 0.3 }} />
-                      )}
-                      {product.discount && (
-                        <span className="discount-badge">{product.discountFormatted}</span>
-                      )}
-                    </div>
-                    <div className="card-content">
-                      <h3 className="card-title">{product.name}</h3>
-                      
-                      <div className="price-row">
-                        <span className="price-current">{product.priceFormatted || 'N/A'}</span>
-                        {product.originalPriceFormatted && (
-                          <span className="price-original">{product.originalPriceFormatted}</span>
-                        )}
-                      </div>
+          )}
 
-                      {/* Alert Met Banner */}
-                      {product.targetPrice && product.price <= product.targetPrice && (
-                        <div className="price-alert-met-banner">
-                          🔥 Price Alert Met! Target: ₹{product.targetPrice}
-                        </div>
-                      )}
+          {currentView === 'cart' && (
+            <CartOptimizer addToast={addToast} />
+          )}
 
-                      {/* Alert Config and Badge */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                        {product.targetPrice && product.price > product.targetPrice && (
-                          <div className="price-alert-pill">
-                            <Bell size={10} /> Target: ₹{product.targetPrice}
-                          </div>
-                        )}
-                        <div className="target-price-input-container">
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center' }}>Alert: ₹</span>
-                          <input 
-                            type="number" 
-                            placeholder="Set target" 
-                            className="target-price-input" 
-                            style={{ width: '70px', height: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px', padding: '0 4px', fontSize: '0.75rem' }}
-                            defaultValue={product.targetPrice || ''}
-                            onBlur={async (e) => {
-                              const val = e.target.value ? parseFloat(e.target.value) : null;
-                              try {
-                                const response = await fetch(`/api/products/${product.id}/alert`, {
-                                  method: 'PUT',
-                                  headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-                                  body: JSON.stringify({ targetPrice: val })
-                                });
-                                if (response.ok) {
-                                  addToast('Target price updated', 'success');
-                                  setSavedProducts(prev => prev.map(pp => 
-                                    pp.id === product.id ? { ...pp, targetPrice: val } : pp
-                                  ));
-                                }
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
+          {currentView === 'cab' && (
+            <CabCompare />
+          )}
+          {currentView === 'orderrelay' && (
+            <OrderRelay
+              authToken={session?.access_token}
+              addToast={addToast}
+            />
+          )}
 
-                      {product.rating && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                          <span className={`star-rating-badge ${product.rating >= 4 ? 'high' : product.rating >= 3 ? 'medium' : 'low'}`}>
-                            {product.rating} ★
-                          </span>
-                          {product.ratingsCount && (
-                            <span className="review-count">
-                              ({product.ratingsCount.toLocaleString()} ratings)
-                            </span>
-                          )}
-                        </div>
-                      )}
+          {currentView === 'insights' && (
+            <InsightHub savedProducts={savedProducts} />
+          )}
 
-                      {/* Line Chart */}
-                      {showCharts[product.id] && (
-                        <ProductHistoryChart productId={product.id} currentPrice={product.price} />
-                      )}
-
-                      <div className="card-footer">
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {product.searchQuery}
-                        </span>
-                        <div className="card-actions">
-                          <button 
-                            className="btn-icon" 
-                            style={{ color: showCharts[product.id] ? 'var(--accent-primary)' : 'var(--text-muted)' }}
-                            onClick={() => setShowCharts(prev => ({ ...prev, [product.id]: !prev[product.id] }))}
-                            title="Toggle Price History Chart"
-                          >
-                            <LineChart size={18} />
-                          </button>
-                          <button 
-                            className="btn-icon" 
-                            style={{ color: 'var(--accent-blue)' }}
-                            onClick={() => handleAddToCart(product.searchQuery || product.query || product.name)}
-                            title="Add to Cart Optimizer"
-                          >
-                            <ShoppingCart size={18} />
-                          </button>
-                          {product.productLink && (
-                            <a 
-                              href={product.productLink} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="btn-icon" 
-                              title="View on Store"
-                            >
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                            </a>
-                          )}
-                          <button 
-                            className="btn-icon" 
-                            style={{ color: 'var(--danger)' }}
-                            onClick={() => handleDeleteProduct(product.id)}
-                            title="Remove"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {currentView === 'cart' && (
-          <CartOptimizer addToast={addToast} />
-        )}
-
-        {currentView === 'cab' && (
-          <CabCompare />
-        )}
-        {currentView === 'orderrelay' && (
-          <OrderRelay
-            authToken={session?.access_token}
-            addToast={addToast}
-          />
-        )}
-
-        {currentView === 'insights' && (
-          <InsightHub savedProducts={savedProducts} />
-        )}
-
-        {currentView === 'profile' && (
-          <UserProfile addToast={addToast} />
-        )}
+          {currentView === 'profile' && (
+            <UserProfile addToast={addToast} />
+          )}
+        </Suspense>
       </main>
 
       {/* AI Chatbot Widget */}

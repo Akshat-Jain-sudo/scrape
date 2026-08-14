@@ -183,7 +183,7 @@ const RESPONSES = {
   ],
 
   about: [
-    "🧬 **Symbiote (FlipScrape)** — v1.0\n\nA premium **Price Comparison & Cart Optimizer** platform that helps you:\n• 🔍 Scrape & compare prices across e-commerce stores\n• 🛒 Optimize your shopping cart for the cheapest total\n• 💰 Track prices and set alerts for drops\n• 🚕 Compare cab fares across Uber, Ola & Rapido\n\n**Tech Stack:**\n• React 19 + Vite (Frontend)\n• Express + SQLite (Backend)\n• Cheerio + Axios (Scraping)\n\nBuilt with ❤️ by the Symbiote team — © 2026",
+    "🧬 **Symbiote (FlipScrape)** — v1.0\n\nA premium **Price Comparison & Cart Optimizer** platform that helps you:\n• 🔍 Scrape & compare prices across e-commerce stores\n• 🛒 Optimize your shopping cart for the cheapest total\n• 💰 Track prices and set alerts for drops\n• 🚕 Compare cab fares across Uber, Ola & Rapido\n\n**Tech Stack:**\n• React 19 + Vite (Frontend)\n• Express + Neon PostgreSQL (Backend)\n• Cheerio + Axios (Scraping)\n\nBuilt with ❤️ by the Symbiote team — © 2026",
   ],
 
   fallback: [

@@ -61,7 +61,107 @@ export async function initNeonDb() {
       ADD COLUMN IF NOT EXISTS memberships JSONB DEFAULT '{}'::jsonb,
       ADD COLUMN IF NOT EXISTS bank_cards JSONB DEFAULT '[]'::jsonb,
       ADD COLUMN IF NOT EXISTS wishlist_urls JSONB DEFAULT '{}'::jsonb,
-      ADD COLUMN IF NOT EXISTS dietary_preference TEXT DEFAULT 'any';
+      ADD COLUMN IF NOT EXISTS dietary_preference TEXT DEFAULT 'any',
+      ADD COLUMN IF NOT EXISTS pincode VARCHAR(20) DEFAULT '',
+      ADD COLUMN IF NOT EXISTS lat NUMERIC(9, 6),
+      ADD COLUMN IF NOT EXISTS lng NUMERIC(9, 6);
+    `);
+
+    // Products table (with UUID db_id as primary key and scraped id as regular text)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        db_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id TEXT NOT NULL,
+        query VARCHAR(255) NOT NULL,
+        category VARCHAR(100) DEFAULT 'ecommerce',
+        store VARCHAR(50) NOT NULL,
+        title TEXT NOT NULL,
+        price NUMERIC(12, 2) NOT NULL,
+        original_price NUMERIC(12, 2),
+        discount VARCHAR(100),
+        rating NUMERIC(3, 2),
+        image TEXT,
+        url TEXT NOT NULL,
+        location TEXT,
+        pincode VARCHAR(20),
+        target_price NUMERIC(12, 2),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        anonymous_session_id VARCHAR(50),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT chk_product_ownership CHECK (
+          (user_id IS NOT NULL AND anonymous_session_id IS NULL) OR
+          (user_id IS NULL AND anonymous_session_id IS NOT NULL)
+        )
+      );
+    `);
+
+    // Price history table (shared by scraped id using text)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS price_history (
+        id BIGSERIAL PRIMARY KEY,
+        product_id TEXT NOT NULL,
+        price NUMERIC(12, 2) NOT NULL,
+        recorded_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
+    // Scraper health table (global diagnostics)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS scraper_health (
+        id SERIAL PRIMARY KEY,
+        store VARCHAR(50) UNIQUE NOT NULL,
+        status VARCHAR(20) CHECK (status IN ('healthy', 'degraded', 'dead')),
+        last_checked TIMESTAMPTZ DEFAULT NOW(),
+        error_message TEXT,
+        success_rate NUMERIC(3, 2) DEFAULT 1.00
+      );
+    `);
+
+    // Feedback table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id SERIAL PRIMARY KEY,
+        category VARCHAR(20) DEFAULT 'general' CHECK (category IN ('bug', 'feature', 'improvement', 'general')),
+        message TEXT NOT NULL,
+        rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+        page VARCHAR(100),
+        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        anonymous_session_id VARCHAR(50),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT chk_feedback_ownership CHECK (
+          (user_id IS NOT NULL AND anonymous_session_id IS NULL) OR
+          (user_id IS NULL AND anonymous_session_id IS NOT NULL)
+        )
+      );
+    `);
+
+    // Chat messages table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        session_id VARCHAR(100) NOT NULL,
+        role VARCHAR(20) CHECK (role IN ('user', 'assistant')) NOT NULL,
+        content TEXT NOT NULL,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        anonymous_session_id VARCHAR(50),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT chk_chat_ownership CHECK (
+          (user_id IS NOT NULL AND anonymous_session_id IS NULL) OR
+          (user_id IS NULL AND anonymous_session_id IS NOT NULL)
+        )
+      );
+    `);
+
+    // Create unique index and performance indexes
+    await db.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_product_user ON products(id, user_id) WHERE user_id IS NOT NULL;
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_product_anon ON products(id, anonymous_session_id) WHERE anonymous_session_id IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_products_user ON products(user_id);
+      CREATE INDEX IF NOT EXISTS idx_products_anon ON products(anonymous_session_id);
+      CREATE INDEX IF NOT EXISTS idx_price_history_parent ON price_history(product_id);
+      CREATE INDEX IF NOT EXISTS idx_chat_auth ON chat_messages(session_id, user_id);
+      CREATE INDEX IF NOT EXISTS idx_chat_anon ON chat_messages(session_id, anonymous_session_id);
     `);
 
     console.log('✅ Neon DB tables initialized successfully');
@@ -132,7 +232,13 @@ export async function authenticateUser(email, password) {
   };
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidUuid(id) {
+  return typeof id === 'string' && UUID_REGEX.test(id);
+}
+
 export async function findUserById(userId) {
+  if (!isValidUuid(userId)) return null;
   const db = getNeonPool();
   const result = await db.query(
     `SELECT id, email, full_name, created_at FROM users WHERE id = $1`,
@@ -144,11 +250,13 @@ export async function findUserById(userId) {
 // ── Profile Functions ──
 
 export async function getNeonUserProfile(userId) {
+  if (!isValidUuid(userId)) return null;
   const db = getNeonPool();
   const result = await db.query(
     `SELECT u.id, u.email, u.full_name, u.created_at,
             p.theme, p.notifications_enabled,
-            p.memberships, p.bank_cards, p.wishlist_urls, p.dietary_preference
+            p.memberships, p.bank_cards, p.wishlist_urls, p.dietary_preference,
+            p.pincode, p.lat, p.lng
      FROM users u
      LEFT JOIN user_preferences p ON p.user_id = u.id
      WHERE u.id = $1`,
@@ -158,6 +266,9 @@ export async function getNeonUserProfile(userId) {
   const row = result.rows[0];
   return {
     ...row,
+    pincode: row.pincode || '',
+    lat: row.lat ? parseFloat(row.lat) : null,
+    lng: row.lng ? parseFloat(row.lng) : null,
     bankCards: row.bank_cards || [],
     wishlistUrls: row.wishlist_urls || {},
     dietaryPreference: row.dietary_preference || 'any'
@@ -165,6 +276,7 @@ export async function getNeonUserProfile(userId) {
 }
 
 export async function updateNeonUserProfile(userId, updates) {
+  if (!isValidUuid(userId)) throw new Error('Invalid user ID');
   const db = getNeonPool();
 
   // Update users table if full_name is provided
@@ -182,7 +294,10 @@ export async function updateNeonUserProfile(userId, updates) {
     updates.memberships !== undefined ||
     updates.bankCards !== undefined ||
     updates.wishlistUrls !== undefined ||
-    updates.dietaryPreference !== undefined
+    updates.dietaryPreference !== undefined ||
+    updates.pincode !== undefined ||
+    updates.lat !== undefined ||
+    updates.lng !== undefined
   ) {
     const fields = [];
     const values = [];
@@ -211,6 +326,18 @@ export async function updateNeonUserProfile(userId, updates) {
     if (updates.dietaryPreference !== undefined) {
       fields.push(`dietary_preference = $${idx++}`);
       values.push(updates.dietaryPreference);
+    }
+    if (updates.pincode !== undefined) {
+      fields.push(`pincode = $${idx++}`);
+      values.push(updates.pincode);
+    }
+    if (updates.lat !== undefined) {
+      fields.push(`lat = $${idx++}`);
+      values.push(updates.lat);
+    }
+    if (updates.lng !== undefined) {
+      fields.push(`lng = $${idx++}`);
+      values.push(updates.lng);
     }
 
     fields.push(`updated_at = NOW()`);

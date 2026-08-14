@@ -14,12 +14,12 @@ export async function checkScraperHealth(store) {
     const results = simulateStoreSearch(testQuery, store, 1, location);
     
     if (results && results.length > 0) {
-      updateScraperHealth(store, 'healthy', null, 1.0);
+      await updateScraperHealth(store, 'healthy', null, 1.0);
     } else {
-      updateScraperHealth(store, 'degraded', 'No results returned', 0.5);
+      await updateScraperHealth(store, 'degraded', 'No results returned', 0.5);
     }
   } catch (error) {
-    updateScraperHealth(store, 'dead', error.message || 'Timeout or crash', 0.0);
+    await updateScraperHealth(store, 'dead', error.message || 'Timeout or crash', 0.0);
   }
 }
 

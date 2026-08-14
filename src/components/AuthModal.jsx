@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 
@@ -11,6 +11,17 @@ export default function AuthModal({ isOpen, onClose, addToast }) {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Listen for landing page CTA mode requests (login vs signup)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail === 'signup' || e.detail === 'login') {
+        setMode(e.detail);
+      }
+    };
+    window.addEventListener('auth-mode-request', handler);
+    return () => window.removeEventListener('auth-mode-request', handler);
+  }, []);
 
   if (!isOpen) return null;
 

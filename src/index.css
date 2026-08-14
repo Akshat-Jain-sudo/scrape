@@ -86,10 +86,13 @@ body::after {
 
 h1,h2,h3,h4,h5,h6 { font-weight: 600; letter-spacing: -0.025em; line-height: 1.25; }
 
-/* ── Focus rings ── */
+/* ── Focus rings & Micro-interactions ── */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
+}
+.btn:active, .btn-icon:active, .amazon-nav-item:active {
+  transform: scale(0.98);
 }
 
 /* ── App Shell ── */
@@ -388,6 +391,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .skeleton-card::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+.skeleton {
+  background: rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.skeleton::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
   animation: skeletonShimmer 1.5s ease-in-out infinite;
 }
 @keyframes skeletonShimmer {
@@ -3676,9 +3690,14 @@ body::before, body::after {
   border-top: 1px solid rgba(255,255,255,0.05);
   overflow-x: auto;
   white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
 }
 .amazon-header-bottom::-webkit-scrollbar {
-  display: none;
+  height: 3px;
+}
+.amazon-header-bottom::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
 }
 
 .amazon-nav-item {
@@ -3692,6 +3711,8 @@ body::before, body::after {
   gap: 6px;
   transition: all var(--transition-fast);
   font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .amazon-nav-item:hover {
