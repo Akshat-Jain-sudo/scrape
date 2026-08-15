@@ -26,6 +26,7 @@ function mapProductRow(row) {
 
   return {
     id: row.id,
+    dbId: row.db_id,
     query: row.query,
     searchQuery: row.query,
     category: row.category,
@@ -35,6 +36,7 @@ function mapProductRow(row) {
     priceFormatted: row.price ? `₹${parseFloat(row.price).toLocaleString('en-IN')}` : 'N/A',
     originalPrice: row.original_price ? parseFloat(row.original_price) : 0,
     originalPriceFormatted: row.original_price ? `₹${parseFloat(row.original_price).toLocaleString('en-IN')}` : null,
+    discount: row.discount ? parseInt(row.discount) || 0 : 0,
     discountFormatted: row.discount,
     rating: row.rating ? parseFloat(row.rating) : null,
     imageUrl: row.image,
@@ -79,10 +81,19 @@ export async function saveProducts(products, userId = null) {
   const client = await pg.connect();
   const isUuid = isValidUuid(userId);
 
+  // In-memory deduplication within the incoming batch: keep the latest product per ID
+  const dedupedMap = new Map();
+  for (const p of products) {
+    if (p && p.id) {
+      dedupedMap.set(p.id, p);
+    }
+  }
+  const uniqueProducts = Array.from(dedupedMap.values());
+
   try {
     await client.query('BEGIN');
 
-    for (const p of products) {
+    for (const p of uniqueProducts) {
       let locStr = p.location;
       if (typeof p.location === 'object' && p.location !== null) {
         locStr = p.location.full || p.location.displayLabel || p.location.city || 'Mumbai';
@@ -136,8 +147,8 @@ export async function saveProducts(products, userId = null) {
         p.id,
         p.query || p.searchQuery || '',
         p.category || 'ecommerce',
-        p.source || '',
-        p.name || '',
+        p.source || p.store || '',
+        p.name || p.title || '',
         p.price ? parseFloat(p.price) : 0,
         p.originalPrice ? parseFloat(p.originalPrice) : null,
         p.discountFormatted || '',
@@ -190,9 +201,9 @@ export async function deleteProduct(id, userId = null) {
   if (!userId) return;
   const pg = getNeonPool();
   if (isValidUuid(userId)) {
-    await pg.query('DELETE FROM products WHERE id = $1 AND user_id = $2', [id, userId]);
+    await pg.query('DELETE FROM products WHERE (id = $1 OR db_id::text = $1) AND user_id = $2', [id, userId]);
   } else if (isValidAnonSession(userId)) {
-    await pg.query('DELETE FROM products WHERE id = $1 AND anonymous_session_id = $2', [id, userId]);
+    await pg.query('DELETE FROM products WHERE (id = $1 OR db_id::text = $1) AND anonymous_session_id = $2', [id, userId]);
   }
 }
 

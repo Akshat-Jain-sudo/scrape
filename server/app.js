@@ -23,7 +23,7 @@ import {
   getNearbyRestaurants,
   getRestaurantMenu
 } from './scraper.js';
-import { filterAndRankProducts } from './relevance.js';
+import { filterAndRankProducts, detectBrands } from './relevance.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { 
@@ -902,15 +902,44 @@ app.post('/api/scrape', async (req, res) => {
         matchesSource(store) && doesStoreSellQuery(store, query.trim())
       );
 
-      // Take up to 25 best-fit stores to prevent high latency
-      const targetStores = isSingleRequest ? eligibleStores : eligibleStores.slice(0, 25);
+      // Quality Safeguard: Rank eligible stores by relevance/niche suitability
+      // Brand stores matching query and major marketplaces are prioritized first
+      const queryLower = query.trim().toLowerCase();
+      const detectedQueryBrands = detectBrands(queryLower).map(b => b.key);
+      
+      const rankedEligibleStores = [...eligibleStores].sort((a, b) => {
+        const aIsBrand = detectedQueryBrands.includes(a);
+        const bIsBrand = detectedQueryBrands.includes(b);
+        if (aIsBrand && !bIsBrand) return -1;
+        if (!aIsBrand && bIsBrand) return 1;
 
-      for (const store of targetStores) {
+        const generalPriority = ['amazon', 'meesho', 'myntra', 'croma', 'reliance', 'tatacliq', 'nykaa', 'shopsy'];
+        const aIsGeneral = generalPriority.includes(a);
+        const bIsGeneral = generalPriority.includes(b);
+        if (aIsGeneral && !bIsGeneral) return -1;
+        if (!aIsGeneral && bIsGeneral) return 1;
+
+        return 0;
+      });
+
+      // Target initial batch of up to 25 highest-value eligible stores
+      const initialTargetStores = isSingleRequest ? rankedEligibleStores : rankedEligibleStores.slice(0, 25);
+
+      for (const store of initialTargetStores) {
         if (isSingleRequest) {
           await new Promise(r => setTimeout(r, 200));
         }
         const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
         products = [...products, ...storeProducts];
+      }
+
+      // Controlled expansion: If initial yield is low (< 15 items) and more eligible stores exist, expand to remaining eligible stores
+      if (!isSingleRequest && products.length < 15 && rankedEligibleStores.length > 25) {
+        const expansionStores = rankedEligibleStores.slice(25, 45);
+        for (const store of expansionStores) {
+          const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
+          products = [...products, ...storeProducts];
+        }
       }
     } else if (isFood) {
       const foodStores = ['zomato', 'swiggy'];
@@ -1016,11 +1045,20 @@ app.post('/api/products', async (req, res) => {
   }
 
   try {
-    // Generate IDs for new products that don't have them
-    const preparedProducts = products.map(p => ({
-      ...p,
-      id: p.id || `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    }));
+    // Generate deterministic stable IDs for products to prevent duplicate rows per user
+    const preparedProducts = products.map(p => {
+      let stableId = p.id;
+      if (!stableId || stableId.startsWith('prod-') || stableId.startsWith('comp-') || /-\d{13}-/.test(stableId)) {
+        const store = p.source || p.store || 'retailer';
+        const urlOrTitle = (p.productUrl || p.productLink || p.name || p.title || '').trim().toLowerCase();
+        const hash = crypto.createHash('sha256').update(`${store}:${urlOrTitle}`).digest('hex').substring(0, 20);
+        stableId = `p-${store}-${hash}`;
+      }
+      return {
+        ...p,
+        id: stableId
+      };
+    });
 
     await saveProducts(preparedProducts, req.userId);
     

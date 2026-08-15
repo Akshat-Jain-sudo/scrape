@@ -1472,11 +1472,23 @@ export function doesStoreSellQuery(store, query) {
   }
 
   // Define keyword sets
-  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loaers|crocs|chappal|slides|flip flops|cleats|wedges|clog|clogs)\b/.test(q);
+  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loafers|crocs|chappal|slides|flip flops|cleats|wedges|clog|clogs)\b/.test(q);
+  
+  const isBags = /\b(bag|bags|backpack|backpacks|wallet|wallets|handbag|handbags|purse|purses|luggage|suitcase|suitcases|trolley|duffel|tote|rucksack)\b/.test(q);
+
+  const isBeauty = /\b(makeup|lipstick|lipsticks|face cream|skin cream|body cream|night cream|day cream|cold cream|bb cream|cc cream|lotion|lotions|shampoo|conditioner|face wash|perfume|perfumes|scent|skincare|cosmetics|eyeliner|eyeshadow|nail polish|serum|serums|moisturizer|sunscreen|haircare|body wash|soap|deo|deodorant|fragrance|kajal|foundation|concealer|blush|mascara|primer|toner|cleanser|lip balm)\b/.test(q) || (/\b(cream|creams)\b/.test(q) && !isFootwear && !/\b(shirt|tshirt|pant|jeans|dress|saree|jacket)\b/.test(q));
   
   const isApparel = /\b(clothing|shirt|shirts|t-shirt|tshirts|tshirt|jeans|jean|jacket|jackets|hoodie|hoodies|dress|dresses|saree|sarees|kurta|kurtas|top|tops|trousers|suit|suits|coat|coats|scarf|innerwear|socks|activewear|wear|blazer|gown|lehenga|pant|pants|shorts|skirt|skirts|sweater|sweaters|sweatshirt|underwear|bra|panties|kurti|sherwani|dhoti|trackpants|leggings|jumpsuit)\b/.test(q);
   
-  const isElectronics = /\b(macbook|mac book|apple|iphone|ipad|mac|airpods|laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds|pc|computer|desktop|trimmer|dryer|shaver|playstation|xbox|nintendo|console|usb|cable|projector|gadget)\b/.test(q);
+  let isElectronics = /\b(macbook|mac book|apple|iphone|ipad|mac|airpods|laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds|pc|computer|desktop|trimmer|dryer|shaver|playstation|xbox|nintendo|console|usb|cable|projector|gadget)\b/.test(q);
+
+  // If query is specifically for a bag/backpack (e.g., "laptop backpack"), do not treat it as electronics unless explicit hardware components are searched
+  if (isBags && isElectronics) {
+    const isHardwareSearch = /\b(macbook|desktop|monitor|pc|ssd|ram|charger|adapter|intel|ryzen|core i\d|geforce|rtx)\b/.test(q);
+    if (!isHardwareSearch) {
+      isElectronics = false;
+    }
+  }
 
   const isAudio = /\b(earphone|earphones|headphone|headphones|speaker|speakers|buds|earbuds|airpods|soundbar|tws|neckband|audio)\b/.test(q);
   
@@ -1486,11 +1498,7 @@ export function doesStoreSellQuery(store, query) {
   
   const isEyewear = /\b(glasses|sunglasses|lens|lenses|frame|frames|spectacles|goggles|eyeplus|contact lens|shades)\b/.test(q);
   
-  const isBeauty = /\b(makeup|lipstick|lipsticks|cream|creams|lotion|lotions|shampoo|conditioner|face wash|perfume|perfumes|scent|skincare|cosmetics|eyeliner|eyeshadow|nail polish|serum|serums|moisturizer|sunscreen|haircare|body wash|soap|deo|deodorant|fragrance|kajal|foundation|concealer|blush|mascara|primer|toner|cleanser|lip balm)\b/.test(q);
-  
   const isHome = /\b(furniture|bed|sofa|sofas|chair|chairs|table|tables|mattress|mattresses|pillow|pillows|sheet|sheets|curtain|curtains|decor|kitchen|cooker|cookers|pan|pans|pot|pots|plate|plates|borosil|induction|stove|kettle|wardrobe|cushion|blanket|towel|rug|carpet|lamp|desk|shelf|glass|mug|cup|bottle|flask|utensils|cutlery|vase|clock|fan|cooler|air fryer|fryer)\b/.test(q);
-  
-  const isBags = /\b(bag|bags|backpack|backpacks|wallet|wallets|handbag|handbags|purse|purses|luggage|suitcase|suitcases|trolley|duffel|tote|rucksack)\b/.test(q);
 
   const isKids = /\b(toy|toys|diaper|diapers|baby|baby care|stroller|strollers|cradle|kids clothing|romper|maternity|doll|lego|puzzle|board game|action figure|teddy|rattle|bib)\b/.test(q);
   

@@ -675,7 +675,7 @@ function App() {
                 <div className="grid-cards">
                   {savedProducts.map((product, index) => (
                     <div 
-                      key={product.id} 
+                      key={product.dbId || product.id || `saved-${product.source || 'prod'}-${index}`} 
                       className="glass-card product-card stagger-in" 
                       style={{ animationDelay: `${index * 60}ms` }}
                     >
