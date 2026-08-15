@@ -1,5 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { calculateRelevanceScore, filterAndRankProducts, validateBaseProduct, detectBrands, detectCategoryIntents } from './relevance.js';
+import { validateProductUrl, canonicalizeProductUrl, toAbsoluteUrl } from './urlValidator.js';
 
 // ── User-Agent rotation pool ──
 const USER_AGENTS = [
@@ -170,19 +172,33 @@ export async function scrapeFlipkartSearch(query, pages = 1) {
     }
 
     productCards.each((index, el) => {
-      if (index >= 15) return;
+      if (allProducts.length >= 15) return;
       const name = extractText($, el, ['.RG5Slk', '.wjcEIp', '.KzDlHZ', '._4rR01T', '.s1Q9rs', 'a[title]']);
       if (!name) return;
+
+      // Filter out irrelevant promoted or cross-category items
+      const rel = calculateRelevanceScore(query, name, { threshold: 0.30 });
+      if (!rel.accepted) return;
 
       const price = cleanPrice(extractText($, el, ['.hZ3P6w', '.Nx9bqj', '._30jeq3']));
       const originalPrice = cleanPrice(extractText($, el, ['.kRYCnD', '.yRaY8j', '._3I9_wc']));
       const discount = cleanDiscount(extractText($, el, ['.HQe8jr', '.UkUFwK', '._3Ay6Sb']));
       const rating = cleanRating(extractText($, el, ['.MKiFS6', '.XQDdHH', '._3LWZlK']));
       const reviewData = cleanReviewCount(extractText($, el, ['.PvbNMB', '.Wphh3N', '._2_R_DZ']));
-      let productLink = extractAttr($, el, ['a.k7wcnx', 'a.CGtC98', 'a[href*="/p/"]'], 'href');
-      if (productLink && !productLink.startsWith('http')) {
-        productLink = `https://www.flipkart.com${productLink}`;
-      }
+      
+      const rawLink = extractAttr($, el, [
+        'a.k7wcnx', 'a.CGtC98', 'a.WKTcLC', 'a.VJA3rP', 'a.IRpwTa', 'a._2UzuFa', 
+        'a.rPDeLR', 'a._1fQZEK', 'a[href*="/p/"]', 'a[href*="pid="]', 'a'
+      ], 'href');
+      const searchFallback = getStoreLink('flipkart', query);
+      const absUrl = toAbsoluteUrl(rawLink, 'https://www.flipkart.com');
+      const urlValidation = validateProductUrl(absUrl, 'flipkart');
+
+      const isExactProductUrl = urlValidation.isExactProductUrl;
+      const productUrl = isExactProductUrl ? urlValidation.canonicalUrl : null;
+      const productLink = isExactProductUrl ? urlValidation.canonicalUrl : (absUrl || searchFallback);
+      const urlType = isExactProductUrl ? 'product' : 'search';
+
       const imageUrl = extractAttr($, el, ['img.UCc1lI', 'img.DByuf4', 'img._396cs4'], 'src') || extractAttr($, el, ['img.UCc1lI', 'img.DByuf4'], 'data-src');
 
       allProducts.push({
@@ -198,9 +214,14 @@ export async function scrapeFlipkartSearch(query, pages = 1) {
         ratingsCount: reviewData ? reviewData.ratings : null,
         reviewsCount: reviewData ? reviewData.reviews : null,
         productLink,
+        productUrl,
+        searchUrl: searchFallback,
+        isExactProductUrl,
+        urlType,
         imageUrl,
         source: 'flipkart',
         sourceMode: 'live',
+        relevanceScore: rel.score,
         scrapedAt: new Date().toISOString()
       });
     });
@@ -220,9 +241,13 @@ export async function scrapeSnapdealSearch(query, pages = 1) {
     const cards = $('.product-tuple-listing, .favProduct');
 
     cards.each((index, el) => {
-      if (index >= 15) return;
+      if (allProducts.length >= 15) return;
       const name = $(el).find('.product-title').text().trim();
       if (!name) return;
+
+      // Filter out irrelevant promoted or cross-category items
+      const rel = calculateRelevanceScore(query, name, { threshold: 0.30 });
+      if (!rel.accepted) return;
 
       const price = cleanPrice($(el).find('.product-price').text().trim());
       const originalPrice = cleanPrice($(el).find('.product-desc-price').text().trim());
@@ -233,10 +258,16 @@ export async function scrapeSnapdealSearch(query, pages = 1) {
       const rating = ratingMatch ? parseFloat((parseFloat(ratingMatch[1]) / 20).toFixed(1)) : null;
       
       const reviewData = cleanReviewCount($(el).find('.product-rating-count').text().trim());
-      let productLink = $(el).find('a.dp-widget-link, a').first().attr('href');
-      if (productLink && !productLink.startsWith('http')) {
-        productLink = `https://www.snapdeal.com${productLink}`;
-      }
+      const rawLink = $(el).find('a.dp-widget-link, a.product-card-link, a[href*="/product/"], a').first().attr('href');
+      const searchFallback = getStoreLink('snapdeal', query);
+      const absUrl = toAbsoluteUrl(rawLink, 'https://www.snapdeal.com');
+      const urlValidation = validateProductUrl(absUrl, 'snapdeal');
+
+      const isExactProductUrl = urlValidation.isExactProductUrl;
+      const productUrl = isExactProductUrl ? urlValidation.canonicalUrl : null;
+      const productLink = isExactProductUrl ? urlValidation.canonicalUrl : (absUrl || searchFallback);
+      const urlType = isExactProductUrl ? 'product' : 'search';
+
       const imageUrl = $(el).find('img.product-image, img.lazy-load').attr('src') || $(el).find('img').attr('data-src');
 
       allProducts.push({
@@ -252,9 +283,14 @@ export async function scrapeSnapdealSearch(query, pages = 1) {
         ratingsCount: reviewData ? reviewData.ratings : null,
         reviewsCount: reviewData ? reviewData.reviews : null,
         productLink,
+        productUrl,
+        searchUrl: searchFallback,
+        isExactProductUrl,
+        urlType,
         imageUrl,
         source: 'snapdeal',
         sourceMode: 'live',
+        relevanceScore: rel.score,
         scrapedAt: new Date().toISOString()
       });
     });
@@ -654,10 +690,10 @@ export function getStoreLink(store, query) {
     // New General E-Commerce
     case 'shopsy': return `https://www.shopsy.in/search?q=${q}`;
     case 'paytmmall': return `https://paytmmall.com/shop/search?q=${q}`;
-    case 'dealshare': return `https://www.dealshare.in`;
-    case 'citymall': return `https://www.citymall.live`;
+    case 'dealshare': return `https://www.dealshare.in/search?q=${q}`;
+    case 'citymall': return `https://www.google.com/search?q=citymall+${q}`;
     case 'udaan': return `https://udaan.com/search?q=${q}`;
-    case 'ondc': return `https://ondc.org`;
+    case 'ondc': return `https://www.google.com/search?q=ondc+${q}`;
 
     // New Fashion & Lifestyle Marketplaces
     case 'tatacliq_luxury': return `https://luxury.tatacliq.com/search/?text=${q}`;
@@ -665,11 +701,11 @@ export function getStoreLink(store, query) {
     case 'lifestylestores': return `https://www.lifestylestores.com/in/en/search?q=${q}`;
     case 'shoppersstop': return `https://www.shoppersstop.com/search/?text=${q}`;
     case 'westside': return `https://www.westside.com/search?q=${q}`;
-    case 'zudio': return `https://www.zudio.com`;
+    case 'zudio': return `https://www.google.com/search?q=zudio+${q}`;
     case 'azorte': return `https://azorte.ajio.com/search?text=${q}`;
     case 'reliancetrends': return `https://trends.ajio.com/search?text=${q}`;
-    case 'yousta': return `https://yousta.in`;
-    case 'centro': return `https://centro.co.in`;
+    case 'yousta': return `https://www.google.com/search?q=yousta+${q}`;
+    case 'centro': return `https://www.google.com/search?q=centro+india+${q}`;
 
     // New D2C Apparel & Casual
     case 'souledstore': return `https://www.thesouledstore.com/search?q=${q}`;
@@ -858,15 +894,15 @@ export function getStoreLink(store, query) {
     
     // Quick commerce
     case 'blinkit': return `https://blinkit.com/s/?q=${q}`;
-    case 'zepto': return `https://www.zeptonow.com`;
-    case 'instamart': return `https://www.swiggy.com/instamart`;
-    case 'bbnow': return `https://www.bigbasket.com`;
-    case 'fkminutes': return `https://www.flipkart.com/grocery-supermart-store`;
-    case 'amazonfresh': return `https://www.amazon.in/fresh`;
-    case 'jiomartexpress': return `https://www.jiomart.com`;
-    case 'bbdaily': return `https://www.bbdaily.com`;
-    case 'dunzo': return `https://www.dunzo.com`;
-    case 'countrydelight': return `https://countrydelight.in`;
+    case 'zepto': return `https://www.zeptonow.com/search?query=${q}`;
+    case 'instamart': return `https://www.swiggy.com/instamart/search?query=${q}`;
+    case 'bbnow': return `https://www.bigbasket.com/ps/?q=${q}`;
+    case 'fkminutes': return `https://www.flipkart.com/search?q=${q}&marketplace=GROCERY`;
+    case 'amazonfresh': return `https://www.amazon.in/s?k=${q}&i=nowstore`;
+    case 'jiomartexpress': return `https://www.jiomart.com/search/${q}`;
+    case 'bbdaily': return `https://www.google.com/search?q=bbdaily+${q}`;
+    case 'dunzo': return `https://www.dunzo.com/search?query=${q}`;
+    case 'countrydelight': return `https://www.google.com/search?q=country+delight+${q}`;
 
     // Food
     case 'zomato': return `https://www.zomato.com/search?q=${q}`;
@@ -1196,6 +1232,12 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
       ? getFoodProductLink(store, location, restaurantName, query)
       : getStoreLink(store, query);
 
+    const isLiveScraped = Boolean(baseProduct && baseProduct.source === store && baseProduct.isExactProductUrl);
+    const isFoodStore = isFood(store);
+    const isExact = isLiveScraped || isFoodStore;
+    const exactProductUrl = isLiveScraped ? baseProduct.productUrl : (isFoodStore ? storeLink : null);
+    const searchUrl = getStoreLink(store, query);
+
     comparison[store] = {
       price,
       priceFormatted: `₹${price.toLocaleString('en-IN')}`,
@@ -1205,7 +1247,11 @@ export function generatePlatformComparison(query, baseProduct, targetStores, loc
       discountFormatted: `${discount}% off`,
       rating,
       ratingsCount,
-      productLink: storeLink,
+      productLink: exactProductUrl || storeLink,
+      productUrl: exactProductUrl,
+      searchUrl,
+      isExactProductUrl: isExact,
+      urlType: isExact ? 'product' : 'search',
       deliveryTime: isQuickCommerce(store) || isFood(store) ? getStoreDeliveryTime(store) : null,
       deliveryFee,
       packagingFee,
@@ -1227,6 +1273,189 @@ export function doesStoreSellQuery(store, query) {
   const s = store.toLowerCase();
   const q = query.toLowerCase();
 
+  // Check single-brand official stores against explicit query brands
+  const singleBrandStores = {
+    // Tech & Electronics
+    apple: 'apple',
+    samsung: 'samsung',
+    oneplus: 'oneplus',
+    sony: 'sony',
+    dell: 'dell',
+    hp: 'hp',
+    lenovo: 'lenovo',
+    asus: 'asus',
+    acer: 'acer',
+    xiaomi: 'xiaomi',
+    realme: 'realme',
+    vivo: 'vivo',
+    oppo: 'oppo',
+    motorola: 'motorola',
+    whirlpool: 'whirlpool',
+    godrej: 'godrej',
+    haier: 'haier',
+    voltas: 'voltas',
+    bluestar: 'bluestar',
+    boat: 'boat',
+    noise: 'noise',
+    boult: 'boult',
+    mivi: 'mivi',
+    fireboltt: 'fireboltt',
+    jbl: 'jbl',
+    sennheiser: 'sennheiser',
+    zebronics: 'zebronics',
+    portronics: 'portronics',
+    ambrane: 'ambrane',
+    leafstudios: 'leafstudios',
+    anker: 'anker',
+
+    // Footwear
+    nike: 'nike',
+    adidas: 'adidas',
+    puma: 'puma',
+    reebok: 'reebok',
+    bata: 'bata',
+    woodland: 'woodland',
+    crocs: 'crocs',
+    skechers: 'skechers',
+    campusshoes: 'campus',
+    relaxo: 'relaxo',
+    libertyshoes: 'liberty',
+    paragon: 'paragon',
+    khadims: 'khadims',
+    redtape: 'redtape',
+
+    // Apparel & Fashion D2C
+    levis: 'levis',
+    zara: 'zara',
+    hm: 'hm',
+    uniqlo: 'uniqlo',
+    marksandspencer: 'marksandspencer',
+    benetton: 'benetton',
+    tommyhilfiger: 'tommy',
+    calvinklein: 'calvin',
+    uspoloassn: 'uspolo',
+    forever21: 'forever21',
+    jackjones: 'jackjones',
+    only: 'only',
+    veromoda: 'veromoda',
+    superdry: 'superdry',
+    gasjeans: 'gasjeans',
+    fabindia: 'fabindia',
+    manyavar: 'manyavar',
+    mohey: 'manyavar',
+    wforwoman: 'wforwoman',
+    aurelia: 'aurelia',
+    biba: 'biba',
+    globaldesi: 'globaldesi',
+    houseofindya: 'houseofindya',
+    libas: 'libas',
+    soch: 'soch',
+    meenabazaar: 'meenabazaar',
+    nallisilks: 'nallisilks',
+    karagiri: 'karagiri',
+    suta: 'suta',
+    kalkifashion: 'kalkifashion',
+    snitch: 'snitch',
+    souledstore: 'souledstore',
+    bewakoof: 'bewakoof',
+    rarerabbit: 'rarerabbit',
+    bombayshirt: 'bombayshirt',
+    powerlook: 'powerlook',
+    beyoung: 'beyoung',
+    redwolf: 'redwolf',
+    campussutra: 'campussutra',
+    hubberholme: 'hubberholme',
+    mufti: 'mufti',
+    spykar: 'spykar',
+    killerjeans: 'killerjeans',
+    flyingmachine: 'flyingmachine',
+    roadster: 'roadster',
+    highlander: 'highlander',
+    tokyotalkies: 'tokyotalkies',
+    mastandharbour: 'mastandharbour',
+    urbanic: 'urbanic',
+    westside: 'westside',
+    zudio: 'zudio',
+
+    // Bags & Luggage
+    baggit: 'baggit',
+    caprese: 'caprese',
+    lavie: 'lavie',
+    hidesign: 'hidesign',
+    damilano: 'damilano',
+    wildhorn: 'wildhorn',
+
+    // Watches & Eyewear
+    titan: 'titan',
+    fastrack: 'fastrack',
+    sonata: 'sonata',
+    casio: 'casio',
+    fossil: 'fossil',
+    danielwellington: 'danielwellington',
+    rayban: 'rayban',
+    johnjacobs: 'johnjacobs',
+    vincentchase: 'vincentchase',
+
+    // Beauty & Skincare D2C
+    nykaa: 'nykaa',
+    purplle: 'purplle',
+    myglamm: 'myglamm',
+    sugarcosmetics: 'sugarcosmetics',
+    mamaearth: 'mamaearth',
+    wowskin: 'wowskin',
+    dermaco: 'dermaco',
+    plumgoodness: 'plumgoodness',
+    mcaffeine: 'mcaffeine',
+    forestessentials: 'forestessentials',
+    kamaayurveda: 'kamaayurveda',
+    biotique: 'biotique',
+    lotusherbals: 'lotusherbals',
+    himalaya: 'himalaya',
+    minimalist: 'minimalist',
+    foxtale: 'foxtale',
+    pilgrim: 'pilgrim',
+    dotandkey: 'dotandkey',
+    facescanada: 'facescanada',
+    lakme: 'lakme',
+    maybelline: 'maybelline',
+
+    // Home & Appliances D2C
+    pepperfry: 'pepperfry',
+    urbanladder: 'urbanladder',
+    woodenstreet: 'woodenstreet',
+    ikea: 'ikea',
+    sleepwell: 'sleepwell',
+    wakefit: 'wakefit',
+    flomattress: 'flomattress',
+    thesleepcompany: 'thesleepcompany',
+    borosil: 'borosil',
+    wonderchef: 'wonderchef',
+    pigeon: 'pigeon',
+    prestige: 'prestige',
+    hawkins: 'hawkins',
+    chumbak: 'chumbak',
+
+    // Sports & Fitness Brands
+    decathlon: 'decathlon',
+    cultstore: 'cultstore',
+    vectorx: 'vectorx',
+    cosco: 'cosco',
+    nivia: 'nivia',
+    yonex: 'yonex',
+    starsports: 'starsports'
+  };
+
+  const storeBrand = singleBrandStores[s];
+  if (storeBrand) {
+    const queryBrands = detectBrands(query);
+    if (queryBrands.length > 0) {
+      const hasMatchingBrand = queryBrands.some(b => b.key === storeBrand);
+      if (!hasMatchingBrand) {
+        return false; // Prevent Apple store from selling Nike or Nike store selling Adidas
+      }
+    }
+  }
+
   // General Marketplaces sell everything
   const generalMarketplaces = [
     'amazon', 'flipkart', 'meesho', 'snapdeal', 'jiomart', 'tatacliq', 'shopsy', 
@@ -1243,22 +1472,26 @@ export function doesStoreSellQuery(store, query) {
   }
 
   // Define keyword sets
-  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loafers|crocs|chappal|slides|flip flops|cleats|wedges)\b/.test(q);
+  const isFootwear = /\b(shoe|shoes|sneaker|sneakers|sandal|sandals|slipper|slippers|boot|boots|flats|heels|footwear|socks|loafer|loaers|crocs|chappal|slides|flip flops|cleats|wedges|clog|clogs)\b/.test(q);
   
   const isApparel = /\b(clothing|shirt|shirts|t-shirt|tshirts|tshirt|jeans|jean|jacket|jackets|hoodie|hoodies|dress|dresses|saree|sarees|kurta|kurtas|top|tops|trousers|suit|suits|coat|coats|scarf|innerwear|socks|activewear|wear|blazer|gown|lehenga|pant|pants|shorts|skirt|skirts|sweater|sweaters|sweatshirt|underwear|bra|panties|kurti|sherwani|dhoti|trackpants|leggings|jumpsuit)\b/.test(q);
   
-  const isElectronics = /\b(macbook|mac book|apple|iphone|ipad|mac|airpods|laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds|pc|computer|desktop|trimmer|dryer|shaver|playstation|xbox|nintendo|console|usb|cable|projector)\b/.test(q);
+  const isElectronics = /\b(macbook|mac book|apple|iphone|ipad|mac|airpods|laptop|laptops|mobile|phone|phones|smartphone|smartphones|tv|television|tvs|earphone|earphones|headphone|headphones|smartwatch|smart watch|smartwatches|speaker|speakers|printer|camera|mouse|keyboard|router|monitor|tablet|charger|charging|adapter|powerbank|fridge|refrigerator|washing machine|ac|air conditioner|microwave|oven|gimbals|buds|earbuds|pc|computer|desktop|trimmer|dryer|shaver|playstation|xbox|nintendo|console|usb|cable|projector|gadget)\b/.test(q);
+
+  const isAudio = /\b(earphone|earphones|headphone|headphones|speaker|speakers|buds|earbuds|airpods|soundbar|tws|neckband|audio)\b/.test(q);
   
   const isJewelry = /\b(jewelry|jewellery|ring|rings|necklace|necklaces|earring|earrings|pendant|pendants|bracelet|bracelets|gold|diamond|diamonds|silver|platinum|bangles|ornaments|gemstone|chain|mangalsutra|anklet|nose ring|choker)\b/.test(q);
   
-  const isWatches = /\b(watch|watches|smartwatch|smart watch|smartwatches|clock|clocks)\b/.test(q);
+  const isWatches = /\b(watch|watches|smartwatch|smart watch|smartwatches|clock|clocks|timepiece)\b/.test(q);
   
   const isEyewear = /\b(glasses|sunglasses|lens|lenses|frame|frames|spectacles|goggles|eyeplus|contact lens|shades)\b/.test(q);
   
   const isBeauty = /\b(makeup|lipstick|lipsticks|cream|creams|lotion|lotions|shampoo|conditioner|face wash|perfume|perfumes|scent|skincare|cosmetics|eyeliner|eyeshadow|nail polish|serum|serums|moisturizer|sunscreen|haircare|body wash|soap|deo|deodorant|fragrance|kajal|foundation|concealer|blush|mascara|primer|toner|cleanser|lip balm)\b/.test(q);
   
-  const isHome = /\b(furniture|bed|sofa|sofas|chair|chairs|table|tables|mattress|mattresses|pillow|pillows|sheet|sheets|curtain|curtains|decor|kitchen|cooker|cookers|pan|pans|pot|pots|plate|plates|borosil|induction|stove|kettle|wardrobe|cushion|blanket|towel|rug|carpet|lamp|desk|shelf|glass|mug|cup|bottle|flask|utensils|cutlery|vase|clock|fan|cooler)\b/.test(q);
+  const isHome = /\b(furniture|bed|sofa|sofas|chair|chairs|table|tables|mattress|mattresses|pillow|pillows|sheet|sheets|curtain|curtains|decor|kitchen|cooker|cookers|pan|pans|pot|pots|plate|plates|borosil|induction|stove|kettle|wardrobe|cushion|blanket|towel|rug|carpet|lamp|desk|shelf|glass|mug|cup|bottle|flask|utensils|cutlery|vase|clock|fan|cooler|air fryer|fryer)\b/.test(q);
   
+  const isBags = /\b(bag|bags|backpack|backpacks|wallet|wallets|handbag|handbags|purse|purses|luggage|suitcase|suitcases|trolley|duffel|tote|rucksack)\b/.test(q);
+
   const isKids = /\b(toy|toys|diaper|diapers|baby|baby care|stroller|strollers|cradle|kids clothing|romper|maternity|doll|lego|puzzle|board game|action figure|teddy|rattle|bib)\b/.test(q);
   
   const isSports = /\b(sports|bat|bats|ball|balls|racket|rackets|shuttlecock|shuttles|gym|fitness|dumbbell|dumbbells|cycle|bicycle|jersey|yoga mat|treadmill|cricket|football|basketball|tennis|badminton|helmet|gloves|skates|skateboard|weights|protein)\b/.test(q);
@@ -1277,9 +1510,14 @@ export function doesStoreSellQuery(store, query) {
   }
 
   // Group 2: Sports & Fitness (who also sell sportswear and sports shoes)
-  const sportsStores = ['decathlon', 'cultstore', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports', 'adidas', 'puma', 'nike', 'reebok'];
-  if (sportsStores.includes(s)) {
+  const sportsApparelStores = ['decathlon', 'cultstore', 'adidas', 'puma', 'nike', 'reebok'];
+  if (sportsApparelStores.includes(s)) {
     return isSports || isFootwear || isApparel;
+  }
+
+  const sportsEquipmentOnlyStores = ['vectorx', 'cosco', 'nivia', 'yonex', 'starsports'];
+  if (sportsEquipmentOnlyStores.includes(s)) {
+    return isSports;
   }
 
   // Group 3: Fashion & Apparel stores
@@ -1297,22 +1535,43 @@ export function doesStoreSellQuery(store, query) {
     'zara'
   ];
   if (fashionStores.includes(s)) {
-    return isApparel || isFootwear || isEyewear || isWatches || isJewelry || isBeauty;
+    return isApparel || isFootwear || isEyewear || isWatches || isJewelry || isBeauty || isBags;
   }
 
-  // Group 4: Electronics only stores
-  const electronicsStores = [
-    'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'dell', 'asus', 
-    'acer', 'whirlpool', 'godrej', 'haier', 'voltas', 'bluestar', 'boat', 
-    'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 
-    'anker', 'sennheiser', 'ambrane', 'leafstudios', 'headphones', 'croma', 
-    'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'hp', 'lenovo', 'lg', 'dailyobjects'
+  // Group 4: Audio-only stores
+  const audioStores = ['boat', 'noise', 'boult', 'mivi', 'fireboltt', 'zebronics', 'portronics', 'jbl', 'anker', 'sennheiser', 'ambrane', 'leafstudios', 'headphones'];
+  if (audioStores.includes(s)) {
+    return isAudio || isWatches;
+  }
+
+  // Group 5: Appliance-only stores
+  const applianceStores = ['whirlpool', 'godrej', 'haier', 'voltas', 'bluestar'];
+  if (applianceStores.includes(s)) {
+    return isHome || (isElectronics && /\b(tv|television|ac|air conditioner|fridge|refrigerator|washing machine|microwave|oven|cooler)\b/.test(q));
+  }
+
+  // Group 6: PC only stores (no watches)
+  const pcOnlyStores = ['dell', 'hp', 'lenovo', 'asus', 'acer'];
+  if (pcOnlyStores.includes(s)) {
+    return isElectronics && !/\b(watch|watches|clock|clocks|timepiece)\b/.test(q);
+  }
+
+  // Group 7: Multi-category electronics / Smartphone brands
+  const mobileElectronicsStores = [
+    'sony', 'xiaomi', 'realme', 'vivo', 'oppo', 'motorola', 'croma', 
+    'reliance', 'vijaysales', 'apple', 'samsung', 'oneplus', 'lg', 'dailyobjects'
   ];
-  if (electronicsStores.includes(s)) {
+  if (mobileElectronicsStores.includes(s)) {
     return isElectronics || isWatches;
   }
 
-  // Group 5: Jewelry only stores
+  // Group 7: Bags & Luggage stores
+  const bagStores = ['baggit', 'caprese', 'lavie', 'hidesign', 'damilano', 'wildhorn'];
+  if (bagStores.includes(s)) {
+    return isBags;
+  }
+
+  // Group 8: Jewelry only stores
   const jewelryStores = [
     'tanishq', 'joyalukkas', 'caratlane', 'bluestone', 'giva', 'melorra', 
     'miabytanishq', 'kalyanjewellers', 'malabargold', 'sencogold', 'pcjeweller', 
@@ -1322,7 +1581,7 @@ export function doesStoreSellQuery(store, query) {
     return isJewelry;
   }
 
-  // Group 6: Watches only stores
+  // Group 9: Watches only stores
   const watchesStores = [
     'titan', 'fastrack', 'sonata', 'casio', 'fossil', 'danielwellington', 
     'ethoswatches', 'helioswatches'
@@ -1331,7 +1590,7 @@ export function doesStoreSellQuery(store, query) {
     return isWatches || isEyewear;
   }
 
-  // Group 7: Eyewear only stores
+  // Group 10: Eyewear only stores
   const eyewearStores = [
     'lenskart', 'titaneyeplus', 'johnjacobs', 'coolwinks', 'rayban', 
     'sunglasshut', 'specsmakers', 'lenspick', 'cleardekho', 'vincentchase'
@@ -1340,7 +1599,7 @@ export function doesStoreSellQuery(store, query) {
     return isEyewear;
   }
 
-  // Group 8: Beauty only stores
+  // Group 11: Beauty only stores
   const beautyStores = [
     'nykaa', 'purplle', 'myglamm', 'sugarcosmetics', 'mamaearth', 'wowskin', 
     'dermaco', 'plumgoodness', 'mcaffeine', 'forestessentials', 'kamaayurveda', 
@@ -1351,7 +1610,7 @@ export function doesStoreSellQuery(store, query) {
     return isBeauty;
   }
 
-  // Group 9: Home decor & kitchenware
+  // Group 12: Home decor & kitchenware
   const homeStores = [
     'pepperfry', 'urbanladder', 'woodenstreet', 'homecentre', 'ikea', 'sleepwell', 
     'wakefit', 'flomattress', 'thesleepcompany', 'borosil', 'wonderchef', 'pigeon', 
@@ -1361,18 +1620,18 @@ export function doesStoreSellQuery(store, query) {
     return isHome;
   }
 
-  // Group 10: Kids only stores
+  // Group 13: Kids only stores
   const kidsStores = ['firstcry', 'hopscotch', 'hamleys'];
   if (kidsStores.includes(s)) {
     return isKids || isApparel || isFootwear;
   }
 
-  // Group 11: Books only stores
+  // Group 14: Books only stores
   if (s === 'bookswagon') {
     return isBooks;
   }
 
-  // Group 12: Quick commerce / grocery
+  // Group 15: Quick commerce / grocery
   const quickCommerceStores = [
     'blinkit', 'zepto', 'instamart', 'bbnow', 'fkminutes', 'amazonfresh', 
     'jiomartexpress', 'bbdaily', 'dunzo', 'countrydelight'
@@ -1381,7 +1640,7 @@ export function doesStoreSellQuery(store, query) {
     return isGrocery || isBeauty || isKids || (isElectronics && /\b(charger|cable|cables|adapter|plug|powerbank|earphone|earphones)\b/.test(q)) || isHome;
   }
 
-  return true;
+  return false;
 }
 
 // ── Store Search Simulator for Scrape Console ──
@@ -1464,23 +1723,30 @@ export function simulateStoreSearch(query, store, pages = 1, location = 'Mumbai'
     const deliveryFee = deliveryProfile.deliveryFee;
     const packagingFee = isFood(store) ? 10 + Math.floor(Math.random() * 15) : null;
     const distance = isFood(store) ? parseFloat((1.2 + Math.random() * 4.5).toFixed(1)) + ' km' : null;
-    const itemLink = isFood(store)
+    const isFoodStore = isFood(store);
+    const itemLink = isFoodStore
       ? getFoodProductLink(store, loc, restaurantName, query)
       : storeLink;
+    const isExact = isFoodStore;
+    const exactProductUrl = isFoodStore ? itemLink : null;
 
     products.push({
       id: `${store.substring(0, 2)}-${Date.now()}-${i}`,
       name: productName,
       price,
-      priceFormatted: `\u20B9${price}`,
+      priceFormatted: `₹${price}`,
       originalPrice,
-      originalPriceFormatted: `\u20B9${originalPrice}`,
+      originalPriceFormatted: `₹${originalPrice}`,
       discount,
       discountFormatted: `${discount}% off`,
       rating,
       ratingsCount,
       reviewsCount: Math.round(ratingsCount * 0.15),
       productLink: itemLink,
+      productUrl: exactProductUrl,
+      searchUrl: storeLink,
+      isExactProductUrl: isExact,
+      urlType: isExact ? 'product' : 'search',
       imageUrl: defaultImg,
       source: store,
       deliverable: true,
@@ -1644,8 +1910,10 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
 
   // Find the best single base product to center the comparison around
   let baseProduct = null;
-  if (products.length > 0) {
-    baseProduct = products.sort((a, b) => (b.ratingsCount || 0) - (a.ratingsCount || 0))[0];
+  const validLiveProducts = products.filter(p => validateBaseProduct(query, p));
+
+  if (validLiveProducts.length > 0) {
+    baseProduct = validLiveProducts.sort((a, b) => (b.ratingsCount || 0) - (a.ratingsCount || 0))[0];
   } else {
     const isFashionQuery = category === 'ecommerce' && 
       ['shoe', 'dress', 'jean', 'clothing', 'shirt', 'jacket', 'watch', 'bag', 'sneaker', 'hoodie'].some(kw => query.toLowerCase().includes(kw));
@@ -1684,15 +1952,34 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
   // Generate comparison prices across all target stores using the base product
   const comparisonData = generatePlatformComparison(query, baseProduct, targetStores, location);
   
-  // IF category is food or quickcommerce, inject the actual scraped/simulated products instead of a single mocked item
-  if (category === 'food' || category === 'quickcommerce') {
-    targetStores.forEach(store => {
-      const storeProducts = products.filter(p => p.source === store).sort((a, b) => a.price - b.price);
-      if (storeProducts.length > 0) {
+  // Inject actual scraped/simulated products for stores that have live results
+  targetStores.forEach(store => {
+    const storeProducts = products.filter(p => p.source === store).sort((a, b) => a.price - b.price);
+    if (storeProducts.length > 0) {
+      if (category === 'food' || category === 'quickcommerce') {
         comparisonData.comparison[store] = storeProducts;
+      } else {
+        const topLive = storeProducts[0];
+        const isExact = Boolean(topLive.isExactProductUrl);
+        comparisonData.comparison[store] = {
+          price: topLive.price,
+          priceFormatted: topLive.priceFormatted || `₹${topLive.price.toLocaleString('en-IN')}`,
+          originalPrice: topLive.originalPrice || Math.round(topLive.price * 1.15),
+          originalPriceFormatted: topLive.originalPriceFormatted || null,
+          discount: topLive.discount || 0,
+          discountFormatted: topLive.discountFormatted || null,
+          rating: topLive.rating || 4.2,
+          ratingsCount: topLive.ratingsCount || 100,
+          productLink: topLive.productLink,
+          productUrl: isExact ? topLive.productUrl : null,
+          searchUrl: getStoreLink(store, query),
+          isExactProductUrl: isExact,
+          urlType: isExact ? 'product' : 'search',
+          imageUrl: topLive.imageUrl
+        };
       }
-    });
-  }
+    }
+  });
 
   // Accuracy Boost: If profileUrls are provided, slightly reduce prices for the matched store to simulate accurate member discounts
   if (profileUrls && profileUrls.length > 0) {

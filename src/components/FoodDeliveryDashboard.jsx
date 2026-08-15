@@ -274,7 +274,7 @@ function FoodDeliveryDashboard({ baseUrl }) {
                               <span title="Packaging Fee">📦 ₹{storeData.packagingFee || 0}</span>
                             </div>
                             
-                            <a href={storeData.productLink} target="_blank" rel="noopener noreferrer" className="btn-store-go" style={{ width: '100%', justifyContent: 'center' }}>
+                            <a href={storeData.productUrl || storeData.productLink} target="_blank" rel="noopener noreferrer" className="btn-store-go" style={{ width: '100%', justifyContent: 'center' }}>
                               Order on {store.charAt(0).toUpperCase() + store.slice(1)} <ArrowRight size={14} />
                             </a>
                           </div>
@@ -352,7 +352,7 @@ function FoodDeliveryDashboard({ baseUrl }) {
                                 <span>Pack: ₹{storeData.packagingFee || 0}</span>
                                 <span>{storeData.deliveryTime}</span>
                               </div>
-                              <a href={storeData.productLink} target="_blank" rel="noopener noreferrer" className="btn-store-go" style={{ width: '100%', justifyContent: 'center' }}>
+                              <a href={storeData.productUrl || storeData.productLink} target="_blank" rel="noopener noreferrer" className="btn-store-go" style={{ width: '100%', justifyContent: 'center' }}>
                                 Order <ArrowRight size={14} />
                               </a>
                             </div>

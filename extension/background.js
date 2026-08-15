@@ -1,4 +1,17 @@
-const BACKEND_URL = 'http://localhost:5000';
+const DEFAULT_BACKEND_URL = 'http://localhost:5000';
+
+async function getBackendUrl() {
+  return new Promise((resolve) => {
+    chrome.storage.sync?.get(['backend_url'], (syncRes) => {
+      if (syncRes && syncRes.backend_url) {
+        return resolve(syncRes.backend_url.replace(/\/+$/, ''));
+      }
+      chrome.storage.local.get(['backend_url'], (localRes) => {
+        resolve((localRes && localRes.backend_url ? localRes.backend_url : DEFAULT_BACKEND_URL).replace(/\/+$/, ''));
+      });
+    });
+  });
+}
 
 // Handle messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -10,8 +23,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(() => sendResponse({ cheaperOptions: [] }));
     return true; // Keep message port open for async response
   } else if (request.action === 'setAuthToken') {
-    chrome.storage.local.set({ auth_token: request.token });
-    console.log('[Symbiote Background] Auth token updated');
+    if (request.token && typeof request.token === 'string' && request.token.trim()) {
+      chrome.storage.local.set({ auth_token: request.token.trim() }, () => {
+        console.log('[Symbiote Background] Auth token updated');
+      });
+    } else {
+      chrome.storage.local.remove(['auth_token'], () => {
+        console.log('[Symbiote Background] Auth token cleared');
+      });
+    }
+  } else if (request.action === 'clearAuthToken') {
+    chrome.storage.local.remove(['auth_token'], () => {
+      console.log('[Symbiote Background] Auth token cleared');
+    });
+  } else if (request.action === 'setBackendUrl') {
+    if (request.url) {
+      const cleanUrl = request.url.replace(/\/+$/, '');
+      chrome.storage.local.set({ backend_url: cleanUrl });
+      chrome.storage.sync?.set({ backend_url: cleanUrl });
+      console.log('[Symbiote Background] Backend URL updated to:', cleanUrl);
+    }
   }
 });
 
@@ -26,12 +57,13 @@ async function getAuthToken() {
 async function syncProductWithServer(product) {
   try {
     const token = await getAuthToken();
+    const backendUrl = await getBackendUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/extension/sync`, {
+    const response = await fetch(`${backendUrl}/api/extension/sync`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ product })
@@ -58,13 +90,14 @@ async function syncProductWithServer(product) {
 async function checkCheaperPrice(product) {
   try {
     const token = await getAuthToken();
+    const backendUrl = await getBackendUrl();
     const headers = { 'Content-Type': 'application/json' };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
     // Call server to compare prices
-    const response = await fetch(`${BACKEND_URL}/api/compare`, {
+    const response = await fetch(`${backendUrl}/api/compare`, {
       method: 'POST',
       headers,
       body: JSON.stringify({

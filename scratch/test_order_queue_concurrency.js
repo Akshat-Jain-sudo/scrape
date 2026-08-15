@@ -402,6 +402,8 @@ async function runQueueTestSuite() {
       process.exit(1);
     }
   } finally {
+    const { stopPriceHistoryScheduler } = await import('../server/cron.js');
+    await stopPriceHistoryScheduler();
     server.close();
   }
 }

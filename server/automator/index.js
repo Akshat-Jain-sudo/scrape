@@ -56,7 +56,7 @@ export async function launchOrderSession({ store, credentials, productUrl, produ
  * Called when user clicks "Confirm & Pay" in the Symbiote UI.
  */
 export async function confirmOrder(sessionId, session) {
-  const handler = SUPPORTED_STORES[session.store];
+  const handler = session.handler || SUPPORTED_STORES[session.store];
   if (!handler) return { status: 'error', message: 'Unknown store' };
 
   updateSession(sessionId, { status: 'placing_order' });
@@ -69,10 +69,8 @@ export async function confirmOrder(sessionId, session) {
     updateSession(sessionId, { status: 'error', lastResult: { message: err.message } });
     return { status: 'error', message: err.message };
   } finally {
-    // Schedule clean shutdown and queue slot release after 10s grace period for final screenshot
-    setTimeout(async () => {
-      await closeSession(sessionId);
-      releaseJob(sessionId);
-    }, 10000);
+    // Safely close session and release queue slot immediately
+    await closeSession(sessionId);
+    releaseJob(sessionId);
   }
 }

@@ -1,8 +1,15 @@
 import { getNeonPool, initNeonDb } from './neonDb.js';
+import { validateProductUrl } from './urlValidator.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ANON_REGEX = /^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function isValidUuid(id) {
   return typeof id === 'string' && UUID_REGEX.test(id);
+}
+
+function isValidAnonSession(id) {
+  return typeof id === 'string' && ANON_REGEX.test(id);
 }
 
 // ── Initialize Database ──
@@ -13,6 +20,10 @@ export async function initDb() {
 // ── PRODUCTS CRUD ──
 
 function mapProductRow(row) {
+  const rawUrl = row.url || '';
+  const validation = validateProductUrl(rawUrl, row.store);
+  const isExact = validation.isExactProductUrl;
+
   return {
     id: row.id,
     query: row.query,
@@ -27,24 +38,31 @@ function mapProductRow(row) {
     discountFormatted: row.discount,
     rating: row.rating ? parseFloat(row.rating) : null,
     imageUrl: row.image,
-    productLink: row.url,
+    productLink: isExact ? validation.canonicalUrl : rawUrl,
+    productUrl: isExact ? validation.canonicalUrl : null,
+    searchUrl: isExact ? null : rawUrl,
+    isExactProductUrl: isExact,
+    urlType: isExact ? 'product' : 'search',
     location: row.location,
     pincode: row.pincode,
     targetPrice: row.target_price ? parseFloat(row.target_price) : null,
-    userId: row.user_id || row.anonymous_session_id || 'anonymous',
+    userId: row.user_id || row.anonymous_session_id || null,
     dateAdded: row.created_at
   };
 }
 
-export async function getProducts(userId = 'anonymous') {
+export async function getProducts(userId = null) {
+  if (!userId) return [];
   const pg = getNeonPool();
-  const isUuid = isValidUuid(userId);
-  const query = isUuid
-    ? 'SELECT * FROM products WHERE user_id = $1 ORDER BY created_at DESC'
-    : 'SELECT * FROM products WHERE anonymous_session_id = $1 ORDER BY created_at DESC';
-  
-  const result = await pg.query(query, [userId]);
-  return result.rows.map(mapProductRow);
+  if (isValidUuid(userId)) {
+    const result = await pg.query('SELECT * FROM products WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+    return result.rows.map(mapProductRow);
+  }
+  if (isValidAnonSession(userId)) {
+    const result = await pg.query('SELECT * FROM products WHERE anonymous_session_id = $1 ORDER BY created_at DESC', [userId]);
+    return result.rows.map(mapProductRow);
+  }
+  return [];
 }
 
 export async function getAllProducts() {
@@ -53,7 +71,10 @@ export async function getAllProducts() {
   return result.rows.map(mapProductRow);
 }
 
-export async function saveProducts(products, userId = 'anonymous') {
+export async function saveProducts(products, userId = null) {
+  if (!userId || (!isValidUuid(userId) && !isValidAnonSession(userId))) {
+    throw new Error('Valid authenticated user ID or anonymous session ID is required to save products');
+  }
   const pg = getNeonPool();
   const client = await pg.connect();
   const isUuid = isValidUuid(userId);
@@ -165,31 +186,34 @@ export async function saveProducts(products, userId = 'anonymous') {
   }
 }
 
-export async function deleteProduct(id, userId = 'anonymous') {
+export async function deleteProduct(id, userId = null) {
+  if (!userId) return;
   const pg = getNeonPool();
-  const isUuid = isValidUuid(userId);
-  const query = isUuid
-    ? 'DELETE FROM products WHERE id = $1 AND user_id = $2'
-    : 'DELETE FROM products WHERE id = $1 AND anonymous_session_id = $2';
-  await pg.query(query, [id, userId]);
+  if (isValidUuid(userId)) {
+    await pg.query('DELETE FROM products WHERE id = $1 AND user_id = $2', [id, userId]);
+  } else if (isValidAnonSession(userId)) {
+    await pg.query('DELETE FROM products WHERE id = $1 AND anonymous_session_id = $2', [id, userId]);
+  }
 }
 
-export async function clearAllProducts(userId = 'anonymous') {
+export async function clearAllProducts(userId = null) {
+  if (!userId) return;
   const pg = getNeonPool();
-  const isUuid = isValidUuid(userId);
-  const query = isUuid
-    ? 'DELETE FROM products WHERE user_id = $1'
-    : 'DELETE FROM products WHERE anonymous_session_id = $1';
-  await pg.query(query, [userId]);
+  if (isValidUuid(userId)) {
+    await pg.query('DELETE FROM products WHERE user_id = $1', [userId]);
+  } else if (isValidAnonSession(userId)) {
+    await pg.query('DELETE FROM products WHERE anonymous_session_id = $1', [userId]);
+  }
 }
 
-export async function updateTargetPrice(id, targetPrice, userId = 'anonymous') {
+export async function updateTargetPrice(id, targetPrice, userId = null) {
+  if (!userId) return;
   const pg = getNeonPool();
-  const isUuid = isValidUuid(userId);
-  const query = isUuid
-    ? 'UPDATE products SET target_price = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3'
-    : 'UPDATE products SET target_price = $1, updated_at = NOW() WHERE id = $2 AND anonymous_session_id = $3';
-  await pg.query(query, [targetPrice, id, userId]);
+  if (isValidUuid(userId)) {
+    await pg.query('UPDATE products SET target_price = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3', [targetPrice, id, userId]);
+  } else if (isValidAnonSession(userId)) {
+    await pg.query('UPDATE products SET target_price = $1, updated_at = NOW() WHERE id = $2 AND anonymous_session_id = $3', [targetPrice, id, userId]);
+  }
 }
 
 export async function updateProductPrice(id, newPrice) {
@@ -263,7 +287,10 @@ export async function getAllScraperHealth() {
 
 // ── FEEDBACK CRUD ──
 
-export async function saveFeedback({ category, message, rating, page, userId = 'anonymous' }) {
+export async function saveFeedback({ category, message, rating, page, userId = null }) {
+  if (!userId || (!isValidUuid(userId) && !isValidAnonSession(userId))) {
+    return;
+  }
   const pg = getNeonPool();
   const isUuid = isValidUuid(userId);
   const query = isUuid
@@ -274,19 +301,26 @@ export async function saveFeedback({ category, message, rating, page, userId = '
   await pg.query(query, [category || 'general', message, rating || null, page || null, userId]);
 }
 
-export async function getFeedback(userId = 'anonymous') {
+export async function getFeedback(userId = null) {
+  if (!userId) return [];
   const pg = getNeonPool();
-  const isUuid = isValidUuid(userId);
-  const query = isUuid
-    ? 'SELECT * FROM feedback WHERE user_id = $1 ORDER BY created_at DESC'
-    : 'SELECT * FROM feedback WHERE anonymous_session_id = $1 ORDER BY created_at DESC';
-  const result = await pg.query(query, [userId]);
-  return result.rows;
+  if (isValidUuid(userId)) {
+    const result = await pg.query('SELECT * FROM feedback WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+    return result.rows;
+  }
+  if (isValidAnonSession(userId)) {
+    const result = await pg.query('SELECT * FROM feedback WHERE anonymous_session_id = $1 ORDER BY created_at DESC', [userId]);
+    return result.rows;
+  }
+  return [];
 }
 
 // ── CHAT MESSAGES CRUD ──
 
-export async function saveChatMessage({ sessionId, role, content, userId = 'anonymous' }) {
+export async function saveChatMessage({ sessionId, role, content, userId = null }) {
+  if (!userId || (!isValidUuid(userId) && !isValidAnonSession(userId))) {
+    return;
+  }
   const pg = getNeonPool();
   const isUuid = isValidUuid(userId);
   const query = isUuid
@@ -297,12 +331,22 @@ export async function saveChatMessage({ sessionId, role, content, userId = 'anon
   await pg.query(query, [sessionId, role, content, userId]);
 }
 
-export async function getChatHistory(sessionId, userId = 'anonymous') {
+export async function getChatHistory(sessionId, userId = null) {
+  if (!userId) return [];
   const pg = getNeonPool();
-  const isUuid = isValidUuid(userId);
-  const query = isUuid
-    ? 'SELECT role, content, created_at FROM chat_messages WHERE session_id = $1 AND user_id = $2 ORDER BY created_at ASC'
-    : 'SELECT role, content, created_at FROM chat_messages WHERE session_id = $1 AND anonymous_session_id = $2 ORDER BY created_at ASC';
-  const result = await pg.query(query, [sessionId, userId]);
-  return result.rows;
+  if (isValidUuid(userId)) {
+    const result = await pg.query(
+      'SELECT role, content, created_at FROM chat_messages WHERE session_id = $1 AND user_id = $2 ORDER BY created_at ASC',
+      [sessionId, userId]
+    );
+    return result.rows;
+  }
+  if (isValidAnonSession(userId)) {
+    const result = await pg.query(
+      'SELECT role, content, created_at FROM chat_messages WHERE session_id = $1 AND anonymous_session_id = $2 ORDER BY created_at ASC',
+      [sessionId, userId]
+    );
+    return result.rows;
+  }
+  return [];
 }

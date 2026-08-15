@@ -146,10 +146,11 @@ export async function processQueue() {
 
     page = await context.newPage();
 
-    // Attach browser and page to session
+    // Attach browser, page, and handler to session
     updateSession(sessionId, {
       browser,
       page,
+      handler,
       status: 'logging_in'
     });
 

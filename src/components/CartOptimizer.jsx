@@ -944,13 +944,13 @@ function CartOptimizer({ addToast }) {
                                       <div>₹{item.price}</div>
                                       {item.productLink && (
                                         <a 
-                                          href={item.productLink} 
+                                          href={item.productUrl || item.productLink} 
                                           target="_blank" 
                                           rel="noopener noreferrer" 
                                           style={{ color: 'var(--accent-blue)', fontSize: '0.65rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '1px' }}
-                                          title={`Buy directly on ${storeCart.storeName}`}
+                                          title={item.isExactProductUrl ? `Buy exact item on ${storeCart.storeName}` : `Search on ${storeCart.storeName}`}
                                         >
-                                          Buy <ExternalLink size={8} />
+                                          {item.isExactProductUrl ? 'Buy' : 'View'} <ExternalLink size={8} />
                                         </a>
                                       )}
                                     </>
@@ -1027,12 +1027,13 @@ function CartOptimizer({ addToast }) {
                                   <div>₹{item.price}</div>
                                   {item.productLink && (
                                     <a 
-                                      href={item.productLink} 
+                                      href={item.productUrl || item.productLink} 
                                       target="_blank" 
                                       rel="noopener noreferrer" 
                                       style={{ color: 'var(--accent-blue)', fontSize: '0.65rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '1px' }}
+                                      title={item.isExactProductUrl ? `Buy exact item on ${storeCard.storeName}` : `Search on ${storeCard.storeName}`}
                                     >
-                                      Buy <ExternalLink size={8} />
+                                      {item.isExactProductUrl ? 'Buy' : 'View'} <ExternalLink size={8} />
                                     </a>
                                   )}
                                 </td>

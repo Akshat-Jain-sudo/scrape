@@ -163,29 +163,60 @@ function injectComparisonBanner(product) {
   });
 }
 
-// Localhost bridge: listen for token updates from the website dashboard
-if (window.location.hostname === 'localhost') {
+// Dashboard bridge: listen for token updates from the website dashboard (localhost or onrender production domain)
+const isSymbioteDashboard = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' || 
+                            window.location.hostname.endsWith('.onrender.com');
+
+if (isSymbioteDashboard) {
   console.log('[Symbiote Content Script] Connected to dashboard');
   document.documentElement.setAttribute('data-symbiote-extension', 'installed');
+
+  // Notify background worker of dashboard URL for API routing
+  if (window.location.origin) {
+    chrome.runtime.sendMessage({ action: 'setBackendUrl', url: window.location.origin });
+  }
   
   // Method 1: Listen to custom window events triggered by React dashboard
   window.addEventListener('symbiote-auth-token', (event) => {
     const token = event.detail;
-    chrome.runtime.sendMessage({ action: 'setAuthToken', token });
+    if (token && typeof token === 'string' && token.trim()) {
+      lastKnownTokenState = token.trim();
+      chrome.runtime.sendMessage({ action: 'setAuthToken', token: lastKnownTokenState });
+    } else {
+      lastKnownTokenState = null;
+      chrome.runtime.sendMessage({ action: 'clearAuthToken' });
+    }
   });
 
-  // Method 2: Periodically poll localStorage for the Supabase session
-  setInterval(() => {
-    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    if (sbKey) {
-      try {
-        const session = JSON.parse(localStorage.getItem(sbKey));
-        if (session && session.access_token) {
-          chrome.runtime.sendMessage({ action: 'setAuthToken', token: session.access_token });
-        }
-      } catch (e) {}
+  // Method 2: Listen to storage events across tabs
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'symbiote_auth_token') {
+      syncTokenFromStorage();
     }
-  }, 3000);
+  });
+
+  // Method 3: Periodically poll localStorage for symbiote_auth_token
+  let lastKnownTokenState = undefined;
+
+  const syncTokenFromStorage = () => {
+    const directToken = localStorage.getItem('symbiote_auth_token');
+    if (directToken && typeof directToken === 'string' && directToken.trim()) {
+      if (lastKnownTokenState !== directToken.trim()) {
+        lastKnownTokenState = directToken.trim();
+        chrome.runtime.sendMessage({ action: 'setAuthToken', token: lastKnownTokenState });
+      }
+    } else {
+      // If token was previously present or on initial check when absent
+      if (lastKnownTokenState !== null) {
+        lastKnownTokenState = null;
+        chrome.runtime.sendMessage({ action: 'clearAuthToken' });
+      }
+    }
+  };
+
+  syncTokenFromStorage();
+  setInterval(syncTokenFromStorage, 1000);
 } else {
   // Scrape and sync on load for Amazon/Flipkart
   setTimeout(() => {

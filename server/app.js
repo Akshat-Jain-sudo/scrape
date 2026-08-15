@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'url';
 import dns from 'node:dns/promises';
 import { isIP } from 'node:net';
@@ -22,6 +23,7 @@ import {
   getNearbyRestaurants,
   getRestaurantMenu
 } from './scraper.js';
+import { filterAndRankProducts } from './relevance.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { 
@@ -76,14 +78,14 @@ function generateToken(user) {
 async function verifyUser(req, res, next) {
   const authHeader = req.headers.authorization;
   const anonHeader = req.headers['x-anonymous-session'];
-  req.userId = 'anonymous'; // default fallback
+  req.userId = null; // No default shared anonymous bucket
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     
     // Ignore stringified placeholders from frontend
     if (!token || token === 'null' || token === 'undefined') {
-      req.userId = 'anonymous';
+      req.userId = null;
       return next();
     }
 
@@ -102,6 +104,8 @@ async function verifyUser(req, res, next) {
     const ANON_REGEX = /^anon-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (ANON_REGEX.test(anonHeader)) {
       req.userId = anonHeader;
+    } else {
+      return res.status(400).json({ error: 'Invalid anonymous session format' });
     }
   }
   next();
@@ -109,7 +113,8 @@ async function verifyUser(req, res, next) {
 
 // Middleware to ensure user is authenticated (not anonymous)
 function requireAuth(req, res, next) {
-  if (req.userId === 'anonymous' || req.userId.startsWith('anon-')) {
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!req.userId || typeof req.userId !== 'string' || !UUID_REGEX.test(req.userId)) {
     return res.status(401).json({ error: 'Authentication required' });
   }
   next();
@@ -202,7 +207,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ── GET /api/auth/me — Get current authenticated user ──
 app.get('/api/auth/me', async (req, res) => {
-  if (req.userId === 'anonymous') {
+  if (!req.userId || req.userId.startsWith('anon-')) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   try {
@@ -219,7 +224,7 @@ app.get('/api/auth/me', async (req, res) => {
 
 // ── PUT /api/auth/profile — Update user profile ──
 app.put('/api/auth/profile', async (req, res) => {
-  if (req.userId === 'anonymous') {
+  if (!req.userId || req.userId.startsWith('anon-')) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   try {
@@ -289,7 +294,8 @@ app.get('/api/location/autocomplete', async (req, res) => {
   if (apiKey) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&components=country:in&key=${apiKey}`
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&components=country:in&key=${apiKey}`,
+        { signal: AbortSignal.timeout(5000) }
       );
       if (response.ok) {
         const data = await response.json();
@@ -302,7 +308,7 @@ app.get('/api/location/autocomplete', async (req, res) => {
         return res.json(suggestions);
       }
     } catch (e) {
-      console.error('Google Autocomplete Proxy failed, falling back to OSM:', e);
+      console.error('Google Autocomplete Proxy failed, falling back to OSM:', e.message || e);
     }
   }
 
@@ -310,7 +316,10 @@ app.get('/api/location/autocomplete', async (req, res) => {
   try {
     const resOsm = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&countrycodes=in&format=json&addressdetails=1&limit=5`,
-      { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
+      { 
+        headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' },
+        signal: AbortSignal.timeout(5000)
+      }
     );
     if (resOsm.ok) {
       const data = await resOsm.json();
@@ -336,7 +345,7 @@ app.get('/api/location/autocomplete', async (req, res) => {
       return res.json(suggestions);
     }
   } catch (e) {
-    console.error('OSM Autocomplete failed:', e);
+    console.error('OSM Autocomplete failed:', e.message || e);
   }
 
   res.json([]);
@@ -356,7 +365,8 @@ app.get('/api/location/details', async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,address_components&key=${apiKey}`
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,address_components&key=${apiKey}`,
+      { signal: AbortSignal.timeout(5000) }
     );
     if (response.ok) {
       const data = await response.json();
@@ -396,7 +406,7 @@ app.get('/api/location/details', async (req, res) => {
       });
     }
   } catch (e) {
-    console.error('Google Place details resolution failed:', e);
+    console.error('Google Place details resolution failed:', e.message || e);
   }
   res.status(500).json({ error: 'Failed to resolve location details' });
 });
@@ -412,7 +422,8 @@ app.get('/api/location/reverse', async (req, res) => {
   if (apiKey) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
+        { signal: AbortSignal.timeout(5000) }
       );
       if (response.ok) {
         const data = await response.json();
@@ -450,7 +461,7 @@ app.get('/api/location/reverse', async (req, res) => {
         });
       }
     } catch (e) {
-      console.error('Google Reverse Geocoding failed, falling back to OSM:', e);
+      console.error('Google Reverse Geocoding failed, falling back to OSM:', e.message || e);
     }
   }
 
@@ -458,7 +469,10 @@ app.get('/api/location/reverse', async (req, res) => {
   try {
     const resOsm = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-      { headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' } }
+      { 
+        headers: { 'User-Agent': 'Symbiote/1.0', 'Accept-Language': 'en' },
+        signal: AbortSignal.timeout(5000)
+      }
     );
     if (resOsm.ok) {
       const data = await resOsm.json();
@@ -481,7 +495,7 @@ app.get('/api/location/reverse', async (req, res) => {
       });
     }
   } catch (e) {
-    console.error('OSM Reverse Geocode failed:', e);
+    console.error('OSM Reverse Geocode failed:', e.message || e);
   }
 
   res.status(500).json({ error: 'Failed to reverse geocode coordinates' });
@@ -842,7 +856,10 @@ app.post('/api/scrape', async (req, res) => {
     const matchesSource = (storeKey) => activeSources.includes('all') || activeSources.includes(storeKey);
     const isSingleRequest = activeSources.length === 1 && !activeSources.includes('all');
 
-    if (category === 'ecommerce') {
+    const isQuickCommerce = category === 'quickcommerce' || category === 'grocery';
+    const isFood = category === 'food';
+
+    if (!isQuickCommerce && !isFood) {
       // 1. Live Scrapers
       if (matchesSource('flipkart')) {
         const fkProducts = await scrapeFlipkartSearch(query.trim(), pageCount);
@@ -880,16 +897,22 @@ app.post('/api/scrape', async (req, res) => {
         'hopscotch', 'hamleys', 'decathlon', 'vectorx', 'cosco', 'nivia', 'yonex', 'starsports'
       ];
 
-      for (const store of simulatedEcommerceStores) {
-        if (matchesSource(store)) {
-          if (isSingleRequest) {
-            await new Promise(r => setTimeout(r, 200));
-          }
-          const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
-          products = [...products, ...storeProducts];
+      // Fast synchronous pre-filtering: only simulate stores that sell the query
+      const eligibleStores = simulatedEcommerceStores.filter(store => 
+        matchesSource(store) && doesStoreSellQuery(store, query.trim())
+      );
+
+      // Take up to 25 best-fit stores to prevent high latency
+      const targetStores = isSingleRequest ? eligibleStores : eligibleStores.slice(0, 25);
+
+      for (const store of targetStores) {
+        if (isSingleRequest) {
+          await new Promise(r => setTimeout(r, 200));
         }
+        const storeProducts = simulateStoreSearch(query.trim(), store, pageCount, location);
+        products = [...products, ...storeProducts];
       }
-    } else if (category === 'food') {
+    } else if (isFood) {
       const foodStores = ['zomato', 'swiggy'];
       for (const store of foodStores) {
         if (matchesSource(store)) {
@@ -917,16 +940,13 @@ app.post('/api/scrape', async (req, res) => {
       }
     }
 
-    // Deduplicate by name and source
-    const seen = new Set();
-    const uniqueProducts = products.filter(p => {
-      const key = `${p.source}-${p.name.toLowerCase().trim()}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+    // Apply deterministic relevance scoring, cross-category noise rejection, and ranking
+    const { products: uniqueProducts } = filterAndRankProducts(query.trim(), products, {
+      threshold: 0.30,
+      logAll: process.env.NODE_ENV !== 'production'
     });
 
-    // Find bestPriceDeal from already-collected products (no re-simulation needed)
+    // Find bestPriceDeal from validated relevant products
     let bestPriceDeal = null;
     let lowestPrice = Infinity;
 
@@ -985,6 +1005,10 @@ app.get('/api/products', async (req, res) => {
 
 // ── POST /api/products — Save scraped products (batch) ──
 app.post('/api/products', async (req, res) => {
+  if (!req.userId) {
+    return res.status(400).json({ error: 'Authentication token or valid X-Anonymous-Session header required' });
+  }
+
   const { products } = req.body;
   
   if (!products || !Array.isArray(products) || products.length === 0) {
@@ -1012,6 +1036,10 @@ app.post('/api/products', async (req, res) => {
 
 // ── POST /api/extension/sync — Sync product from Chrome Extension ──
 app.post('/api/extension/sync', async (req, res) => {
+  if (!req.userId) {
+    return res.status(400).json({ error: 'Authentication token or valid X-Anonymous-Session header required' });
+  }
+
   const { product } = req.body;
   if (!product || !product.productLink || !product.price) {
     return res.status(400).json({ error: 'Valid product object is required' });
@@ -1020,7 +1048,7 @@ app.post('/api/extension/sync', async (req, res) => {
   try {
     // Generate a stable ID based on clean URL to prevent duplicates
     const cleanUrl = product.productLink.split('?')[0];
-    const productId = `ext-${Buffer.from(cleanUrl).toString('base64').replace(/=/g, '').substring(0, 24)}`;
+    const productId = `ext-${crypto.createHash('sha256').update(cleanUrl).digest('hex').substring(0, 24)}`;
     
     const preparedProduct = {
       ...product,
@@ -1056,6 +1084,10 @@ app.get('/api/products/:id/history', async (req, res) => {
 
 // ── PUT /api/products/:id/alert — Update target alert price ──
 app.put('/api/products/:id/alert', async (req, res) => {
+  if (!req.userId) {
+    return res.status(400).json({ error: 'Authentication token or valid X-Anonymous-Session header required' });
+  }
+
   const { id } = req.params;
   const { targetPrice } = req.body;
 
@@ -1069,6 +1101,10 @@ app.put('/api/products/:id/alert', async (req, res) => {
 
 // ── DELETE /api/products/:id — Delete a saved product ──
 app.delete('/api/products/:id', async (req, res) => {
+  if (!req.userId) {
+    return res.status(400).json({ error: 'Authentication token or valid X-Anonymous-Session header required' });
+  }
+
   const { id } = req.params;
   try {
     await deleteProduct(id, req.userId);
@@ -1080,6 +1116,10 @@ app.delete('/api/products/:id', async (req, res) => {
 
 // ── DELETE /api/products — Clear all saved products ──
 app.delete('/api/products', async (req, res) => {
+  if (!req.userId) {
+    return res.status(400).json({ error: 'Authentication token or valid X-Anonymous-Session header required' });
+  }
+
   try {
     await clearAllProducts(req.userId);
     res.json({ message: 'All products cleared successfully' });
@@ -1388,7 +1428,7 @@ app.get('/api/proxy-image', async (req, res) => {
   try {
     const decodedUrl = decodeURIComponent(url);
 
-    if (decodedUrl.startsWith('/')) {
+    if (decodedUrl.startsWith('/') && !decodedUrl.startsWith('//')) {
       return res.redirect(decodedUrl);
     }
 
@@ -1600,6 +1640,10 @@ app.post('/api/chat', async (req, res) => {
 
 // ── POST /api/feedback — Submit structured feedback ──
 app.post('/api/feedback', async (req, res) => {
+  if (!req.userId) {
+    return res.status(400).json({ error: 'Authentication token or valid X-Anonymous-Session header required' });
+  }
+
   const { category, message, rating, page } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Feedback message is required' });

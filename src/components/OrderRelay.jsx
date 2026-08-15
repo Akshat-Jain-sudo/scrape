@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const API = 'http://localhost:5000/api';
+const API = '/api';
 
 const SUPPORTED_STORES = [
   { key: 'amazon', name: 'Amazon India', logo: '🛒', color: '#FF9900' },
@@ -32,7 +32,7 @@ export default function OrderRelay({ authToken, addToast, initialProduct }) {
   // ── Order Flow ──
   const [orderForm, setOrderForm] = useState({
     store: 'amazon',
-    productUrl: initialProduct?.productLink || '',
+    productUrl: initialProduct?.productUrl || initialProduct?.productLink || '',
     productName: initialProduct?.name || '',
     deliveryName: '',
     deliveryPhone: '',

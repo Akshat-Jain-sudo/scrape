@@ -102,6 +102,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, data.token);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     
+    // Notify Chrome extension immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('symbiote-auth-token', { detail: data.token }));
+    }
+
     setUser(data.user);
     setSession({ access_token: data.token, user: data.user });
     setProfile({ id: data.user.id, email: data.user.email, full_name: data.user.full_name });
@@ -124,6 +129,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem(TOKEN_KEY, data.token);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
+    // Notify Chrome extension immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('symbiote-auth-token', { detail: data.token }));
+    }
+
     setUser(data.user);
     setSession({ access_token: data.token, user: data.user });
     
@@ -138,6 +148,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem('symbiote_user_profile');
+
+    // Notify Chrome extension of logout immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('symbiote-auth-token', { detail: null }));
+    }
+
     setUser(null);
     setSession(null);
     setProfile(null);

@@ -966,13 +966,14 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, onAddToCart })
                       <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap' }}>
                         {cheapest.productLink && (
                           <a 
-                            href={cheapest.productLink} 
+                            href={cheapest.productUrl || cheapest.productLink} 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="btn btn-primary"
                             style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', textDecoration: 'none' }}
+                            title={cheapest.isExactProductUrl ? `Buy exact product on ${STORE_NAMES[cheapest.source] || cheapest.source}` : `Search on ${STORE_NAMES[cheapest.source] || cheapest.source}`}
                           >
-                            Buy on Website <ExternalLink size={12} />
+                            {cheapest.isExactProductUrl ? 'Buy on Website' : 'Search on Store'} <ExternalLink size={12} />
                           </a>
                         )}
                         {onAddToCart && (
@@ -1103,7 +1104,14 @@ function ScrapeConsole({ savedProducts, onSaveProducts, addToast, onAddToCart })
                           <td>
                             <div style={{ display: 'flex', gap: '0.25rem' }}>
                               {product.productLink ? (
-                                <a href={product.productLink} target="_blank" rel="noopener noreferrer" className="btn-icon" style={{ padding: '0.3rem' }} title="View on Store">
+                                <a 
+                                  href={product.productUrl || product.productLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="btn-icon" 
+                                  style={{ padding: '0.3rem' }} 
+                                  title={product.isExactProductUrl ? `View exact product on ${STORE_NAMES[product.source] || product.source}` : `Search on ${STORE_NAMES[product.source] || product.source}`}
+                                >
                                   <ExternalLink size={13} />
                                 </a>
                               ) : null}

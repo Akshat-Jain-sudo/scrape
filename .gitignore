@@ -35,3 +35,5 @@ SUGGESTIONS.md
 *.db
 *.db-shm
 *.db-wal
+*.zip
+

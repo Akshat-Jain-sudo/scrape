@@ -580,7 +580,11 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                     discountFormatted: details.discountFormatted,
                     rating: details.rating,
                     ratingsCount: details.ratingsCount,
-                    productLink: details.productLink,
+                    productLink: details.productUrl || details.productLink,
+                    productUrl: details.productUrl || (details.isExactProductUrl ? details.productLink : null),
+                    searchUrl: details.searchUrl || null,
+                    isExactProductUrl: Boolean(details.isExactProductUrl),
+                    urlType: details.urlType || (details.isExactProductUrl ? 'product' : 'search'),
                     imageUrl: details.imageUrl || data.imageUrl || item.image,
                     searchQuery: item.query,
                     source: store,
@@ -594,7 +598,10 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                   });
                 });
               });
-              onSaveComparison(productsToSave, true); // Auto-save silently in background
+
+              if (productsToSave.length > 0) {
+                onSaveProducts(productsToSave);
+              }
               setAutoTracking(true);
             }
           }, 1500);
@@ -602,7 +609,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
           throw new Error('Comparison failed');
         }
       } catch (err) {
-        if (active) setError('Failed to fetch comparison');
+        if (active) setError(err.message);
       } finally {
         if (active) setLoading(false);
       }
@@ -614,10 +621,10 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
       active = false;
       clearTimeout(timer);
     };
-  }, [item.id, category, location]);
+  }, [item.query, category, location]);
 
-  const handleSave = () => {
-    if (!compData) return;
+  const handleSaveAll = () => {
+    if (!compData || !compData.comparison) return;
     const productsToSave = [];
     Object.entries(compData.comparison).forEach(([store, storeData]) => {
       const items = Array.isArray(storeData) ? storeData : [storeData];
@@ -633,7 +640,11 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
           discountFormatted: details.discountFormatted,
           rating: details.rating,
           ratingsCount: details.ratingsCount,
-          productLink: details.productLink,
+          productLink: details.productUrl || details.productLink,
+          productUrl: details.productUrl || (details.isExactProductUrl ? details.productLink : null),
+          searchUrl: details.searchUrl || null,
+          isExactProductUrl: Boolean(details.isExactProductUrl),
+          urlType: details.urlType || (details.isExactProductUrl ? 'product' : 'search'),
           imageUrl: details.imageUrl || compData.imageUrl || item.image,
           searchQuery: item.query,
           source: store,
@@ -840,7 +851,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
 
                       <div>
                         <a 
-                          href={details.productLink} 
+                          href={details.productUrl || details.productLink} 
                           onClick={(e) => {
                             if (store === 'zomato' || store === 'swiggy') {
                               e.preventDefault();
@@ -855,20 +866,22 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                                 window.location.href = appLink;
                                 
                                 // Fallback to web after delay if app not installed
+                                const targetWebUrl = details.productUrl || details.productLink;
                                 setTimeout(() => {
-                                  window.open(details.productLink, '_blank');
+                                  window.open(targetWebUrl, '_blank');
                                 }, 1500);
                               } else {
                                 // Open web link
-                                window.open(details.productLink, '_blank');
+                                window.open(details.productUrl || details.productLink, '_blank');
                               }
                             }
                           }}
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="btn-store-go"
+                          title={details.isExactProductUrl ? `Buy exact product on ${STORE_NAMES[store] || store}` : `Search for "${compData.productName || item.query}" on ${STORE_NAMES[store] || store}`}
                         >
-                          Buy <ArrowRight size={12} />
+                          {details.isExactProductUrl ? 'Buy' : 'View on Store'} <ArrowRight size={12} />
                         </a>
                       </div>
                     </div>

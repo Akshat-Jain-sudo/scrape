@@ -126,7 +126,7 @@ export async function initNeonDb() {
         message TEXT NOT NULL,
         rating INTEGER CHECK (rating BETWEEN 1 AND 5),
         page VARCHAR(100),
-        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
         anonymous_session_id VARCHAR(50),
         created_at TIMESTAMPTZ DEFAULT NOW(),
         CONSTRAINT chk_feedback_ownership CHECK (
