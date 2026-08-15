@@ -1,12 +1,12 @@
 /**
  * index.js — Main Order Automator entry point
- * Launches a Playwright browser session and delegates to store-specific automators.
+ * Delegates order automation requests to the in-process FIFO orderQueue.
  */
 
-import { chromium } from 'playwright';
-import { createSession, updateSession, takeScreenshot, closeSession } from './sessionManager.js';
+import { updateSession, takeScreenshot, closeSession } from './sessionManager.js';
 import { automateAmazon, confirmAmazonOrder } from './platforms/amazon.js';
 import { automateFlipkart, confirmFlipkartOrder } from './platforms/flipkart.js';
+import { enqueueOrderJob, releaseJob } from './orderQueue.js';
 
 // Supported stores and their automators
 const SUPPORTED_STORES = {
@@ -19,54 +19,36 @@ export function getSupportedStores() {
 }
 
 /**
- * Launch a new order automation session.
+ * Launch/enqueue a new order automation session.
+ * Queues the job in the FIFO queue to guarantee that at most MAX_CONCURRENCY (default 1)
+ * Chromium instance runs concurrently on Render.
  * Returns { sessionId, status, message } immediately.
- * The actual automation runs in background; use /api/order/screenshot/:id to poll state.
  */
 export async function launchOrderSession({ store, credentials, productUrl, productName, deliveryAddress, userId }) {
   const handler = SUPPORTED_STORES[store];
   if (!handler) {
-    return { error: `Store "${store}" is not supported for automated ordering. Supported: ${Object.keys(SUPPORTED_STORES).join(', ')}` };
+    return {
+      error: `Store "${store}" is not supported for automated ordering. Supported: ${Object.keys(SUPPORTED_STORES).join(', ')}`
+    };
   }
 
-  // Launch headless browser
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled']
+  // Enqueue job in FIFO queue
+  const queueResult = enqueueOrderJob({
+    store,
+    credentials,
+    productUrl,
+    productName,
+    deliveryAddress,
+    userId,
+    handler
   });
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-    viewport: { width: 1280, height: 900 },
-    locale: 'en-IN',
-    timezoneId: 'Asia/Kolkata'
-  });
-  const page = await context.newPage();
 
-  const sessionId = createSession({ browser, page, store, userId, productUrl, productName });
-
-  // Run automation asynchronously
-  (async () => {
-    try {
-      updateSession(sessionId, { status: 'logging_in' });
-      await takeScreenshot(sessionId);
-
-      const result = await handler.automate(page, credentials, productUrl, deliveryAddress);
-
-      await takeScreenshot(sessionId);
-      updateSession(sessionId, { status: result.status, lastResult: result });
-
-      if (result.status === 'needs_otp') {
-        // Switch to headed mode is not possible post-launch; inform user to use manual flow
-        console.log(`[Automator] Session ${sessionId}: OTP required`);
-      }
-    } catch (err) {
-      console.error(`[Automator] Session ${sessionId} error:`, err.message);
-      await takeScreenshot(sessionId);
-      updateSession(sessionId, { status: 'error', lastResult: { message: err.message } });
-    }
-  })();
-
-  return { sessionId, status: 'initiated', message: `Automation started for ${handler.name}. Use sessionId to poll status.` };
+  return {
+    sessionId: queueResult.sessionId,
+    jobId: queueResult.jobId,
+    status: 'initiated',
+    message: `Automation queued for ${handler.name}. Use sessionId to poll status.`
+  };
 }
 
 /**
@@ -78,14 +60,19 @@ export async function confirmOrder(sessionId, session) {
   if (!handler) return { status: 'error', message: 'Unknown store' };
 
   updateSession(sessionId, { status: 'placing_order' });
-  const result = await handler.confirm(session.page);
-  await takeScreenshot(sessionId);
-  updateSession(sessionId, { status: result.status, lastResult: result });
-
-  // Close the browser after success or definitive failure
-  if (result.status === 'placed' || result.status === 'error') {
-    setTimeout(() => closeSession(sessionId), 10000); // give 10s for final screenshot
+  try {
+    const result = await handler.confirm(session.page);
+    await takeScreenshot(sessionId);
+    updateSession(sessionId, { status: result.status, lastResult: result });
+    return result;
+  } catch (err) {
+    updateSession(sessionId, { status: 'error', lastResult: { message: err.message } });
+    return { status: 'error', message: err.message };
+  } finally {
+    // Schedule clean shutdown and queue slot release after 10s grace period for final screenshot
+    setTimeout(async () => {
+      await closeSession(sessionId);
+      releaseJob(sessionId);
+    }, 10000);
   }
-
-  return result;
 }

@@ -153,6 +153,20 @@ export async function initNeonDb() {
       );
     `);
 
+    // Retailer credentials table for Order Relay
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS retailer_credentials (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        platform VARCHAR(50) NOT NULL,
+        username TEXT NOT NULL,
+        encrypted_password JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT uq_user_retailer_platform UNIQUE (user_id, platform)
+      );
+    `);
+
     // Create unique index and performance indexes
     await db.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS uq_product_user ON products(id, user_id) WHERE user_id IS NOT NULL;
@@ -162,6 +176,7 @@ export async function initNeonDb() {
       CREATE INDEX IF NOT EXISTS idx_price_history_parent ON price_history(product_id);
       CREATE INDEX IF NOT EXISTS idx_chat_auth ON chat_messages(session_id, user_id);
       CREATE INDEX IF NOT EXISTS idx_chat_anon ON chat_messages(session_id, anonymous_session_id);
+      CREATE INDEX IF NOT EXISTS idx_retailer_credentials_user ON retailer_credentials(user_id);
     `);
 
     console.log('✅ Neon DB tables initialized successfully');

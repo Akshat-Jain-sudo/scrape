@@ -3,6 +3,8 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { 
   scrapeFlipkartSearch, 
   scrapeSnapdealSearch,
@@ -1231,6 +1233,151 @@ app.get('/api/health/scrapers', async (req, res) => {
   }
 });
 
+// Check if a resolved IP is a private, loopback, or link-local address
+function isPrivateIp(ip) {
+  if (isIP(ip) === 4) {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4) return true;
+    if (parts[0] === 127) return true;
+    if (parts[0] === 10) return true;
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    if (ip === '0.0.0.0') return true;
+    return false;
+  }
+  if (isIP(ip) === 6) {
+    const canonical = ip.toLowerCase();
+    if (canonical === '::1' || canonical === '0:0:0:0:0:0:0:1') return true;
+    if (canonical === '::' || canonical === '0:0:0:0:0:0:0:0') return true;
+    if (canonical.startsWith('fc') || canonical.startsWith('fd')) return true;
+    if (canonical.startsWith('fe8') || canonical.startsWith('fe9') || canonical.startsWith('fea') || canonical.startsWith('feb')) return true;
+    return false;
+  }
+  return true;
+}
+
+// Strictly validate URL hostname and resolve DNS to prevent SSRF
+async function validateUrlForProxy(urlStr) {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { valid: false, reason: 'Invalid protocol' };
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0') {
+      return { valid: false, reason: 'Localhost not allowed' };
+    }
+
+    const whitelist = [
+      'unsplash.com',
+      'flixcart.com',
+      'sdlcdn.com'
+    ];
+
+    const isWhitelisted = whitelist.some(domain => 
+      hostname === domain || hostname.endsWith('.' + domain)
+    );
+
+    if (!isWhitelisted) {
+      return { valid: false, reason: 'Domain not whitelisted' };
+    }
+
+    let ips = [];
+    try {
+      const lookupResult = await dns.lookup(hostname, { all: true });
+      ips = lookupResult.map(r => r.address);
+    } catch (dnsErr) {
+      return { valid: false, reason: 'DNS resolution failed' };
+    }
+
+    if (ips.length === 0) {
+      return { valid: false, reason: 'No IP addresses found' };
+    }
+
+    const hasPrivateIp = ips.some(isPrivateIp);
+    if (hasPrivateIp) {
+      return { valid: false, reason: 'Private IP address detected' };
+    }
+
+    return { valid: true, url: parsed.toString() };
+  } catch (e) {
+    return { valid: false, reason: 'Malformed URL' };
+  }
+}
+
+// Helper to safely fetch an image, enforce redirects re-validation, max size limit and content-type validation
+async function safeDownloadImage(urlStr) {
+  const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+  let currentUrl = urlStr;
+  let redirectCount = 0;
+  const maxRedirects = 3;
+
+  while (redirectCount <= maxRedirects) {
+    const check = await validateUrlForProxy(currentUrl);
+    if (!check.valid) {
+      throw new Error(`SSRF Blocked: ${check.reason}`);
+    }
+
+    const response = await axios.get(check.url, {
+      responseType: 'stream',
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache'
+      },
+      timeout: 6000,
+      maxRedirects: 0,
+      validateStatus: (status) => (status >= 200 && status < 400)
+    });
+
+    if (response.status >= 300 && response.status < 400) {
+      const redirectUrl = response.headers.location;
+      if (!redirectUrl) {
+        throw new Error('Redirect header missing Location');
+      }
+      currentUrl = new URL(redirectUrl, currentUrl).toString();
+      redirectCount++;
+      continue;
+    }
+
+    const contentType = response.headers['content-type'];
+    if (!contentType || !contentType.toLowerCase().startsWith('image/')) {
+      throw new Error('Invalid content-type: not an image');
+    }
+
+    return new Promise((resolve, reject) => {
+      let totalBytes = 0;
+      const chunks = [];
+
+      response.data.on('data', (chunk) => {
+        totalBytes += chunk.length;
+        if (totalBytes > maxSizeBytes) {
+          response.data.destroy();
+          reject(new Error('Response size limit exceeded'));
+        } else {
+          chunks.push(chunk);
+        }
+      });
+
+      response.data.on('end', () => {
+        resolve({
+          buffer: Buffer.concat(chunks),
+          contentType: contentType
+        });
+      });
+
+      response.data.on('error', (err) => {
+        reject(err);
+      });
+    });
+  }
+
+  throw new Error('Too many redirects');
+}
+
 // ── GET /api/proxy-image — Proxy product images to bypass WAF/Hotlinking blocks ──
 app.get('/api/proxy-image', async (req, res) => {
   const { url } = req.query;
@@ -1241,28 +1388,18 @@ app.get('/api/proxy-image', async (req, res) => {
   try {
     const decodedUrl = decodeURIComponent(url);
 
-    if (decodedUrl.startsWith('/') || decodedUrl.includes('unsplash.com')) {
+    if (decodedUrl.startsWith('/')) {
       return res.redirect(decodedUrl);
     }
 
-    const response = await axios.get(decodedUrl, {
-      responseType: 'arraybuffer',
-      headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': decodedUrl.includes('flipkart') ? 'https://www.flipkart.com/' : 'https://www.snapdeal.com/',
-        'Cache-Control': 'no-cache'
-      },
-      timeout: 6000
-    });
+    const result = await safeDownloadImage(decodedUrl);
 
-    res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Content-Type', result.contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(Buffer.from(response.data));
+    res.send(result.buffer);
   } catch (error) {
     console.error(`Image proxy failed for ${url}:`, error.message);
-    res.redirect('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200');
+    res.status(400).json({ error: 'Invalid or unreachable image resource' });
   }
 });
 
@@ -1521,44 +1658,71 @@ app.get('/api/order/stores', (req, res) => {
 });
 
 // POST /api/order/credentials -- Save encrypted platform credentials
-app.post('/api/order/credentials', requireAuth, (req, res) => {
+app.post('/api/order/credentials', requireAuth, async (req, res) => {
   const { platform, username, password } = req.body;
-  if (!platform || !username || !password) return res.status(400).json({ error: 'platform, username, and password are required' });
+  if (!platform || !username || !password) {
+    return res.status(400).json({ error: 'platform, username, and password are required' });
+  }
   try {
-    saveCredentials(req.userId, platform, username, password);
+    await saveCredentials(req.userId, platform, username, password);
     res.json({ success: true, message: `Credentials saved for ${platform}` });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to save credentials: ' + e.message });
+    console.error('[OrderRelay API] Failed to save credentials:', e.message);
+    res.status(500).json({ error: 'Unable to save credentials' });
   }
 });
 
 // GET /api/order/credentials -- List saved platforms (no passwords returned)
-app.get('/api/order/credentials', requireAuth, (req, res) => {
+app.get('/api/order/credentials', requireAuth, async (req, res) => {
   try {
-    const creds = listCredentials(req.userId);
+    const creds = await listCredentials(req.userId);
     res.json(creds);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error('[OrderRelay API] Failed to list credentials:', e.message);
+    res.status(500).json({ error: 'Unable to retrieve credentials' });
   }
 });
 
 // DELETE /api/order/credentials/:platform -- Remove credentials
-app.delete('/api/order/credentials/:platform', requireAuth, (req, res) => {
-  const deleted = deleteCredentials(req.userId, req.params.platform);
-  res.json({ success: deleted });
+app.delete('/api/order/credentials/:platform', requireAuth, async (req, res) => {
+  try {
+    const deleted = await deleteCredentials(req.userId, req.params.platform);
+    res.json({ success: deleted });
+  } catch (e) {
+    console.error('[OrderRelay API] Failed to delete credentials:', e.message);
+    res.status(500).json({ error: 'Unable to delete credentials' });
+  }
 });
 
 // POST /api/order/initiate -- Start order automation session
 app.post('/api/order/initiate', requireAuth, async (req, res) => {
   const { store, productUrl, productName, deliveryAddress } = req.body;
-  if (!store || !productUrl) return res.status(400).json({ error: 'store and productUrl are required' });
-  const creds = getCredentials(req.userId, store);
-  if (!creds) return res.status(400).json({ error: `No saved credentials for ${store}. Please add credentials first via POST /api/order/credentials` });
+  if (!store || !productUrl) {
+    return res.status(400).json({ error: 'store and productUrl are required' });
+  }
   try {
-    const result = await launchOrderSession({ store, credentials: creds, productUrl, productName, deliveryAddress, userId: req.userId });
+    const creds = await getCredentials(req.userId, store);
+    if (!creds) {
+      return res.status(400).json({ error: `No saved credentials for ${store}. Please add credentials first via POST /api/order/credentials` });
+    }
+    const result = await launchOrderSession({
+      store,
+      credentials: creds,
+      productUrl,
+      productName,
+      deliveryAddress,
+      userId: req.userId
+    });
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
     res.json(result);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to launch session: ' + e.message });
+    if (e.statusCode === 429 || e.code === 'QUEUE_FULL' || e.message === 'Order automation queue is currently full') {
+      return res.status(429).json({ error: 'Order automation queue is currently full' });
+    }
+    console.error('[OrderRelay API] Failed to launch order session:', e.message);
+    res.status(500).json({ error: 'Failed to launch session' });
   }
 });
 

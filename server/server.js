@@ -1,6 +1,7 @@
 import app from './app.js';
 import { runAllHealthChecks } from './scraperHealth.js';
 import { initNeonDb } from './neonDb.js';
+import { migrateJsonCredentials } from './automator/credentialStore.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -11,6 +12,7 @@ app.listen(PORT, async () => {
   try {
     await initNeonDb();
     console.log(`   ✅ Neon DB connected and tables initialized`);
+    await migrateJsonCredentials();
   } catch (err) {
     console.error(`   ❌ Neon DB init failed:`, err.message);
   }

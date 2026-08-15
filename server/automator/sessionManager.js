@@ -4,14 +4,16 @@
  * Sessions expire after 5 minutes of inactivity and the browser is closed cleanly.
  */
 
-const sessions = new Map(); // sessionId -> { browser, page, status, createdAt, lastActivity, screenshotBase64, store, userId }
+import { releaseJob } from './orderQueue.js';
+
+const sessions = new Map(); // sessionId -> { id, browser, page, status, createdAt, lastActivity, screenshotBase64, store, userId }
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 function generateId() {
   return `sess-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function createSession({ browser, page, store, userId, productUrl, productName }) {
+export function createSession({ browser = null, page = null, store, userId, productUrl, productName, status = 'queued' }) {
   const id = generateId();
   sessions.set(id, {
     id,
@@ -21,11 +23,11 @@ export function createSession({ browser, page, store, userId, productUrl, produc
     userId,
     productUrl,
     productName,
-    status: 'initiating',
+    status,
     screenshotBase64: null,
     createdAt: new Date().toISOString(),
     lastActivity: Date.now(),
-    history: []
+    history: [{ status, timestamp: new Date().toISOString() }]
   });
   return id;
 }
@@ -60,26 +62,36 @@ export async function takeScreenshot(id) {
 
 export async function closeSession(id) {
   const session = sessions.get(id);
-  if (!session) return;
+  if (!session) {
+    releaseJob(id);
+    return;
+  }
   try {
-    if (session.browser) await session.browser.close();
-  } catch { /* ignore */ }
-  sessions.delete(id);
+    if (session.browser) {
+      await session.browser.close();
+    }
+  } catch {
+    /* ignore already closed browser */
+  } finally {
+    sessions.delete(id);
+    releaseJob(id);
+  }
 }
 
 // Background cleanup — close sessions that have been idle > 5 minutes
-setInterval(async () => {
+const cleanupTimer = setInterval(async () => {
   const now = Date.now();
   for (const [id, session] of sessions.entries()) {
     if (now - session.lastActivity > SESSION_TIMEOUT_MS) {
       console.log(`[SessionManager] Closing idle session ${id}`);
-      try {
-        if (session.browser) await session.browser.close();
-      } catch { /* ignore */ }
-      sessions.delete(id);
+      await closeSession(id);
     }
   }
-}, 60 * 1000); // Check every minute
+}, 60 * 1000);
+
+if (cleanupTimer.unref) {
+  cleanupTimer.unref();
+}
 
 export function listSessions(userId) {
   const result = [];
