@@ -26,6 +26,7 @@ import { ProfileProvider, useProfile } from './context/ProfileContext';
 import LandingPage from './components/LandingPage';
 import SuspenseLoader from './components/common/SuspenseLoader';
 import SkeletonCard from './components/common/SkeletonCard';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Lazy-loaded heavy views for optimal bundle splitting
 const ScrapeConsole = lazy(() => import('./components/ScrapeConsole'));
@@ -564,7 +565,7 @@ function App() {
                   {/* My Perks Button */}
                   <button
                     className="my-perks-btn"
-                    onClick={() => setProfileModalOpen(true)}
+                    onClick={() => setCurrentView('profile')}
                     title="Connected Profiles & Membership Perks"
                   >
                     👑 My Perks
@@ -858,9 +859,11 @@ function App() {
 
 function AppWithProviders() {
   return (
-    <ProfileProvider>
-      <App />
-    </ProfileProvider>
+    <ErrorBoundary>
+      <ProfileProvider>
+        <App />
+      </ProfileProvider>
+    </ErrorBoundary>
   );
 }
 

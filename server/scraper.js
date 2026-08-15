@@ -2040,7 +2040,7 @@ export async function compareProductPrices(query, category = 'ecommerce', locati
     category,
     comparison: comparisonData.comparison,
     bestPrice: cheapestPrice,
-    bestPriceFormatted: `₹${cheapestPrice.toLocaleString('en-IN')}`,
+    bestPriceFormatted: (cheapestPrice !== null && !isNaN(cheapestPrice)) ? `₹${cheapestPrice.toLocaleString('en-IN')}` : 'N/A',
     bestPriceStore: cheapestStore,
     scrapedAt: new Date().toISOString()
   };

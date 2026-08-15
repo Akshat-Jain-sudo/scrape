@@ -1048,7 +1048,7 @@ app.post('/api/products', async (req, res) => {
     // Generate deterministic stable IDs for products to prevent duplicate rows per user
     const preparedProducts = products.map(p => {
       let stableId = p.id;
-      if (!stableId || stableId.startsWith('prod-') || stableId.startsWith('comp-') || /-\d{13}-/.test(stableId)) {
+      if (!stableId || /^deal-\d+$/i.test(stableId) || /^mock-/i.test(stableId) || /^temp-/i.test(stableId) || /^comp-feed-/i.test(stableId) || /^[a-z]+-\d{13}-\d+$/i.test(stableId)) {
         const store = p.source || p.store || 'retailer';
         const urlOrTitle = (p.productUrl || p.productLink || p.name || p.title || '').trim().toLowerCase();
         const hash = crypto.createHash('sha256').update(`${store}:${urlOrTitle}`).digest('hex').substring(0, 20);

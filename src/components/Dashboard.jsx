@@ -546,7 +546,6 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
 
   useEffect(() => {
     let active = true;
-    let timer;
 
     const fetchComparison = async () => {
       setLoading(true);
@@ -561,50 +560,6 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
           const data = await response.json();
           setCompData(data);
           fetchAIRecommendation(data);
-
-          // Setup automated background chasing timer (1.5 seconds)
-          timer = setTimeout(() => {
-            if (active) {
-              const productsToSave = [];
-              Object.entries(data.comparison).forEach(([store, storeData]) => {
-                const items = Array.isArray(storeData) ? storeData : [storeData];
-                items.forEach((details, index) => {
-                  productsToSave.push({
-                    id: `${data.id}-${store}-${index}`,
-                    name: details.name || data.productName,
-                    price: details.price,
-                    priceFormatted: details.priceFormatted,
-                    originalPrice: details.originalPrice,
-                    originalPriceFormatted: details.originalPriceFormatted,
-                    discount: details.discount,
-                    discountFormatted: details.discountFormatted,
-                    rating: details.rating,
-                    ratingsCount: details.ratingsCount,
-                    productLink: details.productUrl || details.productLink,
-                    productUrl: details.productUrl || (details.isExactProductUrl ? details.productLink : null),
-                    searchUrl: details.searchUrl || null,
-                    isExactProductUrl: Boolean(details.isExactProductUrl),
-                    urlType: details.urlType || (details.isExactProductUrl ? 'product' : 'search'),
-                    imageUrl: details.imageUrl || data.imageUrl || item.image,
-                    searchQuery: item.query,
-                    source: store,
-                    deliveryTime: details.deliveryTime,
-                    deliveryFee: details.deliveryFee,
-                    packagingFee: details.packagingFee,
-                    distance: details.distance,
-                    restaurantName: details.restaurantName,
-                    scrapedAt: details.scrapedAt || data.scrapedAt,
-                    sourceMode: details.sourceMode
-                  });
-                });
-              });
-
-              if (productsToSave.length > 0) {
-                onSaveProducts(productsToSave);
-              }
-              setAutoTracking(true);
-            }
-          }, 1500);
         } else {
           throw new Error('Comparison failed');
         }
@@ -619,7 +574,6 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
 
     return () => {
       active = false;
-      clearTimeout(timer);
     };
   }, [item.query, category, location]);
 
@@ -659,7 +613,10 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
       });
     });
 
-    onSaveComparison(productsToSave);
+    if (productsToSave.length > 0) {
+      onSaveComparison(productsToSave);
+      setAutoTracking(true);
+    }
   };
 
   const getStoreBadgeClass = (store) => {
@@ -715,7 +672,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                     alignItems: 'center', 
                     gap: '4px' 
                   }}>
-                    <span className="sync-pulse" style={{ width: '5px', height: '5px', background: 'var(--success)', borderRadius: '50%' }}></span> Auto-Tracking Active
+                    <span className="sync-pulse" style={{ width: '5px', height: '5px', background: 'var(--success)', borderRadius: '50%' }}></span> Saved to Library
                   </span>
                 )}
                 {onAddToCart && (
@@ -730,7 +687,7 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
                 )}
                 <button 
                   className="btn-icon" 
-                  onClick={handleSave} 
+                  onClick={handleSaveAll} 
                   title="Save comparison to library"
                   style={{ color: 'var(--accent-primary)', padding: '0.25rem' }}
                 >
@@ -961,6 +918,28 @@ function ComparisonFeedCard({ item, category, onSaveComparison, savedProducts, o
   );
 }
 
+const DEFAULT_TRENDING_DEALS = {
+  ecommerce: [
+    { id: 'deal-1', name: 'Apple iPhone 16 (128 GB)', query: 'iphone 16 128gb', image: 'https://rukminim2.flixcart.com/image/312/312/xif0q/mobile/4/l/1/-original-imahyyt4k66yep5y.jpeg?q=70' },
+    { id: 'deal-2', name: 'Apple AirPods Pro (2nd Gen)', query: 'airpods pro 2', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/e/a/r/-original-imagtc3kzzug2vsg.jpeg?q=70' },
+    { id: 'deal-3', name: 'Apple MacBook Air M3 (512GB)', query: 'macbook air m3 512gb', image: 'https://rukminim2.flixcart.com/image/312/312/xif0q/computer/y/6/y/-original-imahyytufgu26z7t.jpeg?q=70' },
+    { id: 'deal-4', name: 'Nike Air Max SC Running Shoes', query: 'nike air max shoes', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/c/k/r/-original-imagzfs8zghwhfgk.jpeg?q=70' },
+    { id: 'deal-5', name: 'Adidas Originals Men Hoodie', query: 'adidas hoodie', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/sweatshirt/t/r/k/s-adidas-original-imaghfggfggfggyh.jpeg?q=70' },
+    { id: 'deal-6', name: "Levi's 511 Slim Fit Jeans", query: 'levis 511 jeans', image: 'https://rukminim2.flixcart.com/image/612/612/xif0q/jean/t/u/r/32-levis-original-imaghfgjggfggyy2.jpeg?q=70' },
+  ],
+  quickcommerce: [
+    { id: 'qc-1', name: 'Amul Taaza Homogenised Toned Milk 1L', query: 'amul taaza milk 1l', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200' },
+    { id: 'qc-2', name: 'Fortune Sunlite Refined Sunflower Oil 1L', query: 'sunflower oil 1l', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=200' },
+    { id: 'qc-3', name: 'Tata Salt Vacuum Evaporated 1kg', query: 'tata salt 1kg', image: 'https://images.unsplash.com/photo-1518110925495-5fe2fda0442c?w=200' },
+    { id: 'qc-4', name: 'Aashirvaad Superior MP Whole Wheat Atta 5kg', query: 'aashirvaad atta 5kg', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200' },
+  ],
+  food: [
+    { id: 'food-1', name: 'Paneer Butter Masala', query: 'paneer butter masala', image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200' },
+    { id: 'food-2', name: 'Chicken Biryani Large', query: 'chicken biryani', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200' },
+    { id: 'food-3', name: 'Margherita Pizza Regular', query: 'margherita pizza', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200' },
+  ]
+};
+
 function Dashboard({ 
   savedProducts, 
   onSaveProducts, 
@@ -983,8 +962,8 @@ function Dashboard({
   }, []);
 
   const [activeCategory, setActiveCategory] = useState('ecommerce');
-  const [trendingDeals, setTrendingDeals] = useState(null);
-  const [loadingTrending, setLoadingTrending] = useState(true);
+  const [trendingDeals, setTrendingDeals] = useState(DEFAULT_TRENDING_DEALS);
+  const [loadingTrending, setLoadingTrending] = useState(false);
 
   // Custom search states
   const [searchQuery, setSearchQuery] = useState('');
